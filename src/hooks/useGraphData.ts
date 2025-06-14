@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
@@ -146,47 +146,67 @@ export const useGraphData = () => {
   };
 
   const usingRealData = isRealData && realNodes.length > 0;
-  const currentNodes = usingRealData ? realNodes : sampleNodes;
-  const currentConnections = usingRealData ? realConnections : sampleConnections;
+  
+  const currentNodes = useMemo(() => 
+    usingRealData ? realNodes : sampleNodes,
+    [usingRealData, realNodes]
+  );
 
-  const uniqueCategories = Array.from(new Set(currentNodes.map(node => node.category)));
+  const currentConnections = useMemo(() =>
+    usingRealData ? realConnections : sampleConnections,
+    [usingRealData, realConnections]
+  );
 
-  // When no categories are selected OR when all categories are selected, show all nodes.
-  // Otherwise, filter by the selected categories.
-  const filteredNodes = (selectedCategories.length === 0 || selectedCategories.length === uniqueCategories.length)
-    ? currentNodes
-    : currentNodes.filter(node => selectedCategories.includes(node.category));
+  const uniqueCategories = useMemo(() => 
+    Array.from(new Set(currentNodes.map(node => node.category))),
+    [currentNodes]
+  );
 
-  const eligibleConnections = currentConnections
-    .filter(conn => conn.strength >= connectionStrengthFilter)
-    .filter(conn => {
-      const sourceExists = filteredNodes.some(node => node.id === conn.source);
-      const targetExists = filteredNodes.some(node => node.id === conn.target);
-      return sourceExists && targetExists;
-    });
+  const filteredNodes = useMemo(() => {
+    // If no categories are selected, show all nodes.
+    if (selectedCategories.length === 0) {
+      return currentNodes;
+    }
+    // Otherwise, filter by the selected categories. This will correctly
+    // show all nodes if "Select All" provides all unique categories.
+    return currentNodes.filter(node => selectedCategories.includes(node.category));
+  }, [currentNodes, selectedCategories]);
 
-  const finalFilteredConnections = eligibleConnections; // Connections are now shown if they are eligible
+  const eligibleConnections = useMemo(() => {
+    // Create a Set of filtered node IDs for efficient lookup.
+    const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
+    
+    return currentConnections
+      .filter(conn => conn.strength >= connectionStrengthFilter)
+      .filter(conn => 
+        filteredNodeIds.has(conn.source) && filteredNodeIds.has(conn.target)
+      );
+  }, [currentConnections, connectionStrengthFilter, filteredNodes]);
 
-  const connectedNodeIds = new Set([
-    ...eligibleConnections.map(conn => conn.source),
-    ...eligibleConnections.map(conn => conn.target)
-  ]);
-  const isolatedNodeCount = filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
+  const finalFilteredConnections = eligibleConnections;
+
+  const isolatedNodeCount = useMemo(() => {
+    const connectedNodeIds = new Set([
+      ...eligibleConnections.map(conn => conn.source),
+      ...eligibleConnections.map(conn => conn.target)
+    ]);
+    return filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
+  }, [filteredNodes, eligibleConnections]);
   
   return {
     selectedCategories, setSelectedCategories,
     showConnectionLabels, setShowConnectionLabels,
     connectionStrengthFilter, setConnectionStrengthFilter,
     isRealData,
-    realNodes, realConnections, // exposed for checks like realNodes.length > 0
+    realNodes, realConnections,
     isSyncing,
     handleSync,
     toggleDataSource,
     usingRealData,
-    currentNodes, // For categories in ControlPanel
+    currentNodes,
     filteredNodes,
-    eligibleConnections, // For connectionCount in ControlPanel
-    finalFilteredConnections, // For KnowledgeGraph
+    eligibleConnections,
+    finalFilteredConnections,
     isolatedNodeCount,
     uniqueCategories,
   };
