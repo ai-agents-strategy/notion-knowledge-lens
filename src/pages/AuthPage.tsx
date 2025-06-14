@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -10,13 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { FcGoogle } from 'react-icons/fc'; // Import Google icon
 
 const AuthPage = () => {
-  const { login, signUp, isLoading: authIsLoading } = useAuth();
+  const { login, signUp, signInWithGoogle, isLoading: authIsLoading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Local loading state for forms
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -29,7 +29,7 @@ const AuthPage = () => {
       toast({ title: "Login Failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Login Successful", description: "Welcome back!" });
-      navigate('/settings'); // Redirect to settings or desired page
+      navigate('/settings');
     }
     setIsLoading(false);
   };
@@ -42,7 +42,7 @@ const AuthPage = () => {
       email, 
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`, // Ensure this is correctly passed
+        emailRedirectTo: `${window.location.origin}/`,
       }
     });
     if (error) {
@@ -50,9 +50,20 @@ const AuthPage = () => {
       toast({ title: "Sign Up Failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Sign Up Successful", description: "Please check your email to confirm your account." });
-      // Optionally navigate or stay on page
     }
     setIsLoading(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    try {
+      await signInWithGoogle();
+      // Supabase will handle the redirect. 
+      // The onAuthStateChange listener in AuthContext will navigate on SIGNED_IN event.
+    } catch (err: any) {
+      setError(err.message || "An error occurred during Google sign-in.");
+      toast({ title: "Google Sign-In Failed", description: err.message || "An unexpected error occurred.", variant: "destructive" });
+    }
   };
 
   return (
@@ -78,6 +89,27 @@ const AuthPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <Button 
+            variant="outline" 
+            className="w-full mb-6 bg-slate-700/30 border-slate-600 hover:bg-slate-600/50"
+            onClick={handleGoogleSignIn}
+            disabled={authIsLoading || isLoading}
+          >
+            <FcGoogle className="w-5 h-5 mr-2" />
+            Sign in with Google
+          </Button>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-600" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-slate-800/50 px-2 text-slate-400">
+                Or continue with email
+              </span>
+            </div>
+          </div>
+
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-slate-700/30 border-slate-600">
               <TabsTrigger value="login" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Login</TabsTrigger>

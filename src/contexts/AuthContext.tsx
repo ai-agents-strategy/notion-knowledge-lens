@@ -11,6 +11,7 @@ interface AuthContextType {
   login: typeof supabase.auth.signInWithPassword;
   signUp: typeof supabase.auth.signUp;
   logout: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>; // New method for Google sign-in
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,21 +35,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
+        if (_event === 'SIGNED_IN' && session?.provider_token) { // Redirect after OAuth sign-in
+          navigate('/settings');
+        }
       }
     );
 
     return () => {
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const logout = async () => {
     await supabase.auth.signOut();
     navigate('/'); // Redirect to home page after logout
   };
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`, // Important: must be an allowed redirect URI in Supabase
+      },
+    });
+    if (error) {
+      console.error('Google Sign-In error:', error);
+      // You might want to show a toast notification here
+    }
+  };
   
-  // It's important to pass the supabase client's auth methods directly
-  // or wrap them carefully to maintain their original signature and behavior.
   const value = {
     session,
     user,
@@ -58,10 +73,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       ...params,
       options: {
         ...params.options,
-        emailRedirectTo: `${window.location.origin}/`, // Important for email confirmation
+        emailRedirectTo: `${window.location.origin}/`,
       }
     }),
     logout,
+    signInWithGoogle, // Add new method to context value
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
