@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
+import { Fullscreen } from "lucide-react"; // Import the Fullscreen icon
+import { Button } from "@/components/ui/button"; // Import Button for consistent styling
 
 interface KnowledgeGraphProps {
   nodes: DatabaseNode[];
@@ -10,7 +12,9 @@ interface KnowledgeGraphProps {
 
 export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: KnowledgeGraphProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const graphContainerRef = useRef<HTMLDivElement>(null); // Ref for the full-screen element
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const categoryColors: Record<string, string> = {
     database: "#3b82f6",
@@ -57,6 +61,31 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
     dependency: "#fbbf24",
     contains: "#60a5fa",
   };
+
+  const toggleFullscreen = () => {
+    if (!graphContainerRef.current) return;
+
+    if (!document.fullscreenElement) {
+      graphContainerRef.current.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (!svgRef.current || nodes.length === 0) {
@@ -304,7 +333,7 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
   }, [nodes, connections, showConnectionLabels, categoryColors, connectionColors]);
 
   return (
-    <div className="relative w-full h-full">
+    <div ref={graphContainerRef} className="relative w-full h-full bg-slate-900"> {/* Added bg for fullscreen */}
       <svg ref={svgRef} className="w-full h-full" />
       
       {hoveredNode && (
@@ -357,10 +386,19 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
         </div>
       </div>
       
-      <div className="absolute bottom-4 right-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 border border-slate-600/50 text-slate-300 text-xs space-y-1 z-20">
+      <div className="absolute bottom-4 right-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 border border-slate-600/50 text-slate-300 text-xs space-y-1 z-20 flex flex-col items-end">
         <div>🖱️ Drag nodes to reposition</div>
         <div>🔍 Scroll to zoom in/out</div>
         <div>👆 Hover for node details</div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleFullscreen}
+          className="mt-2 text-slate-300 hover:text-white hover:bg-slate-700/50 p-1"
+          title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+        >
+          <Fullscreen className="w-5 h-5" />
+        </Button>
       </div>
     </div>
   );
