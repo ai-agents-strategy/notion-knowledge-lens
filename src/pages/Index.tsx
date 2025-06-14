@@ -204,22 +204,23 @@ const Index = () => {
     ? currentNodes.filter(node => selectedCategories.includes(node.category))
     : currentNodes;
 
-  // Apply connection strength filter first
-  const strengthFilteredConnections = currentConnections.filter(conn => conn.strength >= connectionStrengthFilter);
+  // Always compute the connections eligible for display, even when hidden
+  const eligibleConnections = currentConnections
+    .filter(conn => conn.strength >= connectionStrengthFilter)
+    .filter(conn => {
+      // Always filter by visible nodes
+      const sourceExists = filteredNodes.some(node => node.id === conn.source);
+      const targetExists = filteredNodes.some(node => node.id === conn.target);
+      return sourceExists && targetExists;
+    });
 
-  // Then filter connections to only show those between visible nodes, and based on showConnections toggle
-  const finalFilteredConnections = showConnections 
-    ? strengthFilteredConnections.filter(conn => {
-        const sourceExists = filteredNodes.some(node => node.id === conn.source);
-        const targetExists = filteredNodes.some(node => node.id === conn.target);
-        return sourceExists && targetExists;
-      })
-    : [];
+  // Only show connections if showConnections is ON, otherwise return empty array
+  const finalFilteredConnections = showConnections ? eligibleConnections : [];
 
   // Calculate isolated nodes (nodes without any connections)
   const connectedNodeIds = new Set([
-    ...finalFilteredConnections.map(conn => conn.source),
-    ...finalFilteredConnections.map(conn => conn.target)
+    ...eligibleConnections.map(conn => conn.source),
+    ...eligibleConnections.map(conn => conn.target)
   ]);
   const isolatedNodeCount = filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
 
@@ -295,12 +296,12 @@ const Index = () => {
             onCategoryChange={setSelectedCategories}
             showConnectionLabels={showConnectionLabels}
             onShowLabelsChange={setShowConnectionLabels}
-            showConnections={showConnections} // Pass new state
-            onShowConnectionsChange={setShowConnections} // Pass new setter
+            showConnections={showConnections}
+            onShowConnectionsChange={setShowConnections}
             connectionStrengthFilter={connectionStrengthFilter}
             onConnectionStrengthChange={setConnectionStrengthFilter}
             nodeCount={filteredNodes.length}
-            connectionCount={finalFilteredConnections.length}
+            connectionCount={eligibleConnections.length}
             isolatedNodeCount={isolatedNodeCount}
           />
         </div>
@@ -311,7 +312,7 @@ const Index = () => {
             <KnowledgeGraph 
               nodes={filteredNodes}
               connections={finalFilteredConnections}
-              showConnectionLabels={showConnectionLabels && showConnections} // Labels only if connections are shown
+              showConnectionLabels={showConnectionLabels && showConnections}
             />
           </div>
         </div>
