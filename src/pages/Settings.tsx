@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,11 +11,14 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@clerk/clerk-react";
 import { useIntegrations } from "@/hooks/useIntegrations";
+import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { SettingsHeader } from "@/components/SettingsHeader";
+import { SubscriptionGate } from "@/components/SubscriptionGate";
 
 const Settings = () => {
   const { user } = useUser();
   const { getIntegration, saveIntegration, deleteIntegration, loading: integrationsLoading } = useIntegrations();
+  const { subscription } = useSubscriptions();
   
   const [notionApiKey, setNotionApiKey] = useState('');
   const [databaseId, setDatabaseId] = useState(
@@ -185,109 +189,114 @@ const Settings = () => {
             </Alert>
           )}
 
-          {/* Notion Integration */}
-          <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                <Key className="w-5 h-5" />
-                Notion Integration
-              </CardTitle>
-              <CardDescription className="text-slate-300">
-                Connect your Notion workspace to visualize your actual database relationships
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="notion-key" className="text-slate-200">Notion Integration Token</Label>
-                <Input
-                  id="notion-key"
-                  type="password"
-                  placeholder="secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                  value={notionApiKey}
-                  onChange={(e) => setNotionApiKey(e.target.value)}
-                  className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
-                />
-                <p className="text-xs text-slate-400">
-                  Your API key is stored securely in your personal account
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="database-id" className="text-slate-200">Database ID (Optional)</Label>
-                <Input
-                  id="database-id"
-                  placeholder="32 character database ID"
-                  value={databaseId}
-                  onChange={(e) => setDatabaseId(e.target.value)}
-                  className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
-                />
-                <p className="text-xs text-slate-400">
-                  Specific database ID to focus on (leave empty to discover all accessible databases)
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  onClick={handleSave}
-                  disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {isLoading ? "Saving..." : "Save Settings"}
-                </Button>
-
-                <Button 
-                  onClick={handleSync}
-                  disabled={isSyncing || !notionApiKey}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {isSyncing ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Syncing...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Sync Databases
-                    </>
-                  )}
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={handleClear}
-                  className="bg-slate-700/50 border-slate-600 text-slate-200 hover:bg-slate-600/50"
-                >
-                  Clear All
-                </Button>
-              </div>
-
-              {/* Sync Status */}
-              {syncStatus === 'success' && (
-                <div className="flex items-center gap-2 text-green-400 text-sm">
-                  <CheckCircle className="w-4 h-4" />
-                  Successfully synced {syncedDatabases.length} databases
+          {/* Notion Integration - Wrapped in Subscription Gate */}
+          <SubscriptionGate 
+            feature="Notion Integration" 
+            description="Connect your Notion workspace to visualize your actual database relationships. This premium feature requires an active subscription."
+          >
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  <Key className="w-5 h-5" />
+                  Notion Integration
+                </CardTitle>
+                <CardDescription className="text-slate-300">
+                  Connect your Notion workspace to visualize your actual database relationships
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="notion-key" className="text-slate-200">Notion Integration Token</Label>
+                  <Input
+                    id="notion-key"
+                    type="password"
+                    placeholder="secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    value={notionApiKey}
+                    onChange={(e) => setNotionApiKey(e.target.value)}
+                    className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
+                  />
+                  <p className="text-xs text-slate-400">
+                    Your API key is stored securely in your personal account
+                  </p>
                 </div>
-              )}
 
-              {/* Synced Databases Preview */}
-              {syncedDatabases.length > 0 && (
-                <div className="mt-4 p-4 bg-slate-700/30 rounded-lg">
-                  <h4 className="text-slate-200 font-medium mb-2">Synced Databases:</h4>
-                  <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {syncedDatabases.map((db, index) => (
-                      <div key={index} className="text-xs text-slate-400 flex items-center gap-2">
-                        <Database className="w-3 h-3" />
-                        {db.title?.[0]?.plain_text || 'Untitled Database'}
-                      </div>
-                    ))}
+                <div className="space-y-2">
+                  <Label htmlFor="database-id" className="text-slate-200">Database ID (Optional)</Label>
+                  <Input
+                    id="database-id"
+                    placeholder="32 character database ID"
+                    value={databaseId}
+                    onChange={(e) => setDatabaseId(e.target.value)}
+                    className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
+                  />
+                  <p className="text-xs text-slate-400">
+                    Specific database ID to focus on (leave empty to discover all accessible databases)
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    onClick={handleSave}
+                    disabled={isLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isLoading ? "Saving..." : "Save Settings"}
+                  </Button>
+
+                  <Button 
+                    onClick={handleSync}
+                    disabled={isSyncing || !notionApiKey}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Sync Databases
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={handleClear}
+                    className="bg-slate-700/50 border-slate-600 text-slate-200 hover:bg-slate-600/50"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+
+                {/* Sync Status */}
+                {syncStatus === 'success' && (
+                  <div className="flex items-center gap-2 text-green-400 text-sm">
+                    <CheckCircle className="w-4 h-4" />
+                    Successfully synced {syncedDatabases.length} databases
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+
+                {/* Synced Databases Preview */}
+                {syncedDatabases.length > 0 && (
+                  <div className="mt-4 p-4 bg-slate-700/30 rounded-lg">
+                    <h4 className="text-slate-200 font-medium mb-2">Synced Databases:</h4>
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                      {syncedDatabases.map((db, index) => (
+                        <div key={index} className="text-xs text-slate-400 flex items-center gap-2">
+                          <Database className="w-3 h-3" />
+                          {db.title?.[0]?.plain_text || 'Untitled Database'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </SubscriptionGate>
 
           {/* Instructions */}
           <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white">

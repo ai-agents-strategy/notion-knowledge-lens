@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Settings, RefreshCw, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser, UserButton } from "@clerk/clerk-react";
+import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { ShareGraph } from './ShareGraph';
 
 interface GraphHeaderProps {
@@ -29,6 +30,7 @@ export const GraphHeader = ({
   onRevokeLink,
 }: GraphHeaderProps) => {
   const { isSignedIn, isLoaded } = useUser();
+  const { subscription } = useSubscriptions();
   const navigate = useNavigate();
 
   const handleAuthAction = () => {
@@ -36,6 +38,9 @@ export const GraphHeader = ({
   };
   
   const authIsLoading = !isLoaded;
+  
+  // Check if user has active subscription (not free trial)
+  const hasActiveSubscription = subscription && subscription.plan?.price_cents && subscription.plan.price_cents > 0;
 
   return (
     <div className="relative z-10 p-6">
@@ -57,10 +62,11 @@ export const GraphHeader = ({
         <div className="flex gap-2 items-center">
           <Button
             onClick={onSync}
-            disabled={isSyncing || !isSignedIn || authIsLoading}
+            disabled={isSyncing || !isSignedIn || authIsLoading || !hasActiveSubscription}
             variant="outline"
             size="sm"
-            className="bg-green-800/50 border-green-700/50 text-green-200 hover:bg-green-700/50"
+            className="bg-green-800/50 border-green-700/50 text-green-200 hover:bg-green-700/50 disabled:opacity-50"
+            title={!hasActiveSubscription ? "Upgrade to use Notion sync" : ""}
           >
             {isSyncing ? (
               <>
@@ -86,7 +92,7 @@ export const GraphHeader = ({
             </Button>
           )}
 
-          {realDataExists && isSignedIn && (
+          {realDataExists && isSignedIn && hasActiveSubscription && (
             <ShareGraph 
               publicId={publicId}
               onGenerateLink={onGenerateLink}
