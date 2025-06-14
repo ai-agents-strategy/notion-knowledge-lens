@@ -46,7 +46,7 @@ export const GraphPageLayout = ({
 
       {/* Knowledge Graph */}
       <div className="flex-1 p-6">
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200 dark:border-gray-700 h-full overflow-hidden shadow-lg">
+        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 h-full overflow-hidden shadow-sm">
           <KnowledgeGraph
             nodes={graphNodes}
             connections={graphConnections}

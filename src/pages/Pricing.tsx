@@ -28,18 +28,18 @@ const Pricing = () => {
 
   if (plansLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-white" />
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-notion-blue" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">Choose Your Plan</h1>
-          <p className="text-xl text-gray-300">
+          <h1 className="text-4xl font-bold text-black dark:text-white mb-4">Choose Your Plan</h1>
+          <p className="text-xl text-gray-600 dark:text-gray-400">
             Select the perfect plan for your needs
           </p>
         </div>
@@ -59,10 +59,10 @@ const Pricing = () => {
 
         <div className="text-center mt-12">
           <SignedOut>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 max-w-md mx-auto">
-              <p className="text-white mb-4">Sign in to get started</p>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 max-w-md mx-auto">
+              <p className="text-black dark:text-white mb-4">Sign in to get started</p>
               <SignInButton mode="modal">
-                <Button variant="outline" className="bg-white text-slate-900 hover:bg-gray-100">
+                <Button variant="outline" className="bg-white text-black hover:bg-gray-100 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
                   Sign In
                 </Button>
               </SignInButton>
@@ -71,12 +71,12 @@ const Pricing = () => {
 
           <SignedIn>
             {subscription && (
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 max-w-md mx-auto">
-                <p className="text-white mb-4">Need to manage your subscription?</p>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 max-w-md mx-auto">
+                <p className="text-black dark:text-white mb-4">Need to manage your subscription?</p>
                 <Button 
                   onClick={openCustomerPortal}
                   variant="outline" 
-                  className="bg-white text-slate-900 hover:bg-gray-100"
+                  className="bg-white text-black hover:bg-gray-100 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                 >
                   Manage Subscription
                 </Button>
@@ -89,7 +89,7 @@ const Pricing = () => {
           <Button 
             onClick={() => navigate('/')}
             variant="ghost" 
-            className="text-white hover:text-gray-300"
+            className="text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300"
           >
             ← Back to Home
           </Button>

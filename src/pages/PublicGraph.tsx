@@ -32,26 +32,26 @@ const PublicGraph = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      <div className="absolute top-4 left-4 z-20 text-white bg-slate-800/50 backdrop-blur-sm p-2 rounded-lg">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+    <div className="min-h-screen bg-white dark:bg-gray-900 relative overflow-hidden">
+      <div className="absolute top-4 left-4 z-20 text-black dark:text-white bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-2 rounded-lg border border-gray-200 dark:border-gray-700">
+        <h1 className="text-2xl font-bold text-notion-blue">
           Public Knowledge Graph
         </h1>
-        <p className="text-slate-300 text-sm">A shared visualization from a Notion workspace.</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">A shared visualization from a Notion workspace.</p>
       </div>
 
       <div className="w-full h-screen">
         {isLoading && (
-          <div className="flex flex-col gap-4 items-center justify-center h-full text-white">
-            <Loader2 className="w-12 h-12 animate-spin" />
+          <div className="flex flex-col gap-4 items-center justify-center h-full text-black dark:text-white">
+            <Loader2 className="w-12 h-12 animate-spin text-notion-blue" />
             <p>Loading graph...</p>
           </div>
         )}
         {isError && (
-          <div className="flex flex-col gap-4 items-center justify-center h-full text-red-400">
+          <div className="flex flex-col gap-4 items-center justify-center h-full text-red-600 dark:text-red-400">
             <ServerCrash className="w-12 h-12" />
             <p>Could not load graph.</p>
-            <p className="text-sm text-slate-400">{error instanceof Error ? error.message : 'Unknown error'}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{error instanceof Error ? error.message : 'Unknown error'}</p>
           </div>
         )}
         {data && (

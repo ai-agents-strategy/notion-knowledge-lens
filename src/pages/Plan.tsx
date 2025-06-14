@@ -32,7 +32,7 @@ const Plan = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-700 dark:text-gray-300 text-lg">Loading subscription details...</div>
+        <div className="text-black dark:text-white text-lg">Loading subscription details...</div>
       </div>
     );
   }
@@ -40,7 +40,7 @@ const Plan = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 relative">
       {/* Background Pattern - Notion inspired */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-900" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white to-blue-50 dark:from-gray-900 dark:to-gray-800" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(35,131,226,0.05),transparent_50%)]" />
       
       <SettingsHeader title="Subscription Plan" description="Manage your subscription and billing" />
@@ -50,9 +50,9 @@ const Plan = () => {
         <div className="space-y-8">
           {/* Current Subscription */}
           {subscription && (
-            <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 shadow-lg">
+            <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-gray-200 dark:border-gray-700 text-black dark:text-white shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl text-blue-600 dark:text-blue-400">
+                <CardTitle className="flex items-center gap-2 text-xl text-notion-blue dark:text-blue-400">
                   <Crown className="w-5 h-5" />
                   Current Subscription
                 </CardTitle>
@@ -64,7 +64,7 @@ const Plan = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{subscription.plan?.name}</h3>
+                    <h3 className="text-lg font-semibold text-black dark:text-white">{subscription.plan?.name}</h3>
                     <p className="text-gray-600 dark:text-gray-400">{subscription.plan?.description}</p>
                   </div>
                   <Badge className="bg-green-600 text-white">
@@ -91,7 +91,7 @@ const Plan = () => {
                 <div className="pt-4">
                   <Button 
                     onClick={openCustomerPortal}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-notion-blue hover:bg-blue-700 text-white"
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Manage Subscription
@@ -103,7 +103,7 @@ const Plan = () => {
 
           {/* Available Plans */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
+            <h2 className="text-2xl font-bold text-black dark:text-white mb-6 text-center">
               {subscription ? 'Upgrade or Change Plan' : 'Choose Your Plan'}
             </h2>
             

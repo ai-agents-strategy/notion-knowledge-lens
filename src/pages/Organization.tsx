@@ -43,16 +43,17 @@ const Organization = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-lg">Please sign in to access organization settings.</div>
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-black dark:text-white text-lg">Please sign in to access organization settings.</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-gray-900 relative overflow-hidden">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white to-blue-50 dark:from-gray-900 dark:to-gray-800" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(35,131,226,0.05),transparent_50%)]" />
       
       <SettingsHeader title="Organization" description="Manage your organization settings and team" />
 
@@ -60,13 +61,13 @@ const Organization = () => {
       <div className="relative z-10 max-w-4xl mx-auto px-6 pb-12">
         <div className="grid gap-6">
           {/* Organization Info */}
-          <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white">
+          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-gray-200 dark:border-gray-700 text-black dark:text-white shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <CardTitle className="flex items-center gap-2 text-xl text-notion-blue dark:text-blue-400">
                 <Building2 className="w-5 h-5" />
                 Organization Information
               </CardTitle>
-              <CardDescription className="text-slate-300">
+              <CardDescription className="text-gray-600 dark:text-gray-400">
                 Basic information about your organization
               </CardDescription>
             </CardHeader>
@@ -74,59 +75,59 @@ const Organization = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="org-name" className="text-slate-200">Organization Name</Label>
+                  <Label htmlFor="org-name" className="text-black dark:text-white">Organization Name</Label>
                   <Input
                     id="org-name"
                     placeholder="Enter organization name"
                     value={organizationName}
                     onChange={(e) => setOrganizationName(e.target.value)}
-                    className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="website" className="text-slate-200">Website</Label>
+                  <Label htmlFor="website" className="text-black dark:text-white">Website</Label>
                   <Input
                     id="website"
                     placeholder="https://yourcompany.com"
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
-                    className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="org-email" className="text-slate-200">Contact Email</Label>
+                  <Label htmlFor="org-email" className="text-black dark:text-white">Contact Email</Label>
                   <Input
                     id="org-email"
                     type="email"
                     placeholder="contact@yourcompany.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-slate-200">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-black dark:text-white">Phone Number</Label>
                   <Input
                     id="phone"
                     placeholder="+1 (555) 123-4567"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address" className="text-slate-200">Address</Label>
+                <Label htmlFor="address" className="text-black dark:text-white">Address</Label>
                 <Input
                   id="address"
                   placeholder="123 Business St, City, State 12345"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
+                  className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                 />
               </div>
 
@@ -134,7 +135,7 @@ const Organization = () => {
                 <Button 
                   onClick={handleSave}
                   disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-notion-blue hover:bg-blue-700 text-white"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isLoading ? "Saving..." : "Save Changes"}
@@ -144,13 +145,13 @@ const Organization = () => {
           </Card>
 
           {/* Team Members */}
-          <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white">
+          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-gray-200 dark:border-gray-700 text-black dark:text-white shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl text-slate-200">
+              <CardTitle className="flex items-center gap-2 text-xl text-black dark:text-white">
                 <Users className="w-5 h-5" />
                 Team Members
               </CardTitle>
-              <CardDescription className="text-slate-300">
+              <CardDescription className="text-gray-600 dark:text-gray-400">
                 Manage your organization's team members and their roles
               </CardDescription>
             </CardHeader>
@@ -158,19 +159,19 @@ const Organization = () => {
             <CardContent>
               <div className="space-y-4">
                 {/* Current User */}
-                <div className="flex items-center justify-between p-4 bg-slate-700/30 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                    <div className="w-10 h-10 bg-notion-blue rounded-full flex items-center justify-center text-white font-semibold">
                       {user.firstName?.[0] || user.emailAddresses[0]?.emailAddress[0]?.toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-white font-medium">
+                      <p className="text-black dark:text-white font-medium">
                         {user.firstName && user.lastName 
                           ? `${user.firstName} ${user.lastName}` 
                           : user.emailAddresses[0]?.emailAddress
                         }
                       </p>
-                      <p className="text-slate-400 text-sm">
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
                         {user.emailAddresses[0]?.emailAddress}
                       </p>
                     </div>
@@ -179,7 +180,7 @@ const Organization = () => {
                 </div>
 
                 {/* Placeholder for additional team members */}
-                <div className="text-center py-8 text-slate-400">
+                <div className="text-center py-8 text-gray-600 dark:text-gray-400">
                   <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>No additional team members yet</p>
                   <p className="text-sm">Team management features coming soon</p>
