@@ -43,30 +43,53 @@ const Settings = () => {
   }, [getIntegration]);
 
   const handleSave = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to save settings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!notionApiKey.trim()) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter your Notion API key before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage('');
     
     try {
+      console.log('💾 Attempting to save integration settings...');
+      
       // Save API key and database ID to integrations table
-      if (notionApiKey.trim()) {
-        const success = await saveIntegration('notion', notionApiKey.trim(), databaseId.trim() || undefined);
-        if (!success) {
-          setIsLoading(false);
-          return;
-        }
+      const success = await saveIntegration('notion', notionApiKey.trim(), databaseId.trim() || undefined);
+      
+      if (!success) {
+        throw new Error('Failed to save integration to database');
       }
       
       // Save database ID to localStorage (non-sensitive)
       if (databaseId.trim()) {
         localStorage.setItem('notion_database_id', databaseId.trim());
+      } else {
+        localStorage.removeItem('notion_database_id');
       }
+      
+      console.log('✅ Settings saved successfully');
       
       toast({
         title: "Settings saved!",
         description: "Your Notion integration settings have been saved securely.",
       });
     } catch (error) {
-      const errorMsg = "Failed to save settings. Please try again.";
+      console.error('❌ Error saving settings:', error);
+      const errorMsg = error instanceof Error ? error.message : "Failed to save settings. Please try again.";
       setErrorMessage(errorMsg);
       toast({
         title: "Error",
@@ -79,25 +102,43 @@ const Settings = () => {
   };
 
   const handleSync = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to sync with Notion.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!notionApiKey.trim()) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter and save your Notion API key before syncing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSyncing(true);
     setSyncStatus('idle');
     setErrorMessage('');
 
     try {
-      console.log('Starting Notion sync via Edge Function...');
+      console.log('🔄 Starting Notion sync via Edge Function...');
       
       const { data, error } = await supabase.functions.invoke('notion-sync');
 
       if (error) {
-        console.error('Edge function error:', error);
+        console.error('❌ Edge function error:', error);
         throw new Error(error.message || 'Failed to sync with Notion');
       }
 
-      if (data.error) {
+      if (data?.error) {
         throw new Error(data.error);
       }
 
-      console.log('Notion sync success:', data);
+      console.log('✅ Notion sync success:', data);
       
       setSyncedDatabases(data.results || []);
       setSyncStatus('success');
@@ -112,7 +153,7 @@ const Settings = () => {
       });
 
     } catch (error) {
-      console.error('Sync error:', error);
+      console.error('❌ Sync error:', error);
       setSyncStatus('error');
       
       let errorMsg = "Unknown error occurred during sync.";
@@ -133,24 +174,33 @@ const Settings = () => {
   };
 
   const handleClear = async () => {
-    // Clear integrations data
-    await deleteIntegration('notion');
-    
-    // Clear localStorage data
-    localStorage.removeItem('notion_database_id');
-    localStorage.removeItem('notion_synced_databases');
-    localStorage.removeItem('notion_last_sync');
-    
-    setNotionApiKey('');
-    setDatabaseId('');
-    setSyncedDatabases([]);
-    setSyncStatus('idle');
-    setErrorMessage('');
-    
-    toast({
-      title: "Settings cleared",
-      description: "All Notion integration settings have been cleared.",
-    });
+    try {
+      // Clear integrations data
+      await deleteIntegration('notion');
+      
+      // Clear localStorage data
+      localStorage.removeItem('notion_database_id');
+      localStorage.removeItem('notion_synced_databases');
+      localStorage.removeItem('notion_last_sync');
+      
+      setNotionApiKey('');
+      setDatabaseId('');
+      setSyncedDatabases([]);
+      setSyncStatus('idle');
+      setErrorMessage('');
+      
+      toast({
+        title: "Settings cleared",
+        description: "All Notion integration settings have been cleared.",
+      });
+    } catch (error) {
+      console.error('❌ Error clearing settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear settings. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (integrationsLoading) {
@@ -238,8 +288,8 @@ const Settings = () => {
                 <div className="flex gap-3 pt-4">
                   <Button 
                     onClick={handleSave}
-                    disabled={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={isLoading || !notionApiKey.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     {isLoading ? "Saving..." : "Save Settings"}
@@ -247,8 +297,8 @@ const Settings = () => {
 
                   <Button 
                     onClick={handleSync}
-                    disabled={isSyncing || !notionApiKey}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled={isSyncing || !notionApiKey.trim()}
+                    className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
                   >
                     {isSyncing ? (
                       <>
