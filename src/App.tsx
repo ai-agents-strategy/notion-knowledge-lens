@@ -7,33 +7,31 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import AuthPage from "./pages/AuthPage"; // Import AuthPage
-import { AuthProvider } from "./contexts/AuthContext"; // Import AuthProvider
-import ProtectedRoute from "./components/ProtectedRoute"; // Import ProtectedRoute
+import AuthPage from "./pages/AuthPage";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider> {/* Wrap with AuthProvider */}
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <BrowserRouter> {/* BrowserRouter now wraps AuthProvider */}
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthPage />} /> {/* Add AuthPage route */}
+            <Route path="/auth" element={<AuthPage />} />
             
-            {/* Protected Settings Route */}
             <Route element={<ProtectedRoute />}>
               <Route path="/settings" element={<Settings />} />
             </Route>
             
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
