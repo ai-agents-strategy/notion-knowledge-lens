@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
@@ -12,50 +11,50 @@ interface KnowledgeGraphProps {
   showConnectionLabels: boolean;
 }
 
+// Notion-inspired color palette
 const categoryColors: Record<string, string> = {
-  database: "#3b82f6",
-  text: "#10b981",
-  number: "#f59e0b",
-  select: "#8b5cf6",
-  multi_select: "#ec4899",
-  date: "#ef4444",
-  person: "#06b6d4",
-  file: "#84cc16",
-  checkbox: "#f97316",
-  url: "#6366f1",
-  email: "#14b8a6",
-  phone_number: "#a855f7",
-  formula: "#eab308",
-  relation: "#dc2626",
-  rollup: "#7c3aed",
-  created_time: "#059669",
-  created_by: "#0d9488",
-  last_edited_time: "#7c2d12",
-  last_edited_by: "#92400e",
-  // SEO categories from sample data
-  seo: "#3b82f6", // Blue
-  content: "#10b981", // Green
-  technical: "#8b5cf6", // Purple
-  offpage: "#f59e0b", // Yellow
-  local: "#ef4444", // Red
-  ecommerce: "#ec4899", // Pink
-  mobile: "#06b6d4", // Cyan
-  analytics: "#f97316", // Orange
-  research: "#6366f1", // Indigo
-  // Legacy categories
-  work: "#3b82f6",
-  contacts: "#10b981",
-  knowledge: "#8b5cf6",
-  planning: "#f59e0b",
-  finance: "#ef4444",
-  creativity: "#ec4899",
+  database: "#2383e2", // Notion blue
+  text: "#0f7b6c", // Notion teal
+  number: "#dfab01", // Notion yellow
+  select: "#9b51e0", // Notion purple
+  multi_select: "#dd0081", // Notion pink
+  date: "#eb5757", // Notion red
+  person: "#17a5a5", // Notion teal variant
+  file: "#0d8b7b", // Notion green
+  checkbox: "#d9730d", // Notion orange
+  url: "#2383e2", // Notion blue
+  email: "#0f7b6c", // Notion teal
+  phone_number: "#9b51e0", // Notion purple
+  formula: "#dfab01", // Notion yellow
+  relation: "#eb5757", // Notion red
+  rollup: "#9b51e0", // Notion purple
+  created_time: "#0d8b7b", // Notion green
+  created_by: "#17a5a5", // Notion teal
+  last_edited_time: "#8b4513", // Brown
+  last_edited_by: "#8b4513", // Brown
+  // Categories
+  seo: "#2383e2",
+  content: "#0d8b7b",
+  technical: "#9b51e0",
+  offpage: "#dfab01",
+  local: "#eb5757",
+  ecommerce: "#dd0081",
+  mobile: "#17a5a5",
+  analytics: "#d9730d",
+  research: "#6366f1",
+  work: "#2383e2",
+  contacts: "#0d8b7b",
+  knowledge: "#9b51e0",
+  planning: "#dfab01",
+  finance: "#eb5757",
+  creativity: "#dd0081",
 };
 
 const connectionColors: Record<DatabaseConnection['type'], string> = {
-  relation: "#dc2626",
-  reference: "#34d399",
-  dependency: "#fbbf24",
-  contains: "#60a5fa",
+  relation: "#eb5757", // Notion red
+  reference: "#0d8b7b", // Notion green
+  dependency: "#dfab01", // Notion yellow
+  contains: "#2383e2", // Notion blue
 };
 
 export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: KnowledgeGraphProps) => {
@@ -63,8 +62,6 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Color definitions moved outside the component
 
   const toggleFullscreen = () => {
     if (!graphContainerRef.current) return;
@@ -93,7 +90,6 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
 
   useEffect(() => {
     if (!svgRef.current || nodes.length === 0) {
-        // Clear SVG if no nodes to display
         if (svgRef.current) {
             d3.select(svgRef.current).selectAll("*").remove();
         }
@@ -152,12 +148,12 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       
       gradient.append("stop")
         .attr("offset", "0%")
-        .attr("stop-color", connectionColors[conn.type] || "#cbd5e1")
+        .attr("stop-color", connectionColors[conn.type] || "#a8a6a1")
         .attr("stop-opacity", 0.8);
       
       gradient.append("stop")
         .attr("offset", "100%")
-        .attr("stop-color", connectionColors[conn.type] || "#cbd5e1")
+        .attr("stop-color", connectionColors[conn.type] || "#a8a6a1")
         .attr("stop-opacity", 0.2);
     });
 
@@ -334,10 +330,10 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
     return () => {
       simulation.stop();
     };
-  }, [nodes, connections, showConnectionLabels, categoryColors, connectionColors]);
+  }, [nodes, connections, showConnectionLabels]);
 
   return (
-    <div ref={graphContainerRef} className="relative w-full h-full bg-slate-900">
+    <div ref={graphContainerRef} className="relative w-full h-full bg-white dark:bg-gray-900">
       <svg ref={svgRef} className="w-full h-full" />
       
       <HoveredNodeDetails 

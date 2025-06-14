@@ -31,16 +31,16 @@ const Plan = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-lg">Loading subscription details...</div>
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-700 dark:text-gray-300 text-lg">Loading subscription details...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-gray-900 relative">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30 dark:from-gray-800/30 dark:to-gray-700/30" />
       
       <SettingsHeader title="Subscription Plan" description="Manage your subscription and billing" />
 
@@ -49,13 +49,13 @@ const Plan = () => {
         <div className="space-y-8">
           {/* Current Subscription */}
           {subscription && (
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white">
+            <Card className="bg-white/80 backdrop-blur-sm border-gray-200 text-gray-700 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+                <CardTitle className="flex items-center gap-2 text-xl text-blue-600 dark:text-blue-400">
                   <Crown className="w-5 h-5" />
                   Current Subscription
                 </CardTitle>
-                <CardDescription className="text-slate-300">
+                <CardDescription className="text-gray-600 dark:text-gray-400">
                   Your active subscription details
                 </CardDescription>
               </CardHeader>
@@ -63,8 +63,8 @@ const Plan = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-white">{subscription.plan?.name}</h3>
-                    <p className="text-slate-400">{subscription.plan?.description}</p>
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{subscription.plan?.name}</h3>
+                    <p className="text-gray-600 dark:text-gray-400">{subscription.plan?.description}</p>
                   </div>
                   <Badge className="bg-green-600 text-white">
                     {subscription.status}
@@ -72,11 +72,11 @@ const Plan = () => {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 pt-4">
-                  <div className="flex items-center gap-2 text-slate-300">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                     <CreditCard className="w-4 h-4" />
                     <span>{formatPrice(subscription.plan?.price_cents || 0, subscription.plan?.currency)}/{subscription.plan?.interval}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-300">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                     <Calendar className="w-4 h-4" />
                     <span>
                       {subscription.current_period_end 
@@ -102,7 +102,7 @@ const Plan = () => {
 
           {/* Available Plans */}
           <div>
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
               {subscription ? 'Upgrade or Change Plan' : 'Choose Your Plan'}
             </h2>
             

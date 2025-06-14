@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -205,24 +204,24 @@ const Settings = () => {
 
   if (integrationsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-lg">Loading integrations...</div>
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-700 dark:text-gray-300 text-lg">Loading integrations...</div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-lg">Please sign in to access settings.</div>
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-700 dark:text-gray-300 text-lg">Please sign in to access settings.</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-gray-900 relative">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30 dark:from-gray-800/30 dark:to-gray-700/30" />
       
       <SettingsHeader title="Settings" description="Configure your Notion integration" />
 
@@ -231,7 +230,7 @@ const Settings = () => {
         <div className="grid gap-6">
           {/* Error Alert */}
           {errorMessage && (
-            <Alert variant="destructive" className="bg-red-900/50 border-red-700/50 text-red-100">
+            <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-sm">
                 {errorMessage}
@@ -239,48 +238,48 @@ const Settings = () => {
             </Alert>
           )}
 
-          {/* Notion Integration - Wrapped in Subscription Gate */}
+          {/* Notion Integration */}
           <SubscriptionGate 
             feature="Notion Integration" 
             description="Connect your Notion workspace to visualize your actual database relationships. This premium feature requires an active subscription."
           >
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white">
+            <Card className="bg-white/80 backdrop-blur-sm border-gray-200 text-gray-700 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                <CardTitle className="flex items-center gap-2 text-xl text-blue-600 dark:text-blue-400">
                   <Key className="w-5 h-5" />
                   Notion Integration
                 </CardTitle>
-                <CardDescription className="text-slate-300">
+                <CardDescription className="text-gray-600 dark:text-gray-400">
                   Connect your Notion workspace to visualize your actual database relationships
                 </CardDescription>
               </CardHeader>
               
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="notion-key" className="text-slate-200">Notion Integration Token</Label>
+                  <Label htmlFor="notion-key" className="text-gray-700 dark:text-gray-300">Notion Integration Token</Label>
                   <Input
                     id="notion-key"
                     type="password"
                     placeholder="secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                     value={notionApiKey}
                     onChange={(e) => setNotionApiKey(e.target.value)}
-                    className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
+                    className="bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder:text-gray-400"
                   />
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Your API key is stored securely in your personal account
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="database-id" className="text-slate-200">Database ID (Optional)</Label>
+                  <Label htmlFor="database-id" className="text-gray-700 dark:text-gray-300">Database ID (Optional)</Label>
                   <Input
                     id="database-id"
                     placeholder="32 character database ID"
                     value={databaseId}
                     onChange={(e) => setDatabaseId(e.target.value)}
-                    className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
+                    className="bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder:text-gray-400"
                   />
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Specific database ID to focus on (leave empty to discover all accessible databases)
                   </p>
                 </div>
@@ -316,7 +315,7 @@ const Settings = () => {
                   <Button 
                     variant="outline"
                     onClick={handleClear}
-                    className="bg-slate-700/50 border-slate-600 text-slate-200 hover:bg-slate-600/50"
+                    className="bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
                   >
                     Clear All
                   </Button>
@@ -324,7 +323,7 @@ const Settings = () => {
 
                 {/* Sync Status */}
                 {syncStatus === 'success' && (
-                  <div className="flex items-center gap-2 text-green-400 text-sm">
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
                     <CheckCircle className="w-4 h-4" />
                     Successfully synced {syncedDatabases.length} databases
                   </div>
@@ -332,11 +331,11 @@ const Settings = () => {
 
                 {/* Synced Databases Preview */}
                 {syncedDatabases.length > 0 && (
-                  <div className="mt-4 p-4 bg-slate-700/30 rounded-lg">
-                    <h4 className="text-slate-200 font-medium mb-2">Synced Databases:</h4>
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <h4 className="text-gray-700 dark:text-gray-300 font-medium mb-2">Synced Databases:</h4>
                     <div className="space-y-1 max-h-40 overflow-y-auto">
                       {syncedDatabases.map((db, index) => (
-                        <div key={index} className="text-xs text-slate-400 flex items-center gap-2">
+                        <div key={index} className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
                           <Database className="w-3 h-3" />
                           {db.title?.[0]?.plain_text || 'Untitled Database'}
                         </div>
@@ -349,45 +348,45 @@ const Settings = () => {
           </SubscriptionGate>
 
           {/* Instructions */}
-          <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white">
+          <Card className="bg-white/80 backdrop-blur-sm border-gray-200 text-gray-700 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl text-slate-200">
+              <CardTitle className="flex items-center gap-2 text-xl text-gray-800 dark:text-gray-200">
                 <Database className="w-5 h-5" />
                 How to Set Up Notion Integration
               </CardTitle>
             </CardHeader>
             
             <CardContent className="space-y-4">
-              <div className="space-y-3 text-sm text-slate-300">
+              <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex gap-3">
                   <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">1</span>
                   <div>
-                    <p className="font-medium">Create a Notion Integration</p>
-                    <p className="text-slate-400">Go to notion.so/my-integrations and create a new integration</p>
+                    <p className="font-medium text-gray-700 dark:text-gray-300">Create a Notion Integration</p>
+                    <p className="text-gray-600 dark:text-gray-400">Go to notion.so/my-integrations and create a new integration</p>
                   </div>
                 </div>
                 
                 <div className="flex gap-3">
                   <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">2</span>
                   <div>
-                    <p className="font-medium">Copy the Integration Token</p>
-                    <p className="text-slate-400">Copy the "Internal Integration Token" and paste it above</p>
+                    <p className="font-medium text-gray-700 dark:text-gray-300">Copy the Integration Token</p>
+                    <p className="text-gray-600 dark:text-gray-400">Copy the "Internal Integration Token" and paste it above</p>
                   </div>
                 </div>
                 
                 <div className="flex gap-3">
                   <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">3</span>
                   <div>
-                    <p className="font-medium">Share Databases with Integration</p>
-                    <p className="text-slate-400">In Notion, share your databases with the integration you created</p>
+                    <p className="font-medium text-gray-700 dark:text-gray-300">Share Databases with Integration</p>
+                    <p className="text-gray-600 dark:text-gray-400">In Notion, share your databases with the integration you created</p>
                   </div>
                 </div>
                 
                 <div className="flex gap-3">
                   <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">4</span>
                   <div>
-                    <p className="font-medium">Save Settings and Sync</p>
-                    <p className="text-slate-400">Save your API key and click "Sync Databases" to fetch your real data</p>
+                    <p className="font-medium text-gray-700 dark:text-gray-300">Save Settings and Sync</p>
+                    <p className="text-gray-600 dark:text-gray-400">Save your API key and click "Sync Databases" to fetch your real data</p>
                   </div>
                 </div>
               </div>
