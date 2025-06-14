@@ -34,7 +34,8 @@ serve(async (req) => {
         filter: {
           property: 'object',
           value: 'database'
-        }
+        },
+        page_size: 100
       })
     });
 
@@ -77,7 +78,8 @@ serve(async (req) => {
     
     for (const db of databases) {
       try {
-        console.log(`Fetching pages from database: ${db.id}`);
+        const dbName = db.title?.[0]?.plain_text || `Database ${db.id.slice(0, 8)}`;
+        console.log(`Fetching pages from database: ${dbName} (${db.id})`);
         
         const pagesResponse = await fetch(`https://api.notion.com/v1/databases/${db.id}/query`, {
           method: 'POST',
@@ -93,22 +95,54 @@ serve(async (req) => {
 
         if (pagesResponse.ok) {
           const pagesData = await pagesResponse.json();
-          const dbName = db.title?.[0]?.plain_text || `Database ${db.id.slice(0, 8)}`;
+          console.log(`Raw response for ${dbName}:`, JSON.stringify(pagesData, null, 2));
           
-          // Add database info to each page
-          const pagesWithDb = (pagesData.results || []).map(page => ({
-            ...page,
-            database_name: dbName,
-            database_id: db.id
-          }));
+          // Add database info to each page and extract title properly
+          const pagesWithDb = (pagesData.results || []).map(page => {
+            // Extract title from properties
+            let pageTitle = `Page ${page.id.slice(0, 8)}`;
+            
+            if (page.properties) {
+              // Look for title property
+              for (const [key, prop] of Object.entries(page.properties)) {
+                if (prop.type === 'title' && prop.title?.length > 0) {
+                  pageTitle = prop.title[0]?.plain_text || pageTitle;
+                  break;
+                }
+              }
+              
+              // Fallback to rich_text properties
+              if (pageTitle.startsWith('Page ')) {
+                for (const [key, prop] of Object.entries(page.properties)) {
+                  if (prop.type === 'rich_text' && prop.rich_text?.length > 0) {
+                    pageTitle = prop.rich_text[0]?.plain_text || pageTitle;
+                    break;
+                  }
+                }
+              }
+            }
+            
+            return {
+              ...page,
+              database_name: dbName,
+              database_id: db.id,
+              extracted_title: pageTitle
+            };
+          });
           
           allPages.push(...pagesWithDb);
           console.log(`Found ${pagesWithDb.length} pages in ${dbName}`);
+          
+          // Log sample page structure for debugging
+          if (pagesWithDb.length > 0) {
+            console.log(`Sample page from ${dbName}:`, JSON.stringify(pagesWithDb[0], null, 2));
+          }
         } else {
-          console.log(`Failed to fetch pages from ${db.id}:`, pagesResponse.status);
+          const errorText = await pagesResponse.text();
+          console.log(`Failed to fetch pages from ${dbName}:`, pagesResponse.status, errorText);
         }
       } catch (error) {
-        console.log(`Error fetching pages from ${db.id}:`, error);
+        console.log(`Error fetching pages from database:`, error);
       }
     }
 

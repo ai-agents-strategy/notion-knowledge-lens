@@ -70,15 +70,16 @@ const Index = () => {
 
     // Create nodes for each page
     pages.forEach((page: any) => {
-      const pageTitle = getPageTitle(page);
-      const categoryFromDb = page.database_name?.toLowerCase() || 'content';
+      // Use the extracted title from the edge function
+      const pageTitle = page.extracted_title || getPageTitle(page);
+      const categoryFromDb = page.database_name?.toLowerCase().replace(/\s+/g, '_') || 'content';
       
       const pageNode: DatabaseNode = {
         id: page.id,
         name: pageTitle,
         type: "page",
         category: categoryFromDb,
-        description: `Page from ${page.database_name}`,
+        description: `${pageTitle} from ${page.database_name}`,
         size: Math.min(Math.max(15, pageTitle.length), 35)
       };
       nodes.push(pageNode);
@@ -97,7 +98,7 @@ const Index = () => {
                   target: relatedPage.id,
                   type: "relation",
                   strength: 0.8,
-                  label: propName.toLowerCase()
+                  label: propName.toLowerCase().replace(/_/g, ' ')
                 });
               }
             });
@@ -110,7 +111,7 @@ const Index = () => {
   };
 
   const getPageTitle = (page: any) => {
-    // Try to get title from various possible properties
+    // This is a fallback method in case the edge function doesn't extract the title
     if (page.properties) {
       for (const [key, prop] of Object.entries(page.properties)) {
         const propData = prop as any;
