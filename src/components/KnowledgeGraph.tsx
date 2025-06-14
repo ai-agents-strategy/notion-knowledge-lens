@@ -1,7 +1,6 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import { DatabaseNode, DatabaseConnection } from "@/pages/Index";
+import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 
 interface KnowledgeGraphProps {
   nodes: DatabaseNode[];
@@ -13,7 +12,7 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
-  const categoryColors = {
+  const categoryColors: Record<string, string> = {
     database: "#3b82f6",
     text: "#10b981",
     number: "#f59e0b", 
@@ -33,6 +32,16 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
     created_by: "#0d9488",
     last_edited_time: "#7c2d12",
     last_edited_by: "#92400e",
+    // SEO categories from sample data
+    seo: "#3b82f6", // Blue
+    content: "#10b981", // Green
+    technical: "#8b5cf6", // Purple
+    offpage: "#f59e0b", // Yellow
+    local: "#ef4444", // Red
+    ecommerce: "#ec4899", // Pink
+    mobile: "#06b6d4", // Cyan
+    analytics: "#f97316", // Orange
+    research: "#6366f1", // Indigo
     // Legacy categories
     work: "#3b82f6",
     contacts: "#10b981", 
@@ -42,7 +51,7 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
     creativity: "#ec4899",
   };
 
-  const connectionColors = {
+  const connectionColors: Record<DatabaseConnection['type'], string> = {
     relation: "#dc2626",
     reference: "#34d399", 
     dependency: "#fbbf24",
@@ -50,7 +59,13 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
   };
 
   useEffect(() => {
-    if (!svgRef.current || nodes.length === 0) return;
+    if (!svgRef.current || nodes.length === 0) {
+        // Clear SVG if no nodes to display
+        if (svgRef.current) {
+            d3.select(svgRef.current).selectAll("*").remove();
+        }
+        return;
+    }
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -63,7 +78,6 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
 
     svg.attr("width", width).attr("height", height);
 
-    // Create zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
       .on("zoom", (event) => {
@@ -71,25 +85,19 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       });
 
     svg.call(zoom);
-
     const g = svg.append("g");
 
-    // Create force simulation with different forces for different node types
-    const simulation = d3.forceSimulation(nodes as any)
-      .force("link", d3.forceLink(connections).id((d: any) => d.id)
+    const simulation = d3.forceSimulation(nodes as d3.SimulationNodeDatum[])
+      .force("link", d3.forceLink<d3.SimulationNodeDatum, DatabaseConnection>(connections).id((d: any) => d.id)
         .distance((d: any) => {
-          // Shorter distance for database-property connections
           if (d.type === 'contains') return 60;
-          // Longer distance for database-database relations
           if (d.type === 'relation') return 150;
           return 100;
         })
       )
       .force("charge", d3.forceManyBody()
         .strength((d: any) => {
-          // Databases repel more strongly
           if (d.type === 'database') return -400;
-          // Properties have less repulsion
           if (d.type === 'property') return -150;
           return -300;
         })
@@ -103,7 +111,6 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
         })
       );
 
-    // Create gradients for connections
     const defs = g.append("defs");
     connections.forEach((conn, i) => {
       const gradient = defs.append("linearGradient")
@@ -112,16 +119,15 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       
       gradient.append("stop")
         .attr("offset", "0%")
-        .attr("stop-color", connectionColors[conn.type])
+        .attr("stop-color", connectionColors[conn.type] || "#cbd5e1")
         .attr("stop-opacity", 0.8);
       
       gradient.append("stop")
         .attr("offset", "100%")
-        .attr("stop-color", connectionColors[conn.type])
+        .attr("stop-color", connectionColors[conn.type] || "#cbd5e1")
         .attr("stop-opacity", 0.2);
     });
 
-    // Create connections
     const links = g.append("g")
       .selectAll("line")
       .data(connections)
@@ -136,7 +142,6 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       .attr("stroke-opacity", d => d.type === 'contains' ? 0.8 : 0.6)
       .attr("stroke-dasharray", d => d.type === 'reference' ? "5,5" : null);
 
-    // Create connection labels
     const linkLabels = g.append("g")
       .selectAll("text")
       .data(connections)
@@ -149,97 +154,88 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       .style("opacity", showConnectionLabels ? 0.7 : 0)
       .text(d => d.label || "");
 
-    // Create nodes
     const nodeGroups = g.append("g")
-      .selectAll("g")
+      .selectAll<SVGGElement, DatabaseNode>("g")
       .data(nodes)
       .enter()
       .append("g")
       .style("cursor", "grab")
-      .call(d3.drag<SVGGElement, DatabaseNode>()
-        .on("start", (event, d: any) => {
+      .call(d3.drag<SVGGElement, DatabaseNode & d3.SimulationNodeDatum>()
+        .on("start", (event, d) => {
           if (!event.active) simulation.alphaTarget(0.3).restart();
           d.fx = d.x;
           d.fy = d.y;
         })
-        .on("drag", (event, d: any) => {
+        .on("drag", (event, d) => {
           d.fx = event.x;
           d.fy = event.y;
         })
-        .on("end", (event, d: any) => {
+        .on("end", (event, d) => {
           if (!event.active) simulation.alphaTarget(0);
           d.fx = null;
           d.fy = null;
         }));
-
-    // Add glow filter
+    
     const filter = defs.append("filter")
       .attr("id", "glow");
-    
     filter.append("feGaussianBlur")
       .attr("stdDeviation", "3")
       .attr("result", "coloredBlur");
-    
     const feMerge = filter.append("feMerge");
     feMerge.append("feMergeNode").attr("in", "coloredBlur");
     feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 
-    // Add node shapes based on type
     nodeGroups.each(function(d) {
       const group = d3.select(this);
+      const color = categoryColors[d.category.toLowerCase()] || categoryColors[d.type] || "#6b7280";
       
-      if (d.type === 'database') {
-        // Databases as larger circles
+      if (d.type === 'database' || d.type === 'page') {
         group.append("circle")
           .attr("r", d.size)
-          .attr("fill", categoryColors[d.category as keyof typeof categoryColors] || "#6b7280")
+          .attr("fill", color)
           .attr("stroke", "#1e293b")
           .attr("stroke-width", 3)
           .style("filter", "url(#glow)")
           .style("opacity", 0.9);
       } else if (d.type === 'property') {
-        // Properties as smaller rectangles
         group.append("rect")
           .attr("width", d.size * 2)
           .attr("height", d.size)
           .attr("x", -d.size)
           .attr("y", -d.size / 2)
           .attr("rx", 4)
-          .attr("fill", categoryColors[d.category as keyof typeof categoryColors] || "#6b7280")
+          .attr("fill", color)
           .attr("stroke", "#1e293b")
           .attr("stroke-width", 1)
           .style("opacity", 0.8);
       }
     });
 
-    // Add node labels
     nodeGroups.append("text")
       .attr("text-anchor", "middle")
-      .attr("dy", d => d.type === 'database' ? 5 : 3)
-      .attr("font-size", d => d.type === 'database' ? "12px" : "9px")
-      .attr("font-weight", d => d.type === 'database' ? "bold" : "normal")
+      .attr("dy", d => (d.type === 'database' || d.type === 'page') ? 5 : 3)
+      .attr("font-size", d => (d.type === 'database' || d.type === 'page') ? "12px" : "9px")
+      .attr("font-weight", d => (d.type === 'database' || d.type === 'page') ? "bold" : "normal")
       .attr("fill", "white")
       .text(d => {
-        // Truncate long property names
         if (d.type === 'property' && d.name.length > 12) {
           return d.name.substring(0, 12) + '...';
         }
         return d.name;
       });
 
-    // Add hover effects
     nodeGroups
       .on("mouseenter", (event, d) => {
         setHoveredNode(d.id);
         const element = d3.select(event.currentTarget);
         
-        if (d.type === 'database') {
+        if (d.type === 'database' || d.type === 'page') {
           element.select("circle")
             .transition()
             .duration(200)
             .attr("r", d.size + 5)
             .style("opacity", 1);
-        } else {
+        } else { // property
           element.select("rect")
             .transition()
             .duration(200)
@@ -254,13 +250,13 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
         setHoveredNode(null);
         const element = d3.select(event.currentTarget);
         
-        if (d.type === 'database') {
+        if (d.type === 'database' || d.type === 'page') {
           element.select("circle")
             .transition()
             .duration(200)
             .attr("r", d.size)
             .style("opacity", 0.9);
-        } else {
+        } else { // property
           element.select("rect")
             .transition()
             .duration(200)
@@ -272,7 +268,6 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
         }
       });
 
-    // Update positions on simulation tick
     simulation.on("tick", () => {
       links
         .attr("x1", (d: any) => d.source.x)
@@ -288,18 +283,32 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
         .attr("transform", (d: any) => `translate(${d.x},${d.y})`);
     });
 
+    // Add initial zoom transform to center the graph if desired
+    // For example, to center and fit (this is a basic example, might need adjustment)
+    // const bounds = g.node()?.getBBox();
+    // if (bounds && bounds.width > 0 && bounds.height > 0) {
+    //   const fullWidth = width;
+    //   const fullHeight = height;
+    //   const midX = bounds.x + bounds.width / 2;
+    //   const midY = bounds.y + bounds.height / 2;
+    //   const scale = Math.min(1, 0.9 / Math.max(bounds.width / fullWidth, bounds.height / fullHeight));
+      
+    //   svg.call(zoom.transform, d3.zoomIdentity
+    //     .translate(fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY)
+    //     .scale(scale));
+    // }
+
     return () => {
       simulation.stop();
     };
-  }, [nodes, connections, showConnectionLabels]);
+  }, [nodes, connections, showConnectionLabels, categoryColors, connectionColors]);
 
   return (
     <div className="relative w-full h-full">
       <svg ref={svgRef} className="w-full h-full" />
       
-      {/* Node Info Panel */}
       {hoveredNode && (
-        <div className="absolute top-4 left-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-4 border border-slate-600/50 max-w-sm">
+        <div className="absolute top-4 left-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-4 border border-slate-600/50 max-w-sm z-20">
           {(() => {
             const node = nodes.find(n => n.id === hoveredNode);
             if (!node) return null;
@@ -309,14 +318,14 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
                 <h3 className="text-white font-bold text-lg mb-2">{node.name}</h3>
                 <p className="text-slate-300 text-sm mb-2">{node.description}</p>
                 <div className="flex gap-2 text-xs flex-wrap">
-                  <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
+                  <span className={`px-2 py-1 rounded ${categoryColors[node.type] ? 'bg-opacity-20' : 'bg-gray-500/20 text-gray-300'}`} style={{backgroundColor: categoryColors[node.type] ? `${categoryColors[node.type]}33` : undefined, color: categoryColors[node.type] || undefined}}>
                     {node.type}
                   </span>
-                  <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">
+                  <span className={`px-2 py-1 rounded ${categoryColors[node.category.toLowerCase()] ? 'bg-opacity-20' : 'bg-gray-500/20 text-gray-300'}`} style={{backgroundColor: categoryColors[node.category.toLowerCase()] ? `${categoryColors[node.category.toLowerCase()]}33` : undefined, color: categoryColors[node.category.toLowerCase()] || undefined}}>
                     {node.category}
                   </span>
                   {node.propertyType && (
-                    <span className="bg-green-500/20 text-green-300 px-2 py-1 rounded">
+                     <span className={`px-2 py-1 rounded ${categoryColors[node.propertyType.toLowerCase()] ? 'bg-opacity-20' : 'bg-gray-500/20 text-gray-300'}`} style={{backgroundColor: categoryColors[node.propertyType.toLowerCase()] ? `${categoryColors[node.propertyType.toLowerCase()]}33` : undefined, color: categoryColors[node.propertyType.toLowerCase()] || undefined}}>
                       {node.propertyType}
                     </span>
                   )}
@@ -327,37 +336,31 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
         </div>
       )}
       
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 border border-slate-600/50">
+      <div className="absolute bottom-4 left-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 border border-slate-600/50 z-20">
         <div className="text-slate-300 text-xs space-y-2">
-          <div className="font-semibold mb-2">Node Types:</div>
+          <div className="font-semibold mb-1 text-white">Node Types:</div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-            <span>Database</span>
+            <div className="w-3 h-3 rounded-full" style={{backgroundColor: categoryColors.page || categoryColors.database}}></div>
+            <span>Page/Database</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-2 bg-green-500 rounded"></div>
+            <div className="w-3 h-1.5 rounded-sm" style={{backgroundColor: categoryColors.property || categoryColors.text}}></div>
             <span>Property</span>
           </div>
-          <div className="mt-2 font-semibold">Connections:</div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-0.5 bg-blue-400"></div>
-            <span>Contains</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-0.5 bg-red-400"></div>
-            <span>Relation</span>
-          </div>
+          <div className="mt-2 font-semibold text-white">Connections:</div>
+          {Object.entries(connectionColors).map(([type, color]) => (
+            <div key={type} className="flex items-center gap-2">
+              <div className="w-3 h-0.5 rounded" style={{backgroundColor: color}}></div>
+              <span className="capitalize">{type}</span>
+            </div>
+          ))}
         </div>
       </div>
       
-      {/* Instructions */}
-      <div className="absolute bottom-4 right-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 border border-slate-600/50">
-        <div className="text-slate-300 text-xs space-y-1">
-          <div>🖱️ Drag nodes to reposition</div>
-          <div>🔍 Scroll to zoom in/out</div>
-          <div>👆 Hover for node details</div>
-        </div>
+      <div className="absolute bottom-4 right-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 border border-slate-600/50 text-slate-300 text-xs space-y-1 z-20">
+        <div>🖱️ Drag nodes to reposition</div>
+        <div>🔍 Scroll to zoom in/out</div>
+        <div>👆 Hover for node details</div>
       </div>
     </div>
   );
