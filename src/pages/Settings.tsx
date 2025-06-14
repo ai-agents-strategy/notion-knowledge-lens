@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,11 +9,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Key, Database, Save, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useUser } from "@clerk/clerk-react";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Settings = () => {
-  const [notionApiKey, setNotionApiKey] = useState(
-    localStorage.getItem('notion_api_key') || ''
-  );
+  const { user } = useUser();
+  const { profile, loading: profileLoading, updateNotionApiKey } = useUserProfile();
+  
+  const [notionApiKey, setNotionApiKey] = useState('');
   const [databaseId, setDatabaseId] = useState(
     localStorage.getItem('notion_database_id') || ''
   );
@@ -22,21 +26,35 @@ const Settings = () => {
   const [syncedDatabases, setSyncedDatabases] = useState<any[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  const handleSave = () => {
+  // Load profile data when available
+  useEffect(() => {
+    if (profile) {
+      setNotionApiKey(profile.notion_api_key || '');
+    }
+  }, [profile]);
+
+  const handleSave = async () => {
     setIsLoading(true);
     setErrorMessage('');
     
     try {
-      if (notionApiKey.trim()) {
-        localStorage.setItem('notion_api_key', notionApiKey.trim());
+      // Save API key to Supabase profile
+      if (notionApiKey.trim() && profile) {
+        const success = await updateNotionApiKey(notionApiKey.trim());
+        if (!success) {
+          setIsLoading(false);
+          return;
+        }
       }
+      
+      // Save database ID to localStorage (non-sensitive)
       if (databaseId.trim()) {
         localStorage.setItem('notion_database_id', databaseId.trim());
       }
       
       toast({
         title: "Settings saved!",
-        description: "Your Notion integration settings have been saved successfully.",
+        description: "Your Notion integration settings have been saved securely.",
       });
     } catch (error) {
       const errorMsg = "Failed to save settings. Please try again.";
@@ -105,11 +123,17 @@ const Settings = () => {
     }
   };
 
-  const handleClear = () => {
-    localStorage.removeItem('notion_api_key');
+  const handleClear = async () => {
+    // Clear Supabase profile data
+    if (profile) {
+      await updateNotionApiKey('');
+    }
+    
+    // Clear localStorage data
     localStorage.removeItem('notion_database_id');
     localStorage.removeItem('notion_synced_databases');
     localStorage.removeItem('notion_last_sync');
+    
     setNotionApiKey('');
     setDatabaseId('');
     setSyncedDatabases([]);
@@ -121,6 +145,22 @@ const Settings = () => {
       description: "All Notion integration settings have been cleared.",
     });
   };
+
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-lg">Loading profile...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-lg">Please sign in to access settings.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
@@ -184,7 +224,7 @@ const Settings = () => {
                   className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
                 />
                 <p className="text-xs text-slate-400">
-                  Your API key is now stored securely in Supabase and used server-side
+                  Your API key is stored securely in your personal account
                 </p>
               </div>
 
@@ -214,7 +254,7 @@ const Settings = () => {
 
                 <Button 
                   onClick={handleSync}
-                  disabled={isSyncing}
+                  disabled={isSyncing || !notionApiKey}
                   className="bg-green-600 hover:bg-green-700 text-white"
                 >
                   {isSyncing ? (
