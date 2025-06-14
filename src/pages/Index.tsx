@@ -56,7 +56,7 @@ const sampleConnections: DatabaseConnection[] = [
 ];
 
 const Index = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showConnectionLabels, setShowConnectionLabels] = useState(true);
   const [connectionStrengthFilter, setConnectionStrengthFilter] = useState(0);
   const [isRealData, setIsRealData] = useState(false);
@@ -197,15 +197,24 @@ const Index = () => {
   const currentNodes = isRealData && realNodes.length > 0 ? realNodes : sampleNodes;
   const currentConnections = isRealData && realConnections.length > 0 ? realConnections : sampleConnections;
 
-  const filteredNodes = selectedCategory 
-    ? currentNodes.filter(node => node.category === selectedCategory)
+  // Filter nodes by selected categories (if any selected)
+  const filteredNodes = selectedCategories.length > 0 
+    ? currentNodes.filter(node => selectedCategories.includes(node.category))
     : currentNodes;
 
+  // Filter connections to only show those between visible nodes
   const filteredConnections = currentConnections.filter(conn => {
     const sourceExists = filteredNodes.some(node => node.id === conn.source);
     const targetExists = filteredNodes.some(node => node.id === conn.target);
     return sourceExists && targetExists && conn.strength >= connectionStrengthFilter;
   });
+
+  // Calculate isolated nodes (nodes without any connections)
+  const connectedNodeIds = new Set([
+    ...filteredConnections.map(conn => conn.source),
+    ...filteredConnections.map(conn => conn.target)
+  ]);
+  const isolatedNodeCount = filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
@@ -275,14 +284,15 @@ const Index = () => {
         <div className="lg:w-80 p-6">
           <ControlPanel
             categories={Array.from(new Set(currentNodes.map(node => node.category)))}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
+            selectedCategories={selectedCategories}
+            onCategoryChange={setSelectedCategories}
             showConnectionLabels={showConnectionLabels}
             onShowLabelsChange={setShowConnectionLabels}
             connectionStrengthFilter={connectionStrengthFilter}
             onConnectionStrengthChange={setConnectionStrengthFilter}
             nodeCount={filteredNodes.length}
             connectionCount={filteredConnections.length}
+            isolatedNodeCount={isolatedNodeCount}
           />
         </div>
 

@@ -5,22 +5,25 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { X } from "lucide-react";
 
 interface ControlPanelProps {
   categories: string[];
-  selectedCategory: string | null;
-  onCategoryChange: (category: string | null) => void;
+  selectedCategories: string[];
+  onCategoryChange: (categories: string[]) => void;
   showConnectionLabels: boolean;
   onShowLabelsChange: (show: boolean) => void;
   connectionStrengthFilter: number;
   onConnectionStrengthChange: (strength: number) => void;
   nodeCount: number;
   connectionCount: number;
+  isolatedNodeCount: number;
 }
 
 export const ControlPanel = ({
   categories,
-  selectedCategory,
+  selectedCategories,
   onCategoryChange,
   showConnectionLabels,
   onShowLabelsChange,
@@ -28,6 +31,7 @@ export const ControlPanel = ({
   onConnectionStrengthChange,
   nodeCount,
   connectionCount,
+  isolatedNodeCount,
 }: ControlPanelProps) => {
   const categoryColors: Record<string, string> = {
     seo: "bg-blue-500/20 text-blue-300 border-blue-500/30",
@@ -48,6 +52,18 @@ export const ControlPanel = ({
     creativity: "bg-pink-500/20 text-pink-300 border-pink-500/30",
   };
 
+  const handleCategoryToggle = (category: string) => {
+    if (selectedCategories.includes(category)) {
+      onCategoryChange(selectedCategories.filter(c => c !== category));
+    } else {
+      onCategoryChange([...selectedCategories, category]);
+    }
+  };
+
+  const handleRemoveCategory = (category: string) => {
+    onCategoryChange(selectedCategories.filter(c => c !== category));
+  };
+
   return (
     <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white h-fit">
       <CardHeader>
@@ -61,14 +77,18 @@ export const ControlPanel = ({
       
       <CardContent className="space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-2">
           <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-blue-400">{nodeCount}</div>
+            <div className="text-lg font-bold text-blue-400">{nodeCount}</div>
             <div className="text-xs text-slate-300">Pages</div>
           </div>
           <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-purple-400">{connectionCount}</div>
+            <div className="text-lg font-bold text-purple-400">{connectionCount}</div>
             <div className="text-xs text-slate-300">Relations</div>
+          </div>
+          <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+            <div className="text-lg font-bold text-red-400">{isolatedNodeCount}</div>
+            <div className="text-xs text-slate-300">Isolated</div>
           </div>
         </div>
 
@@ -76,29 +96,68 @@ export const ControlPanel = ({
 
         {/* Category Filter */}
         <div>
-          <h3 className="text-sm font-semibold mb-3 text-slate-200">Filter by Category</h3>
-          <div className="space-y-2">
+          <h3 className="text-sm font-semibold mb-3 text-slate-200">Filter by Categories</h3>
+          
+          {/* Selected Categories */}
+          {selectedCategories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {selectedCategories.map((category) => (
+                <Badge
+                  key={category}
+                  variant="outline"
+                  className={`capitalize ${
+                    categoryColors[category] || "bg-gray-500/20 text-gray-300 border-gray-500/30"
+                  }`}
+                >
+                  {category}
+                  <button
+                    onClick={() => handleRemoveCategory(category)}
+                    className="ml-1 hover:bg-white/20 rounded-full p-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Category Selector */}
+          <Select onValueChange={handleCategoryToggle}>
+            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectValue placeholder="Select categories to filter..." />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-700 border-slate-600 text-white z-50">
+              {categories.map((category) => (
+                <SelectItem 
+                  key={category} 
+                  value={category}
+                  className="capitalize hover:bg-slate-600 focus:bg-slate-600"
+                  disabled={selectedCategories.includes(category)}
+                >
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Quick Actions */}
+          <div className="flex gap-2 mt-2">
             <Button
-              variant={selectedCategory === null ? "default" : "outline"}
+              variant="outline"
               size="sm"
-              onClick={() => onCategoryChange(null)}
-              className="w-full justify-start bg-slate-700 hover:bg-slate-600 border-slate-600"
+              onClick={() => onCategoryChange([])}
+              className="flex-1 bg-slate-700 hover:bg-slate-600 border-slate-600 text-slate-200"
             >
-              All Categories
+              Clear All
             </Button>
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => onCategoryChange(category)}
-                className={`w-full justify-start capitalize ${
-                  categoryColors[category] || "bg-gray-500/20 text-gray-300 border-gray-500/30"
-                }`}
-              >
-                {category}
-              </Button>
-            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onCategoryChange(categories)}
+              className="flex-1 bg-slate-700 hover:bg-slate-600 border-slate-600 text-slate-200"
+            >
+              Select All
+            </Button>
           </div>
         </div>
 
@@ -158,7 +217,7 @@ export const ControlPanel = ({
           variant="outline" 
           size="sm" 
           onClick={() => {
-            onCategoryChange(null);
+            onCategoryChange([]);
             onConnectionStrengthChange(0);
             onShowLabelsChange(true);
           }}
