@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +7,8 @@ import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
+import Plan from "./pages/Plan";
+import Organization from "./pages/Organization";
 import { SignIn, SignUp, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
@@ -59,6 +60,32 @@ const App = () => (
             <>
               <SignedIn>
                 <Settings />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+        <Route
+          path="/plan"
+          element={
+            <>
+              <SignedIn>
+                <Plan />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+        <Route
+          path="/organization"
+          element={
+            <>
+              <SignedIn>
+                <Organization />
               </SignedIn>
               <SignedOut>
                 <RedirectToSignIn />

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Key, Database, Save, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
+import { Key, Database, Save, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@clerk/clerk-react";
 import { useIntegrations } from "@/hooks/useIntegrations";
+import { SettingsHeader } from "@/components/SettingsHeader";
 
 const Settings = () => {
   const { user } = useUser();
@@ -170,25 +170,7 @@ const Settings = () => {
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]" />
       
-      {/* Header */}
-      <div className="relative z-10 p-6">
-        <div className="flex items-center gap-4 mb-8">
-          <Link to="/">
-            <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-700/50 text-white hover:bg-slate-700/50">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Graph
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Settings
-            </h1>
-            <p className="text-slate-300 text-lg">
-              Configure your Notion integration
-            </p>
-          </div>
-        </div>
-      </div>
+      <SettingsHeader title="Settings" description="Configure your Notion integration" />
 
       {/* Main Content */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 pb-12">
