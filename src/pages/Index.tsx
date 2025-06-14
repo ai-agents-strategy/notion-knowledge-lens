@@ -26,16 +26,17 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-white" />
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]" />
+    <div className="min-h-screen bg-white dark:bg-gray-900 relative overflow-hidden">
+      {/* Background Pattern - Notion inspired */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-900" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(35,131,226,0.05),transparent_50%)]" />
       
       <GraphHeader
         usingRealData={usingRealData}
@@ -53,7 +54,7 @@ const Index = () => {
         showConnectionLabels={showConnectionLabels}
         onShowLabelsChange={setShowConnectionLabels}
         connectionStrengthFilter={connectionStrengthFilter}
-        onConnectionStrengthChange={setConnectionStrengthFilter}
+        onConnectionStrengthChange={setConnectionStrengthChange}
         nodeCount={filteredNodes.length}
         connectionCount={eligibleConnections.length}
         isolatedNodeCount={isolatedNodeCount}

@@ -21,16 +21,16 @@ export const SettingsHeader = ({ title, description }: SettingsHeaderProps) => {
     <div className="relative z-10 p-6">
       <div className="flex items-center gap-4 mb-8">
         <Link to="/">
-          <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-700/50 text-white hover:bg-slate-700/50">
+          <Button variant="outline" size="sm" className="bg-white/80 border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800/80 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Graph
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-2">
             {title}
           </h1>
-          <p className="text-slate-300 text-lg">
+          <p className="text-gray-600 dark:text-gray-400 text-lg">
             {description}
           </p>
         </div>
@@ -46,7 +46,7 @@ export const SettingsHeader = ({ title, description }: SettingsHeaderProps) => {
               className={
                 location.pathname === item.path
                   ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-slate-800/50 border-slate-700/50 text-slate-200 hover:bg-slate-700/50"
+                  : "bg-white/80 border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800/80 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
               }
             >
               {item.label}

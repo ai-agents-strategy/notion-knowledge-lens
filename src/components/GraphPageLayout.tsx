@@ -1,3 +1,4 @@
+
 import { ControlPanel } from "@/components/ControlPanel";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
@@ -45,7 +46,7 @@ export const GraphPageLayout = ({
 
       {/* Knowledge Graph */}
       <div className="flex-1 p-6">
-        <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl border border-slate-700/50 h-full overflow-hidden">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200 dark:border-gray-700 h-full overflow-hidden shadow-lg">
           <KnowledgeGraph
             nodes={graphNodes}
             connections={graphConnections}

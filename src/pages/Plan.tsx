@@ -39,8 +39,9 @@ const Plan = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 relative">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30 dark:from-gray-800/30 dark:to-gray-700/30" />
+      {/* Background Pattern - Notion inspired */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-900" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(35,131,226,0.05),transparent_50%)]" />
       
       <SettingsHeader title="Subscription Plan" description="Manage your subscription and billing" />
 
@@ -49,7 +50,7 @@ const Plan = () => {
         <div className="space-y-8">
           {/* Current Subscription */}
           {subscription && (
-            <Card className="bg-white/80 backdrop-blur-sm border-gray-200 text-gray-700 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-200">
+            <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl text-blue-600 dark:text-blue-400">
                   <Crown className="w-5 h-5" />
