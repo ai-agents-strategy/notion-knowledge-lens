@@ -46,17 +46,17 @@ export const GraphHeader = ({
     <div className="relative z-10 p-6">
       <div className="flex justify-between items-start mb-8">
         <div className="text-center flex-1">
-          <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-notion-black mb-2 bg-gradient-to-r from-notion-blue to-notion-blue bg-clip-text text-transparent">
             SEO Knowledge Graph
           </h1>
-          <p className="text-slate-300 text-lg">
+          <p className="text-notion-gray-600 text-lg">
             Visualize semantic relationships between pages and content
           </p>
           <div className="flex items-center justify-center gap-2 mt-4">
-            <span className="text-sm text-slate-400">
+            <span className="text-sm text-notion-gray-500">
               {usingRealData ? "Real Notion Pages" : "Sample SEO Data"}
             </span>
-            <div className={`w-2 h-2 rounded-full ${usingRealData ? "bg-green-400" : "bg-blue-400"}`} />
+            <div className={`w-2 h-2 rounded-full ${usingRealData ? "bg-notion-green" : "bg-notion-blue"}`} />
           </div>
         </div>
         <div className="flex gap-2 items-center">
@@ -65,7 +65,7 @@ export const GraphHeader = ({
             disabled={isSyncing || !isSignedIn || authIsLoading || !hasActiveSubscription}
             variant="outline"
             size="sm"
-            className="bg-green-800/50 border-green-700/50 text-green-200 hover:bg-green-700/50 disabled:opacity-50"
+            className="bg-notion-green/10 border-notion-green text-notion-green hover:bg-notion-green/20 disabled:opacity-50"
             title={!hasActiveSubscription ? "Upgrade to use Notion sync" : ""}
           >
             {isSyncing ? (
@@ -85,7 +85,7 @@ export const GraphHeader = ({
               onClick={onToggleDataSource}
               variant="outline"
               size="sm"
-              className="bg-blue-800/50 border-blue-700/50 text-blue-200 hover:bg-blue-700/50"
+              className="bg-notion-blue/10 border-notion-blue text-notion-blue hover:bg-notion-blue/20"
               disabled={!isSignedIn || authIsLoading}
             >
               {isRealData ? "Show Sample" : "Show Real Data"}
@@ -103,7 +103,7 @@ export const GraphHeader = ({
           <Button 
             variant="outline" 
             size="sm" 
-            className="bg-slate-800/50 border-slate-700/50 text-white hover:bg-slate-700/50"
+            className="bg-notion-gray-100 border-notion-gray-300 text-notion-black hover:bg-notion-gray-200"
             onClick={() => navigate('/settings')}
             disabled={!isSignedIn || authIsLoading}
           >
@@ -112,14 +112,14 @@ export const GraphHeader = ({
           </Button>
 
           {authIsLoading ? (
-            <div className="w-8 h-8 bg-slate-700 rounded-full animate-pulse" />
+            <div className="w-8 h-8 bg-notion-gray-200 rounded-full animate-pulse" />
           ) : isSignedIn ? (
             <UserButton afterSignOutUrl="/" />
           ) : (
             <Button
               variant="outline"
               size="sm"
-              className="bg-sky-800/50 border-sky-700/50 text-sky-200 hover:bg-sky-700/50"
+              className="bg-notion-blue/10 border-notion-blue text-notion-blue hover:bg-notion-blue/20"
               onClick={handleAuthAction}
             >
               <LogIn className="w-4 h-4 mr-2" />
