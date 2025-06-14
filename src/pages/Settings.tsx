@@ -4,9 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Key, Database, Save } from "lucide-react";
+import { ArrowLeft, Key, Database, Save, RefreshCw, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Settings = () => {
@@ -17,6 +16,9 @@ const Settings = () => {
     localStorage.getItem('notion_database_id') || ''
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [syncedDatabases, setSyncedDatabases] = useState<any[]>([]);
 
   const handleSave = () => {
     setIsLoading(true);
@@ -44,11 +46,74 @@ const Settings = () => {
     }
   };
 
+  const handleSync = async () => {
+    if (!notionApiKey.trim()) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter your Notion API key before syncing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSyncing(true);
+    setSyncStatus('idle');
+
+    try {
+      const response = await fetch('https://api.notion.com/v1/search', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${notionApiKey.trim()}`,
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28',
+        },
+        body: JSON.stringify({
+          filter: {
+            property: 'object',
+            value: 'database'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch databases: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setSyncedDatabases(data.results || []);
+      setSyncStatus('success');
+      
+      // Save synced data to localStorage
+      localStorage.setItem('notion_synced_databases', JSON.stringify(data.results || []));
+      localStorage.setItem('notion_last_sync', new Date().toISOString());
+
+      toast({
+        title: "Sync successful!",
+        description: `Found ${data.results?.length || 0} databases in your Notion workspace.`,
+      });
+
+    } catch (error) {
+      console.error('Sync error:', error);
+      setSyncStatus('error');
+      toast({
+        title: "Sync failed",
+        description: "Failed to connect to Notion. Please check your API key and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleClear = () => {
     localStorage.removeItem('notion_api_key');
     localStorage.removeItem('notion_database_id');
+    localStorage.removeItem('notion_synced_databases');
+    localStorage.removeItem('notion_last_sync');
     setNotionApiKey('');
     setDatabaseId('');
+    setSyncedDatabases([]);
+    setSyncStatus('idle');
     
     toast({
       title: "Settings cleared",
@@ -143,6 +208,24 @@ const Settings = () => {
                   <Save className="w-4 h-4 mr-2" />
                   {isLoading ? "Saving..." : "Save Settings"}
                 </Button>
+
+                <Button 
+                  onClick={handleSync}
+                  disabled={isSyncing || !notionApiKey.trim()}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {isSyncing ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Sync Databases
+                    </>
+                  )}
+                </Button>
                 
                 <Button 
                   variant="outline"
@@ -152,6 +235,29 @@ const Settings = () => {
                   Clear All
                 </Button>
               </div>
+
+              {/* Sync Status */}
+              {syncStatus === 'success' && (
+                <div className="flex items-center gap-2 text-green-400 text-sm">
+                  <CheckCircle className="w-4 h-4" />
+                  Successfully synced {syncedDatabases.length} databases
+                </div>
+              )}
+
+              {/* Synced Databases Preview */}
+              {syncedDatabases.length > 0 && (
+                <div className="mt-4 p-4 bg-slate-700/30 rounded-lg">
+                  <h4 className="text-slate-200 font-medium mb-2">Synced Databases:</h4>
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {syncedDatabases.map((db, index) => (
+                      <div key={index} className="text-xs text-slate-400 flex items-center gap-2">
+                        <Database className="w-3 h-3" />
+                        {db.title?.[0]?.plain_text || 'Untitled Database'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -193,8 +299,8 @@ const Settings = () => {
                 <div className="flex gap-3">
                   <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">4</span>
                   <div>
-                    <p className="font-medium">Save and Return</p>
-                    <p className="text-slate-400">Save your settings and return to the knowledge graph to see your real data</p>
+                    <p className="font-medium">Save Settings and Sync</p>
+                    <p className="text-slate-400">Save your API key and click "Sync Databases" to fetch your real data</p>
                   </div>
                 </div>
               </div>
