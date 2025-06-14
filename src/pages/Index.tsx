@@ -54,7 +54,7 @@ const Index = () => {
         showConnectionLabels={showConnectionLabels}
         onShowLabelsChange={setShowConnectionLabels}
         connectionStrengthFilter={connectionStrengthFilter}
-        onConnectionStrengthChange={setConnectionStrengthChange}
+        onConnectionStrengthChange={setConnectionStrengthFilter}
         nodeCount={filteredNodes.length}
         connectionCount={eligibleConnections.length}
         isolatedNodeCount={isolatedNodeCount}
