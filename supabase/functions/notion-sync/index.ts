@@ -30,21 +30,22 @@ serve(async (req) => {
       )
     }
 
-    // Get the user's profile with their Notion API key
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('notion_api_key')
-      .eq('clerk_user_id', user.id)
+    // Get the user's Notion integration from the integrations table
+    const { data: integration, error: integrationError } = await supabaseClient
+      .from('integrations')
+      .select('api_key, database_id')
+      .eq('user_id', user.id)
+      .eq('integration_type', 'notion')
       .single()
 
-    if (profileError || !profile?.notion_api_key) {
+    if (integrationError || !integration?.api_key) {
       return new Response(
         JSON.stringify({ error: 'Notion API key not found. Please configure it in Settings.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const notionApiKey = profile.notion_api_key
+    const notionApiKey = integration.api_key
     
     console.log('Starting Notion sync for user:', user.id)
 

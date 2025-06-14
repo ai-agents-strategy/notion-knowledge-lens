@@ -10,11 +10,11 @@ import { ArrowLeft, Key, Database, Save, RefreshCw, CheckCircle, AlertCircle } f
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@clerk/clerk-react";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { useIntegrations } from "@/hooks/useIntegrations";
 
 const Settings = () => {
   const { user } = useUser();
-  const { profile, loading: profileLoading, updateNotionApiKey } = useUserProfile();
+  const { getIntegration, saveIntegration, deleteIntegration, loading: integrationsLoading } = useIntegrations();
   
   const [notionApiKey, setNotionApiKey] = useState('');
   const [databaseId, setDatabaseId] = useState(
@@ -26,21 +26,26 @@ const Settings = () => {
   const [syncedDatabases, setSyncedDatabases] = useState<any[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  // Load profile data when available
+  // Load integration data when available
   useEffect(() => {
-    if (profile) {
-      setNotionApiKey(profile.notion_api_key || '');
+    const notionIntegration = getIntegration('notion');
+    if (notionIntegration) {
+      setNotionApiKey(notionIntegration.api_key || '');
+      if (notionIntegration.database_id) {
+        setDatabaseId(notionIntegration.database_id);
+        localStorage.setItem('notion_database_id', notionIntegration.database_id);
+      }
     }
-  }, [profile]);
+  }, [getIntegration]);
 
   const handleSave = async () => {
     setIsLoading(true);
     setErrorMessage('');
     
     try {
-      // Save API key to Supabase profile
-      if (notionApiKey.trim() && profile) {
-        const success = await updateNotionApiKey(notionApiKey.trim());
+      // Save API key and database ID to integrations table
+      if (notionApiKey.trim()) {
+        const success = await saveIntegration('notion', notionApiKey.trim(), databaseId.trim() || undefined);
         if (!success) {
           setIsLoading(false);
           return;
@@ -124,10 +129,8 @@ const Settings = () => {
   };
 
   const handleClear = async () => {
-    // Clear Supabase profile data
-    if (profile) {
-      await updateNotionApiKey('');
-    }
+    // Clear integrations data
+    await deleteIntegration('notion');
     
     // Clear localStorage data
     localStorage.removeItem('notion_database_id');
@@ -146,10 +149,10 @@ const Settings = () => {
     });
   };
 
-  if (profileLoading) {
+  if (integrationsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-lg">Loading profile...</div>
+        <div className="text-white text-lg">Loading integrations...</div>
       </div>
     );
   }
