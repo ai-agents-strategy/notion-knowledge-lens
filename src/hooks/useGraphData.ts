@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -37,7 +36,6 @@ const sampleConnections: DatabaseConnection[] = [
 export const useGraphData = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showConnectionLabels, setShowConnectionLabels] = useState(true);
-  const [showConnections, setShowConnections] = useState(true);
   const [connectionStrengthFilter, setConnectionStrengthFilter] = useState(0);
   const [isRealData, setIsRealData] = useState(false);
   const [realNodes, setRealNodes] = useState<DatabaseNode[]>([]);
@@ -120,7 +118,7 @@ export const useGraphData = () => {
       setRealNodes(nodes);
       setRealConnections(connections);
       setIsRealData(true);
-      setShowConnections(true);
+      // setShowConnections(true); // No longer needed
 
       toast({
         title: "Sync successful!",
@@ -163,7 +161,7 @@ export const useGraphData = () => {
       return sourceExists && targetExists;
     });
 
-  const finalFilteredConnections = showConnections ? eligibleConnections : [];
+  const finalFilteredConnections = eligibleConnections; // Connections are now shown if they are eligible
 
   const connectedNodeIds = new Set([
     ...eligibleConnections.map(conn => conn.source),
@@ -176,7 +174,6 @@ export const useGraphData = () => {
   return {
     selectedCategories, setSelectedCategories,
     showConnectionLabels, setShowConnectionLabels,
-    showConnections, setShowConnections,
     connectionStrengthFilter, setConnectionStrengthFilter,
     isRealData,
     realNodes, realConnections, // exposed for checks like realNodes.length > 0
@@ -192,4 +189,3 @@ export const useGraphData = () => {
     uniqueCategories,
   };
 };
-

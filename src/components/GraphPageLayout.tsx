@@ -1,3 +1,4 @@
+
 import { ControlPanel } from "@/components/ControlPanel";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph"; // This path should now resolve to src/components/KnowledgeGraph/index.ts
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
@@ -8,8 +9,8 @@ interface GraphPageLayoutProps {
   onCategoryChange: (categories: string[]) => void;
   showConnectionLabels: boolean;
   onShowLabelsChange: (show: boolean) => void;
-  showConnections: boolean;
-  onShowConnectionsChange: (show: boolean) => void;
+  // showConnections: boolean; // Removed
+  // onShowConnectionsChange: (show: boolean) => void; // Removed
   connectionStrengthFilter: number;
   onConnectionStrengthChange: (strength: number) => void;
   nodeCount: number;
@@ -27,8 +28,8 @@ export const GraphPageLayout = ({
   onCategoryChange,
   showConnectionLabels,
   onShowLabelsChange,
-  showConnections,
-  onShowConnectionsChange,
+  // showConnections, // Removed
+  // onShowConnectionsChange, // Removed
   connectionStrengthFilter,
   onConnectionStrengthChange,
   nodeCount,
@@ -48,8 +49,8 @@ export const GraphPageLayout = ({
           onCategoryChange={onCategoryChange}
           showConnectionLabels={showConnectionLabels}
           onShowLabelsChange={onShowLabelsChange}
-          showConnections={showConnections}
-          onShowConnectionsChange={onShowConnectionsChange}
+          // showConnections={showConnections} // Removed
+          // onShowConnectionsChange={onShowConnectionsChange} // Removed
           connectionStrengthFilter={connectionStrengthFilter}
           onConnectionStrengthChange={onConnectionStrengthChange}
           nodeCount={nodeCount}

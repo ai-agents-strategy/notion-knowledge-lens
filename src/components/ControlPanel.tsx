@@ -13,8 +13,6 @@ interface ControlPanelProps {
   onCategoryChange: (categories: string[]) => void;
   showConnectionLabels: boolean;
   onShowLabelsChange: (show: boolean) => void;
-  showConnections: boolean; // New prop
-  onShowConnectionsChange: (show: boolean) => void; // New prop
   connectionStrengthFilter: number;
   onConnectionStrengthChange: (strength: number) => void;
   nodeCount: number;
@@ -28,8 +26,6 @@ export const ControlPanel = ({
   onCategoryChange,
   showConnectionLabels,
   onShowLabelsChange,
-  showConnections, // New prop
-  onShowConnectionsChange, // New prop
   connectionStrengthFilter,
   onConnectionStrengthChange,
   nodeCount,
@@ -168,21 +164,12 @@ export const ControlPanel = ({
           <h3 className="text-sm font-semibold text-slate-200">Relationship Options</h3>
           
           <div className="flex items-center justify-between">
-            <label htmlFor="show-connections-switch" className="text-sm text-slate-300">Show Relationships</label>
-            <Switch
-              id="show-connections-switch"
-              checked={showConnections}
-              onCheckedChange={onShowConnectionsChange}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
             <label htmlFor="show-labels-switch" className="text-sm text-slate-300">Show Labels</label>
             <Switch
               id="show-labels-switch"
               checked={showConnectionLabels}
               onCheckedChange={onShowLabelsChange}
-              disabled={!showConnections} // Disable if relationships are hidden
+              disabled={connectionCount === 0}
             />
           </div>
 
@@ -198,7 +185,7 @@ export const ControlPanel = ({
               min={0}
               step={0.1}
               className="w-full"
-              disabled={!showConnections} // Disable if relationships are hidden
+              disabled={connectionCount === 0}
             />
           </div>
         </div>
@@ -223,21 +210,6 @@ export const ControlPanel = ({
             </div>
           </div>
         </div>
-
-        {/* Reset Button */}
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => {
-            onCategoryChange([]);
-            onConnectionStrengthChange(0);
-            onShowLabelsChange(true);
-            onShowConnectionsChange(true); // Reset new toggle
-          }}
-          className="w-full bg-slate-700 hover:bg-slate-600 border-slate-600 text-slate-200"
-        >
-          Reset Filters
-        </Button>
       </CardContent>
     </Card>
   );

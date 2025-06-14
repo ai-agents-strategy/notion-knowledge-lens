@@ -6,7 +6,6 @@ const Index = () => {
   const {
     selectedCategories, setSelectedCategories,
     showConnectionLabels, setShowConnectionLabels,
-    showConnections, setShowConnections,
     connectionStrengthFilter, setConnectionStrengthFilter,
     isRealData,
     realNodes, // Used for realDataExists check
@@ -41,8 +40,6 @@ const Index = () => {
         onCategoryChange={setSelectedCategories}
         showConnectionLabels={showConnectionLabels}
         onShowLabelsChange={setShowConnectionLabels}
-        showConnections={showConnections}
-        onShowConnectionsChange={setShowConnections}
         connectionStrengthFilter={connectionStrengthFilter}
         onConnectionStrengthChange={setConnectionStrengthFilter}
         nodeCount={filteredNodes.length}
@@ -50,7 +47,7 @@ const Index = () => {
         isolatedNodeCount={isolatedNodeCount}
         graphNodes={filteredNodes}
         graphConnections={finalFilteredConnections}
-        graphShowConnectionLabels={showConnectionLabels && showConnections}
+        graphShowConnectionLabels={showConnectionLabels}
       />
     </div>
   );
