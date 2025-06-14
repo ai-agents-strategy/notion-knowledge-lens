@@ -194,9 +194,10 @@ const Index = () => {
     });
   };
 
-  // Use real data if available and selected, otherwise use sample data
-  const currentNodes = isRealData && realNodes.length > 0 ? realNodes : sampleNodes;
-  const currentConnections = isRealData && realConnections.length > 0 ? realConnections : sampleConnections;
+  // Determine if we are using real data (if available) or sample data
+  const usingRealData = isRealData && realNodes.length > 0;
+  const currentNodes = usingRealData ? realNodes : sampleNodes;
+  const currentConnections = usingRealData ? realConnections : sampleConnections;
 
   // Filter nodes by selected categories (if any selected)
   const filteredNodes = selectedCategories.length > 0 
@@ -239,9 +240,9 @@ const Index = () => {
             </p>
             <div className="flex items-center justify-center gap-2 mt-4">
               <span className="text-sm text-slate-400">
-                {isRealData ? "Real Notion Pages" : "Sample SEO Data"}
+                {usingRealData ? "Real Notion Pages" : "Sample SEO Data"}
               </span>
-              <div className={`w-2 h-2 rounded-full ${isRealData ? "bg-green-400" : "bg-blue-400"}`} />
+              <div className={`w-2 h-2 rounded-full ${usingRealData ? "bg-green-400" : "bg-blue-400"}`} />
             </div>
           </div>
           <div className="flex gap-2">
