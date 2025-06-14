@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      graphs: {
+        Row: {
+          connections: Json | null
+          created_at: string
+          id: string
+          nodes: Json | null
+          public_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connections?: Json | null
+          created_at?: string
+          id?: string
+          nodes?: Json | null
+          public_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connections?: Json | null
+          created_at?: string
+          id?: string
+          nodes?: Json | null
+          public_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       integrations: {
         Row: {
           api_key: string

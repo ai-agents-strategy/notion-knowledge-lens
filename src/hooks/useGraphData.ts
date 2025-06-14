@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useUser } from "@clerk/clerk-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
@@ -34,12 +35,48 @@ const sampleConnections: DatabaseConnection[] = [
 
 
 export const useGraphData = () => {
+  const { user } = useUser();
   const [showConnectionLabels, setShowConnectionLabels] = useState(true);
   const [connectionStrengthFilter, setConnectionStrengthFilter] = useState(0);
   const [isRealData, setIsRealData] = useState(false);
   const [realNodes, setRealNodes] = useState<DatabaseNode[]>([]);
   const [realConnections, setRealConnections] = useState<DatabaseConnection[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [publicId, setPublicId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadGraphFromDB = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('graphs')
+          .select('nodes, connections, public_id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') throw error; // Allow "no rows" error
+
+        if (data && data.nodes && data.connections) {
+          setRealNodes(data.nodes as DatabaseNode[]);
+          setRealConnections(data.connections as DatabaseConnection[]);
+          setPublicId(data.public_id);
+          setIsRealData(true);
+        }
+      } catch (error) {
+        console.error("Error loading graph from DB:", error);
+        toast({ title: "Could not load your saved graph", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadGraphFromDB();
+  }, [user]);
 
   const getPageTitle = (page: any) => {
     if (page.properties) {
@@ -106,22 +143,21 @@ export const useGraphData = () => {
     try {
       console.log('Starting SEO Knowledge Graph sync via Edge Function...');
       const { data, error } = await supabase.functions.invoke('notion-sync');
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to sync with Notion');
-      }
+      if (error) throw new Error(error.message || 'Failed to sync with Notion');
       if (data.error) throw new Error(data.error);
-      console.log('SEO Knowledge Graph sync success:', data);
+
+      const { nodes, connections } = data;
+      if (!nodes || !connections) {
+        throw new Error('Sync function did not return valid graph data.');
+      }
       
-      const { nodes, connections } = transformNotionDataToSEOGraph(data.pages || [], data.databases || []);
       setRealNodes(nodes);
       setRealConnections(connections);
       setIsRealData(true);
-      // setShowConnections(true); // No longer needed
 
       toast({
         title: "Sync successful!",
-        description: `Loaded ${data.total_pages || 0} pages from ${data.total_databases || 0} databases with ${connections.length} semantic relationships.`,
+        description: `Loaded ${nodes.length} pages and ${connections.length} relationships.`,
       });
     } catch (error) {
       console.error('Sync error:', error);
@@ -130,6 +166,51 @@ export const useGraphData = () => {
       toast({ title: "Sync failed", description: errorMsg, variant: "destructive" });
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const generatePublicLink = async (): Promise<string | null> => {
+    if (!user) return null;
+    try {
+      if (publicId) {
+        return `${window.location.origin}/public/graph/${publicId}`;
+      }
+
+      const newPublicId = crypto.randomUUID();
+      const { error: updateError } = await supabase
+        .from('graphs')
+        .update({ public_id: newPublicId })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+      
+      if (updateError) throw updateError;
+      
+      setPublicId(newPublicId);
+      toast({ title: "Public link generated!", description: "Anyone with the link can now view your graph." });
+      return `${window.location.origin}/public/graph/${newPublicId}`;
+    } catch (error) {
+      console.error("Error generating public link:", error);
+      toast({ title: "Could not generate public link", variant: "destructive" });
+      return null;
+    }
+  };
+
+  const revokePublicLink = async (): Promise<void> => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('graphs')
+        .update({ public_id: null })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+
+      setPublicId(null);
+      toast({ title: "Public access revoked", description: "Your graph is no longer shared publicly." });
+    } catch (error) {
+      console.error("Error revoking public link:", error);
+      toast({ title: "Could not revoke public link", variant: "destructive" });
     }
   };
 
@@ -185,13 +266,16 @@ export const useGraphData = () => {
     isRealData,
     realNodes, realConnections,
     isSyncing,
+    isLoading,
     handleSync,
     toggleDataSource,
     usingRealData,
-    currentNodes,
+    publicId,
+    generatePublicLink,
+    revokePublicLink,
     filteredNodes,
-    eligibleConnections,
     finalFilteredConnections,
     isolatedNodeCount,
+    eligibleConnections, // Keep this for connectionCount in Index
   };
 };

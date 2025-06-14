@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -6,6 +5,67 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+// Helper functions moved from client-side to be used here
+function extractPageTitle(page: any): string {
+  if (page.properties) {
+    for (const [, prop] of Object.entries(page.properties)) {
+      const propData = prop as any;
+      if (propData.type === 'title' && propData.title?.length > 0) {
+        return propData.title[0]?.plain_text || 'Untitled';
+      }
+    }
+    for (const [, prop] of Object.entries(page.properties)) {
+      const propData = prop as any;
+      if (propData.type === 'rich_text' && propData.rich_text?.length > 0) {
+        return propData.rich_text[0]?.plain_text || 'Untitled';
+      }
+    }
+  }
+  return `Page ${page.id.slice(0, 8)}`;
+}
+
+function transformNotionDataToSEOGraph(pages: any[], _databases: any[]) {
+    const nodes: any[] = [];
+    const connections: any[] = [];
+
+    pages.forEach((page: any) => {
+      const pageTitle = page.extracted_title || extractPageTitle(page);
+      const categoryFromDb = page.database_name?.toLowerCase().replace(/\s+/g, '_') || 'content';
+      
+      const pageNode = {
+        id: page.id,
+        name: pageTitle,
+        type: "page",
+        category: categoryFromDb,
+        description: `${pageTitle} from ${page.database_name}`,
+        size: Math.min(Math.max(15, pageTitle.length), 35)
+      };
+      nodes.push(pageNode);
+    });
+
+    pages.forEach((page: any) => {
+      if (page.properties) {
+        Object.entries(page.properties).forEach(([propName, propData]: [string, any]) => {
+          if (propData.type === 'relation' && propData.relation?.length > 0) {
+            propData.relation.forEach((relatedPage: any) => {
+              const targetPage = pages.find(p => p.id === relatedPage.id);
+              if (targetPage) {
+                connections.push({
+                  source: page.id,
+                  target: relatedPage.id,
+                  type: "relation",
+                  strength: 0.8,
+                  label: propName.toLowerCase().replace(/_/g, ' ')
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+    return { nodes, connections };
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -118,15 +178,32 @@ serve(async (req) => {
     pageResults.forEach(pages => allPages.push(...pages))
 
     console.log(`Total pages collected: ${allPages.length}`)
+    
+    // Transform and save graph data to the database
+    const { nodes, connections } = transformNotionDataToSEOGraph(allPages, databasesData.results || []);
+
+    if (user && nodes.length > 0) {
+      const { error: upsertError } = await supabaseClient
+        .from('graphs')
+        .upsert({
+          user_id: user.id,
+          nodes: nodes,
+          connections: connections,
+        }, { onConflict: 'user_id' });
+
+      if (upsertError) {
+        console.error('Error upserting graph data:', upsertError);
+        // Don't fail the request, just log it
+      } else {
+        console.log('Successfully saved graph data for user:', user.id);
+      }
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        total_databases: databasesData.results?.length || 0,
-        total_pages: allPages.length,
-        databases: databasesData.results || [],
-        pages: allPages,
-        results: databasesData.results || []
+        nodes: nodes,
+        connections: connections,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
@@ -139,25 +216,3 @@ serve(async (req) => {
     )
   }
 })
-
-function extractPageTitle(page: any): string {
-  if (page.properties) {
-    // Look for title property first
-    for (const [, prop] of Object.entries(page.properties)) {
-      const propData = prop as any
-      if (propData.type === 'title' && propData.title?.length > 0) {
-        return propData.title[0]?.plain_text || 'Untitled'
-      }
-    }
-    
-    // Fall back to rich_text properties
-    for (const [, prop] of Object.entries(page.properties)) {
-      const propData = prop as any
-      if (propData.type === 'rich_text' && propData.rich_text?.length > 0) {
-        return propData.rich_text[0]?.plain_text || 'Untitled'
-      }
-    }
-  }
-  
-  return `Page ${page.id.slice(0, 8)}`
-}

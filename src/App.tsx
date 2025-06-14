@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +10,7 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Plan from "./pages/Plan";
 import Organization from "./pages/Organization";
+import PublicGraph from "./pages/PublicGraph";
 import { SignIn, SignUp, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
@@ -37,6 +39,7 @@ const App = () => (
       <Sonner />
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/public/graph/:publicId" element={<PublicGraph />} />
         <Route
           path="/auth/sign-in"
           element={

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Settings, RefreshCw, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser, UserButton } from "@clerk/clerk-react";
+import { ShareGraph } from './ShareGraph';
 
 interface GraphHeaderProps {
   usingRealData: boolean;
@@ -10,7 +11,10 @@ interface GraphHeaderProps {
   onSync: () => void;
   realDataExists: boolean;
   onToggleDataSource: () => void;
-  isRealData: boolean; // To determine button text
+  isRealData: boolean;
+  publicId: string | null;
+  onGenerateLink: () => Promise<string | null>;
+  onRevokeLink: () => Promise<void>;
 }
 
 export const GraphHeader = ({
@@ -20,6 +24,9 @@ export const GraphHeader = ({
   realDataExists,
   onToggleDataSource,
   isRealData,
+  publicId,
+  onGenerateLink,
+  onRevokeLink,
 }: GraphHeaderProps) => {
   const { isSignedIn, isLoaded } = useUser();
   const navigate = useNavigate();
@@ -77,6 +84,14 @@ export const GraphHeader = ({
             >
               {isRealData ? "Show Sample" : "Show Real Data"}
             </Button>
+          )}
+
+          {realDataExists && isSignedIn && (
+            <ShareGraph 
+              publicId={publicId}
+              onGenerateLink={onGenerateLink}
+              onRevokeLink={onRevokeLink}
+            />
           )}
           
           <Button 
