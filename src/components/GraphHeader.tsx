@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import { Settings, RefreshCw } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Settings, RefreshCw, LogIn, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
 
 interface GraphHeaderProps {
   usingRealData: boolean;
@@ -20,6 +21,17 @@ export const GraphHeader = ({
   onToggleDataSource,
   isRealData,
 }: GraphHeaderProps) => {
+  const { user, logout, isLoading: authIsLoading } = useAuth(); // Get user and logout function
+  const navigate = useNavigate();
+
+  const handleSettingsClick = () => {
+    navigate("/settings");
+  };
+
+  const handleLoginClick = () => {
+    navigate("/auth");
+  };
+
   return (
     <div className="relative z-10 p-6">
       <div className="flex justify-between items-start mb-8">
@@ -40,7 +52,7 @@ export const GraphHeader = ({
         <div className="flex gap-2">
           <Button
             onClick={onSync}
-            disabled={isSyncing}
+            disabled={isSyncing || authIsLoading} // Disable if auth is loading too
             variant="outline"
             size="sm"
             className="bg-green-800/50 border-green-700/50 text-green-200 hover:bg-green-700/50"
@@ -63,19 +75,48 @@ export const GraphHeader = ({
               variant="outline"
               size="sm"
               className="bg-blue-800/50 border-blue-700/50 text-blue-200 hover:bg-blue-700/50"
+              disabled={authIsLoading}
             >
               {isRealData ? "Show Sample" : "Show Real Data"}
             </Button>
           )}
-          <Link to="/settings">
-            <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-700/50 text-white hover:bg-slate-700/50">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="bg-slate-800/50 border-slate-700/50 text-white hover:bg-slate-700/50"
+            onClick={handleSettingsClick}
+            disabled={authIsLoading}
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Settings
+          </Button>
+
+          {user ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-red-800/50 border-red-700/50 text-red-200 hover:bg-red-700/50"
+              onClick={logout}
+              disabled={authIsLoading}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
             </Button>
-          </Link>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-sky-800/50 border-sky-700/50 text-sky-200 hover:bg-sky-700/50"
+              onClick={handleLoginClick}
+              disabled={authIsLoading}
+            >
+              <LogIn className="w-4 h-4 mr-2" />
+              Login / Sign Up
+            </Button>
+          )}
         </div>
       </div>
     </div>
   );
 };
-
