@@ -34,7 +34,6 @@ const sampleConnections: DatabaseConnection[] = [
 
 
 export const useGraphData = () => {
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showConnectionLabels, setShowConnectionLabels] = useState(true);
   const [connectionStrengthFilter, setConnectionStrengthFilter] = useState(0);
   const [isRealData, setIsRealData] = useState(false);
@@ -157,20 +156,7 @@ export const useGraphData = () => {
     [usingRealData, realConnections]
   );
 
-  const uniqueCategories = useMemo(() => 
-    Array.from(new Set(currentNodes.map(node => node.category))),
-    [currentNodes]
-  );
-
-  const filteredNodes = useMemo(() => {
-    // If no categories are selected, show all nodes.
-    if (selectedCategories.length === 0) {
-      return currentNodes;
-    }
-    // Otherwise, filter by the selected categories. This will correctly
-    // show all nodes if "Select All" provides all unique categories.
-    return currentNodes.filter(node => selectedCategories.includes(node.category));
-  }, [currentNodes, selectedCategories]);
+  const filteredNodes = currentNodes;
 
   const eligibleConnections = useMemo(() => {
     // Create a Set of filtered node IDs for efficient lookup.
@@ -194,7 +180,6 @@ export const useGraphData = () => {
   }, [filteredNodes, eligibleConnections]);
   
   return {
-    selectedCategories, setSelectedCategories,
     showConnectionLabels, setShowConnectionLabels,
     connectionStrengthFilter, setConnectionStrengthFilter,
     isRealData,
@@ -208,6 +193,5 @@ export const useGraphData = () => {
     eligibleConnections,
     finalFilteredConnections,
     isolatedNodeCount,
-    uniqueCategories,
   };
 };

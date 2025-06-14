@@ -1,16 +1,10 @@
-
 import { ControlPanel } from "@/components/ControlPanel";
-import { KnowledgeGraph } from "@/components/KnowledgeGraph"; // This path should now resolve to src/components/KnowledgeGraph/index.ts
+import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 
 interface GraphPageLayoutProps {
-  categories: string[];
-  selectedCategories: string[];
-  onCategoryChange: (categories: string[]) => void;
   showConnectionLabels: boolean;
   onShowLabelsChange: (show: boolean) => void;
-  // showConnections: boolean; // Removed
-  // onShowConnectionsChange: (show: boolean) => void; // Removed
   connectionStrengthFilter: number;
   onConnectionStrengthChange: (strength: number) => void;
   nodeCount: number;
@@ -19,17 +13,12 @@ interface GraphPageLayoutProps {
   // Knowledge Graph Props
   graphNodes: DatabaseNode[];
   graphConnections: DatabaseConnection[];
-  graphShowConnectionLabels: boolean; // Combined state for KG
+  graphShowConnectionLabels: boolean;
 }
 
 export const GraphPageLayout = ({
-  categories,
-  selectedCategories,
-  onCategoryChange,
   showConnectionLabels,
   onShowLabelsChange,
-  // showConnections, // Removed
-  // onShowConnectionsChange, // Removed
   connectionStrengthFilter,
   onConnectionStrengthChange,
   nodeCount,
@@ -44,13 +33,8 @@ export const GraphPageLayout = ({
       {/* Control Panel */}
       <div className="lg:w-80 p-6">
         <ControlPanel
-          categories={categories}
-          selectedCategories={selectedCategories}
-          onCategoryChange={onCategoryChange}
           showConnectionLabels={showConnectionLabels}
           onShowLabelsChange={onShowLabelsChange}
-          // showConnections={showConnections} // Removed
-          // onShowConnectionsChange={onShowConnectionsChange} // Removed
           connectionStrengthFilter={connectionStrengthFilter}
           onConnectionStrengthChange={onConnectionStrengthChange}
           nodeCount={nodeCount}

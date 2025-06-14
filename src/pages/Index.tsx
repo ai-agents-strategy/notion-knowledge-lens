@@ -1,10 +1,11 @@
+
 import { useGraphData } from "@/hooks/useGraphData";
 import { GraphHeader } from "@/components/GraphHeader";
 import { GraphPageLayout } from "@/components/GraphPageLayout";
 
 const Index = () => {
   const {
-    selectedCategories, setSelectedCategories,
+    // Category state hooks removed
     showConnectionLabels, setShowConnectionLabels,
     connectionStrengthFilter, setConnectionStrengthFilter,
     isRealData,
@@ -17,7 +18,7 @@ const Index = () => {
     eligibleConnections, // For connectionCount
     finalFilteredConnections, // For KnowledgeGraph connections
     isolatedNodeCount,
-    uniqueCategories,
+    // uniqueCategories removed
   } = useGraphData();
 
   return (
@@ -35,9 +36,7 @@ const Index = () => {
       />
 
       <GraphPageLayout
-        categories={uniqueCategories}
-        selectedCategories={selectedCategories}
-        onCategoryChange={setSelectedCategories}
+        // Category props removed
         showConnectionLabels={showConnectionLabels}
         onShowLabelsChange={setShowConnectionLabels}
         connectionStrengthFilter={connectionStrengthFilter}
