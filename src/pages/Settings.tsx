@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Key, Database, Save, RefreshCw, CheckCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, Key, Database, Save, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Settings = () => {
@@ -19,9 +20,11 @@ const Settings = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [syncedDatabases, setSyncedDatabases] = useState<any[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handleSave = () => {
     setIsLoading(true);
+    setErrorMessage('');
     
     try {
       if (notionApiKey.trim()) {
@@ -36,9 +39,11 @@ const Settings = () => {
         description: "Your Notion integration settings have been saved successfully.",
       });
     } catch (error) {
+      const errorMsg = "Failed to save settings. Please try again.";
+      setErrorMessage(errorMsg);
       toast({
         title: "Error",
-        description: "Failed to save settings. Please try again.",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
@@ -48,9 +53,11 @@ const Settings = () => {
 
   const handleSync = async () => {
     if (!notionApiKey.trim()) {
+      const errorMsg = "Please enter your Notion API key before syncing.";
+      setErrorMessage(errorMsg);
       toast({
         title: "API Key Required",
-        description: "Please enter your Notion API key before syncing.",
+        description: errorMsg,
         variant: "destructive",
       });
       return;
@@ -58,8 +65,11 @@ const Settings = () => {
 
     setIsSyncing(true);
     setSyncStatus('idle');
+    setErrorMessage('');
 
     try {
+      console.log('Starting Notion API sync...');
+      
       const response = await fetch('https://api.notion.com/v1/search', {
         method: 'POST',
         headers: {
@@ -75,11 +85,40 @@ const Settings = () => {
         })
       });
 
+      console.log('Notion API response status:', response.status);
+      console.log('Notion API response headers:', response.headers);
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch databases: ${response.status}`);
+        let errorMsg = `API request failed with status ${response.status}`;
+        
+        try {
+          const errorData = await response.json();
+          console.log('Notion API error data:', errorData);
+          
+          if (errorData.code === 'unauthorized') {
+            errorMsg = "Invalid API key. Please check your Notion integration token.";
+          } else if (errorData.code === 'restricted_resource') {
+            errorMsg = "Access denied. Make sure your integration has access to the databases.";
+          } else if (errorData.message) {
+            errorMsg = `Notion API Error: ${errorData.message}`;
+          }
+        } catch (parseError) {
+          console.log('Could not parse error response:', parseError);
+          if (response.status === 401) {
+            errorMsg = "Invalid API key. Please check your Notion integration token.";
+          } else if (response.status === 403) {
+            errorMsg = "Access forbidden. Make sure your integration has proper permissions.";
+          } else if (response.status === 404) {
+            errorMsg = "Resource not found. Please check your integration setup.";
+          }
+        }
+        
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
+      console.log('Notion API success data:', data);
+      
       setSyncedDatabases(data.results || []);
       setSyncStatus('success');
       
@@ -93,11 +132,22 @@ const Settings = () => {
       });
 
     } catch (error) {
-      console.error('Sync error:', error);
+      console.error('Sync error details:', error);
       setSyncStatus('error');
+      
+      let errorMsg = "Unknown error occurred during sync.";
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMsg = "Network error: Unable to connect to Notion API. This might be due to CORS restrictions when calling Notion API directly from the browser. Consider using a proxy service or backend API.";
+      } else if (error instanceof Error) {
+        errorMsg = error.message;
+      }
+      
+      setErrorMessage(errorMsg);
+      
       toast({
         title: "Sync failed",
-        description: "Failed to connect to Notion. Please check your API key and try again.",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
@@ -114,6 +164,7 @@ const Settings = () => {
     setDatabaseId('');
     setSyncedDatabases([]);
     setSyncStatus('idle');
+    setErrorMessage('');
     
     toast({
       title: "Settings cleared",
@@ -149,6 +200,16 @@ const Settings = () => {
       {/* Main Content */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 pb-12">
         <div className="grid gap-6">
+          {/* Error Alert */}
+          {errorMessage && (
+            <Alert variant="destructive" className="bg-red-900/50 border-red-700/50 text-red-100">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                {errorMessage}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Notion Integration */}
           <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white">
             <CardHeader>
