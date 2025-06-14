@@ -60,8 +60,11 @@ CREATE POLICY "Users can update their own subscriptions"
   FOR UPDATE 
   USING (user_id = get_clerk_user_id());
 
--- Insert some sample plans
+-- Delete existing plans first
+DELETE FROM public.plans;
+
+-- Insert updated plans with new pricing structure
 INSERT INTO public.plans (name, description, price_cents, interval, features) VALUES 
-('Basic', 'Basic plan with essential features', 999, 'month', '["Up to 5 projects", "Basic support"]'),
-('Pro', 'Professional plan with advanced features', 1999, 'month', '["Unlimited projects", "Priority support", "Advanced analytics"]'),
-('Enterprise', 'Enterprise plan with all features', 4999, 'month', '["Everything in Pro", "Custom integrations", "Dedicated support"]');
+('Free Trial', '7-day free trial with full access', 0, 'week', '["7-day free trial", "Full access to all features", "Knowledge graph creation", "Notion integration"]'),
+('Monthly Plan', 'Monthly subscription with full access', 500, 'month', '["Unlimited knowledge graphs", "Notion integration", "Public sharing", "Priority support"]'),
+('Yearly Plan', 'Yearly subscription - Save $25.20 per year!', 3500, 'year', '["Everything in Monthly", "Save $25.20 per year", "Early access to new features", "Premium support"]');
