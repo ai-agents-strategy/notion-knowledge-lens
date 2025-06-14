@@ -149,9 +149,13 @@ export const useGraphData = () => {
   const currentNodes = usingRealData ? realNodes : sampleNodes;
   const currentConnections = usingRealData ? realConnections : sampleConnections;
 
-  const filteredNodes = selectedCategories.length > 0
-    ? currentNodes.filter(node => selectedCategories.includes(node.category))
-    : currentNodes;
+  const uniqueCategories = Array.from(new Set(currentNodes.map(node => node.category)));
+
+  // When no categories are selected OR when all categories are selected, show all nodes.
+  // Otherwise, filter by the selected categories.
+  const filteredNodes = (selectedCategories.length === 0 || selectedCategories.length === uniqueCategories.length)
+    ? currentNodes
+    : currentNodes.filter(node => selectedCategories.includes(node.category));
 
   const eligibleConnections = currentConnections
     .filter(conn => conn.strength >= connectionStrengthFilter)
@@ -169,8 +173,6 @@ export const useGraphData = () => {
   ]);
   const isolatedNodeCount = filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
   
-  const uniqueCategories = Array.from(new Set(currentNodes.map(node => node.category)));
-
   return {
     selectedCategories, setSelectedCategories,
     showConnectionLabels, setShowConnectionLabels,
