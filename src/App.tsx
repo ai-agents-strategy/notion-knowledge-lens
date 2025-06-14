@@ -39,7 +39,7 @@ const App = () => (
           path="/auth/sign-in"
           element={
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-              <SignIn path="/auth/sign-in" routing="path" signUpUrl="/auth/sign-up" fallbackRedirectUrl="/settings" />
+              <SignIn path="/auth/sign-in" routing="path" signUpUrl="/auth/sign-up" fallbackRedirectUrl="/" />
             </div>
           }
         />
@@ -47,7 +47,7 @@ const App = () => (
           path="/auth/sign-up"
           element={
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-              <SignUp path="/auth/sign-up" routing="path" signInUrl="/auth/sign-in" fallbackRedirectUrl="/settings" />
+              <SignUp path="/auth/sign-up" routing="path" signInUrl="/auth/sign-in" fallbackRedirectUrl="/" />
             </div>
           }
         />
