@@ -2,9 +2,11 @@
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { ControlPanel } from "@/components/ControlPanel";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export interface DatabaseNode {
   id: string;
@@ -56,12 +58,102 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showConnectionLabels, setShowConnectionLabels] = useState(true);
   const [connectionStrengthFilter, setConnectionStrengthFilter] = useState(0);
+  const [isRealData, setIsRealData] = useState(false);
+  const [realNodes, setRealNodes] = useState<DatabaseNode[]>([]);
+  const [realConnections, setRealConnections] = useState<DatabaseConnection[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    
+    try {
+      console.log('Starting Notion sync via Edge Function...');
+      
+      const { data, error } = await supabase.functions.invoke('notion-sync');
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to sync with Notion');
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      console.log('Notion sync success:', data);
+      
+      // Transform Notion data to our node format
+      const notionNodes: DatabaseNode[] = (data.results || []).map((db: any, index: number) => ({
+        id: db.id,
+        name: db.title?.[0]?.plain_text || `Database ${index + 1}`,
+        type: "database" as const,
+        category: "notion",
+        description: db.description?.[0]?.plain_text || "Notion database",
+        size: 20
+      }));
+
+      // Generate some basic connections between databases (simplified)
+      const notionConnections: DatabaseConnection[] = [];
+      for (let i = 0; i < notionNodes.length - 1; i++) {
+        if (Math.random() > 0.5) { // Randomly connect some databases
+          notionConnections.push({
+            source: notionNodes[i].id,
+            target: notionNodes[i + 1].id,
+            type: "reference",
+            strength: Math.random() * 0.8 + 0.2,
+            label: "related to"
+          });
+        }
+      }
+
+      setRealNodes(notionNodes);
+      setRealConnections(notionConnections);
+      setIsRealData(true);
+
+      toast({
+        title: "Sync successful!",
+        description: `Loaded ${notionNodes.length} databases from your Notion workspace.`,
+      });
+
+    } catch (error) {
+      console.error('Sync error:', error);
+      
+      let errorMsg = "Unknown error occurred during sync.";
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      }
+      
+      toast({
+        title: "Sync failed",
+        description: errorMsg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const toggleDataSource = () => {
+    setIsRealData(!isRealData);
+    toast({
+      title: isRealData ? "Switched to sample data" : "Switched to real data",
+      description: isRealData 
+        ? "Now showing sample Notion database structure"
+        : realNodes.length > 0 
+          ? "Now showing your real Notion databases"
+          : "No real data available. Please sync first.",
+    });
+  };
+
+  // Use real data if available and selected, otherwise use sample data
+  const currentNodes = isRealData && realNodes.length > 0 ? realNodes : sampleNodes;
+  const currentConnections = isRealData && realConnections.length > 0 ? realConnections : sampleConnections;
 
   const filteredNodes = selectedCategory 
-    ? sampleNodes.filter(node => node.category === selectedCategory)
-    : sampleNodes;
+    ? currentNodes.filter(node => node.category === selectedCategory)
+    : currentNodes;
 
-  const filteredConnections = sampleConnections.filter(conn => {
+  const filteredConnections = currentConnections.filter(conn => {
     const sourceExists = filteredNodes.some(node => node.id === conn.source);
     const targetExists = filteredNodes.some(node => node.id === conn.target);
     return sourceExists && targetExists && conn.strength >= connectionStrengthFilter;
@@ -82,13 +174,50 @@ const Index = () => {
             <p className="text-slate-300 text-lg">
               Visualize the relationships between your databases
             </p>
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <span className="text-sm text-slate-400">
+                {isRealData ? "Real Notion Data" : "Sample Data"}
+              </span>
+              <div className={`w-2 h-2 rounded-full ${isRealData ? "bg-green-400" : "bg-blue-400"}`} />
+            </div>
           </div>
-          <Link to="/settings">
-            <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-700/50 text-white hover:bg-slate-700/50">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleSync}
+              disabled={isSyncing}
+              variant="outline"
+              size="sm" 
+              className="bg-green-800/50 border-green-700/50 text-green-200 hover:bg-green-700/50"
+            >
+              {isSyncing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Sync Notion
+                </>
+              )}
             </Button>
-          </Link>
+            {realNodes.length > 0 && (
+              <Button 
+                onClick={toggleDataSource}
+                variant="outline"
+                size="sm" 
+                className="bg-blue-800/50 border-blue-700/50 text-blue-200 hover:bg-blue-700/50"
+              >
+                {isRealData ? "Show Sample" : "Show Real Data"}
+              </Button>
+            )}
+            <Link to="/settings">
+              <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-700/50 text-white hover:bg-slate-700/50">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -97,7 +226,7 @@ const Index = () => {
         {/* Control Panel */}
         <div className="lg:w-80 p-6">
           <ControlPanel
-            categories={Array.from(new Set(sampleNodes.map(node => node.category)))}
+            categories={Array.from(new Set(currentNodes.map(node => node.category)))}
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
             showConnectionLabels={showConnectionLabels}
