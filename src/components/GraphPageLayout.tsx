@@ -1,10 +1,8 @@
-
 import { ControlPanel } from "@/components/ControlPanel";
-import { KnowledgeGraph } from "@/components/KnowledgeGraph";
+import { KnowledgeGraph } from "@/components/KnowledgeGraph"; // This path should now resolve to src/components/KnowledgeGraph/index.ts
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 
 interface GraphPageLayoutProps {
-  // Control Panel Props
   categories: string[];
   selectedCategories: string[];
   onCategoryChange: (categories: string[]) => void;
@@ -73,4 +71,3 @@ export const GraphPageLayout = ({
     </div>
   );
 };
-

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
-import { Fullscreen } from "lucide-react"; // Import the Fullscreen icon
-import { Button } from "@/components/ui/button"; // Import Button for consistent styling
+import { GraphLegend } from "./GraphLegend";
+import { HoveredNodeDetails } from "./HoveredNodeDetails";
+import { GraphControls } from "./GraphControls";
 
 interface KnowledgeGraphProps {
   nodes: DatabaseNode[];
@@ -12,7 +13,7 @@ interface KnowledgeGraphProps {
 
 export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: KnowledgeGraphProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const graphContainerRef = useRef<HTMLDivElement>(null); // Ref for the full-screen element
+  const graphContainerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -333,73 +334,24 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
   }, [nodes, connections, showConnectionLabels, categoryColors, connectionColors]);
 
   return (
-    <div ref={graphContainerRef} className="relative w-full h-full bg-slate-900"> {/* Added bg for fullscreen */}
+    <div ref={graphContainerRef} className="relative w-full h-full bg-slate-900">
       <svg ref={svgRef} className="w-full h-full" />
       
-      {hoveredNode && (
-        <div className="absolute top-4 left-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-4 border border-slate-600/50 max-w-sm z-20">
-          {(() => {
-            const node = nodes.find(n => n.id === hoveredNode);
-            if (!node) return null;
-            
-            return (
-              <div>
-                <h3 className="text-white font-bold text-lg mb-2">{node.name}</h3>
-                <p className="text-slate-300 text-sm mb-2">{node.description}</p>
-                <div className="flex gap-2 text-xs flex-wrap">
-                  <span className={`px-2 py-1 rounded ${categoryColors[node.type] ? 'bg-opacity-20' : 'bg-gray-500/20 text-gray-300'}`} style={{backgroundColor: categoryColors[node.type] ? `${categoryColors[node.type]}33` : undefined, color: categoryColors[node.type] || undefined}}>
-                    {node.type}
-                  </span>
-                  <span className={`px-2 py-1 rounded ${categoryColors[node.category.toLowerCase()] ? 'bg-opacity-20' : 'bg-gray-500/20 text-gray-300'}`} style={{backgroundColor: categoryColors[node.category.toLowerCase()] ? `${categoryColors[node.category.toLowerCase()]}33` : undefined, color: categoryColors[node.category.toLowerCase()] || undefined}}>
-                    {node.category}
-                  </span>
-                  {node.propertyType && (
-                     <span className={`px-2 py-1 rounded ${categoryColors[node.propertyType.toLowerCase()] ? 'bg-opacity-20' : 'bg-gray-500/20 text-gray-300'}`} style={{backgroundColor: categoryColors[node.propertyType.toLowerCase()] ? `${categoryColors[node.propertyType.toLowerCase()]}33` : undefined, color: categoryColors[node.propertyType.toLowerCase()] || undefined}}>
-                      {node.propertyType}
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      )}
+      <HoveredNodeDetails 
+        nodeId={hoveredNode}
+        nodes={nodes}
+        categoryColors={categoryColors}
+      />
       
-      <div className="absolute bottom-4 left-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 border border-slate-600/50 z-20">
-        <div className="text-slate-300 text-xs space-y-2">
-          <div className="font-semibold mb-1 text-white">Node Types:</div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{backgroundColor: categoryColors.page || categoryColors.database}}></div>
-            <span>Page/Database</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-1.5 rounded-sm" style={{backgroundColor: categoryColors.property || categoryColors.text}}></div>
-            <span>Property</span>
-          </div>
-          <div className="mt-2 font-semibold text-white">Connections:</div>
-          {Object.entries(connectionColors).map(([type, color]) => (
-            <div key={type} className="flex items-center gap-2">
-              <div className="w-3 h-0.5 rounded" style={{backgroundColor: color}}></div>
-              <span className="capitalize">{type}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <GraphLegend 
+        categoryColors={categoryColors}
+        connectionColors={connectionColors}
+      />
       
-      <div className="absolute bottom-4 right-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 border border-slate-600/50 text-slate-300 text-xs space-y-1 z-20 flex flex-col items-end">
-        <div>🖱️ Drag nodes to reposition</div>
-        <div>🔍 Scroll to zoom in/out</div>
-        <div>👆 Hover for node details</div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleFullscreen}
-          className="mt-2 text-slate-300 hover:text-white hover:bg-slate-700/50 p-1"
-          title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-        >
-          <Fullscreen className="w-5 h-5" />
-        </Button>
-      </div>
+      <GraphControls 
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
+      />
     </div>
   );
 };
