@@ -20,7 +20,7 @@ serve(async (req) => {
       throw new Error('Notion API key not configured');
     }
 
-    console.log('Starting detailed Notion API sync...');
+    console.log('Starting SEO Knowledge Graph sync...');
 
     // First, get all databases
     const databasesResponse = await fetch('https://api.notion.com/v1/search', {
@@ -72,44 +72,53 @@ serve(async (req) => {
     
     console.log('Found databases:', databases.length);
 
-    // Now fetch detailed schema for each database
-    const detailedDatabases = [];
+    // Now fetch pages from each database
+    const allPages = [];
     
     for (const db of databases) {
       try {
-        console.log(`Fetching schema for database: ${db.id}`);
+        console.log(`Fetching pages from database: ${db.id}`);
         
-        const schemaResponse = await fetch(`https://api.notion.com/v1/databases/${db.id}`, {
+        const pagesResponse = await fetch(`https://api.notion.com/v1/databases/${db.id}/query`, {
+          method: 'POST',
           headers: {
             'Authorization': `Bearer ${notionApiKey}`,
+            'Content-Type': 'application/json',
             'Notion-Version': '2022-06-28',
-          }
+          },
+          body: JSON.stringify({
+            page_size: 100
+          })
         });
 
-        if (schemaResponse.ok) {
-          const schemaData = await schemaResponse.json();
-          detailedDatabases.push({
-            ...db,
-            properties: schemaData.properties || {},
-            detailed_schema: schemaData
-          });
+        if (pagesResponse.ok) {
+          const pagesData = await pagesResponse.json();
+          const dbName = db.title?.[0]?.plain_text || `Database ${db.id.slice(0, 8)}`;
+          
+          // Add database info to each page
+          const pagesWithDb = (pagesData.results || []).map(page => ({
+            ...page,
+            database_name: dbName,
+            database_id: db.id
+          }));
+          
+          allPages.push(...pagesWithDb);
+          console.log(`Found ${pagesWithDb.length} pages in ${dbName}`);
         } else {
-          console.log(`Failed to fetch schema for ${db.id}:`, schemaResponse.status);
-          // Still include the database without detailed schema
-          detailedDatabases.push(db);
+          console.log(`Failed to fetch pages from ${db.id}:`, pagesResponse.status);
         }
       } catch (error) {
-        console.log(`Error fetching schema for ${db.id}:`, error);
-        // Still include the database without detailed schema
-        detailedDatabases.push(db);
+        console.log(`Error fetching pages from ${db.id}:`, error);
       }
     }
 
-    console.log('Detailed sync complete, processed databases:', detailedDatabases.length);
+    console.log('SEO Knowledge Graph sync complete, processed pages:', allPages.length);
 
     return new Response(JSON.stringify({
-      results: detailedDatabases,
-      total_databases: detailedDatabases.length
+      pages: allPages,
+      databases: databases,
+      total_pages: allPages.length,
+      total_databases: databases.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
