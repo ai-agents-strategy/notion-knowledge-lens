@@ -17,10 +17,16 @@ const SyncClerkToSupabase = () => {
         try {
           const token = await getToken({ template: 'supabase' });
           if (token) {
-            await supabase.auth.signInWithJwt(token);
+            // Supabase expects a session object. We use the Clerk token for both
+            // access and refresh tokens. Clerk will handle token refreshing.
+            const { error } = await supabase.auth.setSession({
+              access_token: token,
+              refresh_token: token,
+            });
+            if (error) throw error;
           }
         } catch (e) {
-          console.error('Error signing in with JWT', e);
+          console.error('Error setting Supabase session:', e);
         }
       } else {
         // Sign out of Supabase when not signed in with Clerk.
