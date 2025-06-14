@@ -25,8 +25,8 @@ const RedirectToSignIn = () => {
   }, [navigate]);
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <Loader2 className="h-12 w-12 animate-spin text-white" />
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <Loader2 className="h-12 w-12 animate-spin text-notion-blue" />
     </div>
   );
 };
@@ -43,7 +43,7 @@ const App = () => (
         <Route
           path="/auth/sign-in"
           element={
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
               <SignIn path="/auth/sign-in" routing="path" signUpUrl="/auth/sign-up" fallbackRedirectUrl="/" />
             </div>
           }
@@ -51,7 +51,7 @@ const App = () => (
         <Route
           path="/auth/sign-up"
           element={
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
               <SignUp path="/auth/sign-up" routing="path" signInUrl="/auth/sign-in" fallbackRedirectUrl="/" />
             </div>
           }
