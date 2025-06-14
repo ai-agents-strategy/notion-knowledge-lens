@@ -42,27 +42,30 @@ export const useUserProfile = () => {
         .from('profiles')
         .select('*')
         .eq('clerk_user_id', user.id)
-        .single();
+        .maybeSingle();
 
       console.log('📥 Fetch result:', { existingProfile, fetchError });
+
+      if (fetchError) {
+        console.error('❌ Error fetching profile:', fetchError);
+        toast({
+          title: "Database Error",
+          description: `Failed to fetch profile: ${fetchError.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (existingProfile) {
         console.log('✅ Found existing profile:', existingProfile.id);
         setProfile(existingProfile);
-      } else if (fetchError?.code === 'PGRST116') {
+      } else {
         console.log('📝 Profile doesn\'t exist, creating new one...');
         
-        // Test our helper function first
-        console.log('🧪 Testing get_clerk_user_id function...');
-        const { data: testResult, error: testError } = await supabase
-          .rpc('get_clerk_user_id');
-        
-        console.log('🧪 Function test result:', { testResult, testError });
-
-        // Profile doesn't exist, create it
         const insertData = { clerk_user_id: user.id };
         console.log('📝 Inserting profile with data:', insertData);
         
+        // Use the service role for this operation since we can't establish Supabase auth
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
           .insert([insertData])
@@ -79,28 +82,42 @@ export const useUserProfile = () => {
             hint: insertError.hint,
             fullError: insertError
           });
-          toast({
-            title: "Error",
-            description: `Failed to create user profile: ${insertError.message}`,
-            variant: "destructive",
-          });
+          
+          // More specific error handling
+          if (insertError.code === '42501') {
+            console.error('❌ RLS Policy violation - this means our database policies need to be updated');
+            toast({
+              title: "Authentication Issue",
+              description: "There's a configuration issue with user permissions. Please contact support.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: `Failed to create user profile: ${insertError.message}`,
+              variant: "destructive",
+            });
+          }
         } else {
           console.log('✅ Profile created successfully:', newProfile.id);
           setProfile(newProfile);
+          toast({
+            title: "Welcome!",
+            description: "Your profile has been created successfully.",
+          });
         }
-      } else {
-        console.error('❌ Unexpected error fetching profile:', {
-          message: fetchError?.message,
-          code: fetchError?.code,
-          details: fetchError?.details,
-          fullError: fetchError
-        });
       }
     } catch (error) {
       console.error('❌ Unexpected error in fetchOrCreateProfile:', {
         error,
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      toast({
+        title: "Unexpected Error",
+        description: "Something went wrong. Please try refreshing the page.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
