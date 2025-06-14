@@ -57,15 +57,19 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
+				// Notion simplified colors
+				notion: {
+					black: '#37352F',
+					white: '#FFFFFF',
+					blue: '#2383E2',
+					gray: {
+						50: '#F7F6F3',
+						100: '#F1F0EC',
+						200: '#E9E9E7',
+						300: '#A8A6A1',
+						400: '#787774',
+						500: '#49483E'
+					}
 				}
 			},
 			borderRadius: {
