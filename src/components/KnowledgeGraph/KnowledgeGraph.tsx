@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
@@ -11,57 +12,59 @@ interface KnowledgeGraphProps {
   showConnectionLabels: boolean;
 }
 
+const categoryColors: Record<string, string> = {
+  database: "#3b82f6",
+  text: "#10b981",
+  number: "#f59e0b",
+  select: "#8b5cf6",
+  multi_select: "#ec4899",
+  date: "#ef4444",
+  person: "#06b6d4",
+  file: "#84cc16",
+  checkbox: "#f97316",
+  url: "#6366f1",
+  email: "#14b8a6",
+  phone_number: "#a855f7",
+  formula: "#eab308",
+  relation: "#dc2626",
+  rollup: "#7c3aed",
+  created_time: "#059669",
+  created_by: "#0d9488",
+  last_edited_time: "#7c2d12",
+  last_edited_by: "#92400e",
+  // SEO categories from sample data
+  seo: "#3b82f6", // Blue
+  content: "#10b981", // Green
+  technical: "#8b5cf6", // Purple
+  offpage: "#f59e0b", // Yellow
+  local: "#ef4444", // Red
+  ecommerce: "#ec4899", // Pink
+  mobile: "#06b6d4", // Cyan
+  analytics: "#f97316", // Orange
+  research: "#6366f1", // Indigo
+  // Legacy categories
+  work: "#3b82f6",
+  contacts: "#10b981",
+  knowledge: "#8b5cf6",
+  planning: "#f59e0b",
+  finance: "#ef4444",
+  creativity: "#ec4899",
+};
+
+const connectionColors: Record<DatabaseConnection['type'], string> = {
+  relation: "#dc2626",
+  reference: "#34d399",
+  dependency: "#fbbf24",
+  contains: "#60a5fa",
+};
+
 export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: KnowledgeGraphProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const categoryColors: Record<string, string> = {
-    database: "#3b82f6",
-    text: "#10b981",
-    number: "#f59e0b", 
-    select: "#8b5cf6",
-    multi_select: "#ec4899",
-    date: "#ef4444",
-    person: "#06b6d4",
-    file: "#84cc16",
-    checkbox: "#f97316",
-    url: "#6366f1",
-    email: "#14b8a6",
-    phone_number: "#a855f7",
-    formula: "#eab308",
-    relation: "#dc2626",
-    rollup: "#7c3aed",
-    created_time: "#059669",
-    created_by: "#0d9488",
-    last_edited_time: "#7c2d12",
-    last_edited_by: "#92400e",
-    // SEO categories from sample data
-    seo: "#3b82f6", // Blue
-    content: "#10b981", // Green
-    technical: "#8b5cf6", // Purple
-    offpage: "#f59e0b", // Yellow
-    local: "#ef4444", // Red
-    ecommerce: "#ec4899", // Pink
-    mobile: "#06b6d4", // Cyan
-    analytics: "#f97316", // Orange
-    research: "#6366f1", // Indigo
-    // Legacy categories
-    work: "#3b82f6",
-    contacts: "#10b981", 
-    knowledge: "#8b5cf6",
-    planning: "#f59e0b",
-    finance: "#ef4444",
-    creativity: "#ec4899",
-  };
-
-  const connectionColors: Record<DatabaseConnection['type'], string> = {
-    relation: "#dc2626",
-    reference: "#34d399", 
-    dependency: "#fbbf24",
-    contains: "#60a5fa",
-  };
+  // Color definitions moved outside the component
 
   const toggleFullscreen = () => {
     if (!graphContainerRef.current) return;
