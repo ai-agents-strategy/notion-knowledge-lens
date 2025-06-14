@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +13,8 @@ interface ControlPanelProps {
   onCategoryChange: (categories: string[]) => void;
   showConnectionLabels: boolean;
   onShowLabelsChange: (show: boolean) => void;
+  showConnections: boolean; // New prop
+  onShowConnectionsChange: (show: boolean) => void; // New prop
   connectionStrengthFilter: number;
   onConnectionStrengthChange: (strength: number) => void;
   nodeCount: number;
@@ -27,6 +28,8 @@ export const ControlPanel = ({
   onCategoryChange,
   showConnectionLabels,
   onShowLabelsChange,
+  showConnections, // New prop
+  onShowConnectionsChange, // New prop
   connectionStrengthFilter,
   onConnectionStrengthChange,
   nodeCount,
@@ -98,7 +101,6 @@ export const ControlPanel = ({
         <div>
           <h3 className="text-sm font-semibold mb-3 text-slate-200">Filter by Categories</h3>
           
-          {/* Selected Categories */}
           {selectedCategories.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
               {selectedCategories.map((category) => (
@@ -121,7 +123,6 @@ export const ControlPanel = ({
             </div>
           )}
 
-          {/* Category Selector */}
           <Select onValueChange={handleCategoryToggle}>
             <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
               <SelectValue placeholder="Select categories to filter..." />
@@ -140,7 +141,6 @@ export const ControlPanel = ({
             </SelectContent>
           </Select>
 
-          {/* Quick Actions */}
           <div className="flex gap-2 mt-2">
             <Button
               variant="outline"
@@ -168,10 +168,21 @@ export const ControlPanel = ({
           <h3 className="text-sm font-semibold text-slate-200">Relationship Options</h3>
           
           <div className="flex items-center justify-between">
-            <label className="text-sm text-slate-300">Show Labels</label>
+            <label htmlFor="show-connections-switch" className="text-sm text-slate-300">Show Relationships</label>
             <Switch
+              id="show-connections-switch"
+              checked={showConnections}
+              onCheckedChange={onShowConnectionsChange}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <label htmlFor="show-labels-switch" className="text-sm text-slate-300">Show Labels</label>
+            <Switch
+              id="show-labels-switch"
               checked={showConnectionLabels}
               onCheckedChange={onShowLabelsChange}
+              disabled={!showConnections} // Disable if relationships are hidden
             />
           </div>
 
@@ -187,6 +198,7 @@ export const ControlPanel = ({
               min={0}
               step={0.1}
               className="w-full"
+              disabled={!showConnections} // Disable if relationships are hidden
             />
           </div>
         </div>
@@ -220,6 +232,7 @@ export const ControlPanel = ({
             onCategoryChange([]);
             onConnectionStrengthChange(0);
             onShowLabelsChange(true);
+            onShowConnectionsChange(true); // Reset new toggle
           }}
           className="w-full bg-slate-700 hover:bg-slate-600 border-slate-600 text-slate-200"
         >

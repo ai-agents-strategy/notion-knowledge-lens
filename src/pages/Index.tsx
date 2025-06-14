@@ -58,6 +58,7 @@ const sampleConnections: DatabaseConnection[] = [
 const Index = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showConnectionLabels, setShowConnectionLabels] = useState(true);
+  const [showConnections, setShowConnections] = useState(true); // New state
   const [connectionStrengthFilter, setConnectionStrengthFilter] = useState(0);
   const [isRealData, setIsRealData] = useState(false);
   const [realNodes, setRealNodes] = useState<DatabaseNode[]>([]);
@@ -151,12 +152,12 @@ const Index = () => {
 
       console.log('SEO Knowledge Graph sync success:', data);
       
-      // Transform the Notion pages data
       const { nodes, connections } = transformNotionDataToSEOGraph(data.pages || [], data.databases || []);
 
       setRealNodes(nodes);
       setRealConnections(connections);
       setIsRealData(true);
+      setShowConnections(true); // Ensure connections are shown after sync
 
       toast({
         title: "Sync successful!",
@@ -202,17 +203,22 @@ const Index = () => {
     ? currentNodes.filter(node => selectedCategories.includes(node.category))
     : currentNodes;
 
-  // Filter connections to only show those between visible nodes
-  const filteredConnections = currentConnections.filter(conn => {
-    const sourceExists = filteredNodes.some(node => node.id === conn.source);
-    const targetExists = filteredNodes.some(node => node.id === conn.target);
-    return sourceExists && targetExists && conn.strength >= connectionStrengthFilter;
-  });
+  // Apply connection strength filter first
+  const strengthFilteredConnections = currentConnections.filter(conn => conn.strength >= connectionStrengthFilter);
+
+  // Then filter connections to only show those between visible nodes, and based on showConnections toggle
+  const finalFilteredConnections = showConnections 
+    ? strengthFilteredConnections.filter(conn => {
+        const sourceExists = filteredNodes.some(node => node.id === conn.source);
+        const targetExists = filteredNodes.some(node => node.id === conn.target);
+        return sourceExists && targetExists;
+      })
+    : [];
 
   // Calculate isolated nodes (nodes without any connections)
   const connectedNodeIds = new Set([
-    ...filteredConnections.map(conn => conn.source),
-    ...filteredConnections.map(conn => conn.target)
+    ...finalFilteredConnections.map(conn => conn.source),
+    ...finalFilteredConnections.map(conn => conn.target)
   ]);
   const isolatedNodeCount = filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
 
@@ -288,10 +294,12 @@ const Index = () => {
             onCategoryChange={setSelectedCategories}
             showConnectionLabels={showConnectionLabels}
             onShowLabelsChange={setShowConnectionLabels}
+            showConnections={showConnections} // Pass new state
+            onShowConnectionsChange={setShowConnections} // Pass new setter
             connectionStrengthFilter={connectionStrengthFilter}
             onConnectionStrengthChange={setConnectionStrengthFilter}
             nodeCount={filteredNodes.length}
-            connectionCount={filteredConnections.length}
+            connectionCount={finalFilteredConnections.length}
             isolatedNodeCount={isolatedNodeCount}
           />
         </div>
@@ -301,8 +309,8 @@ const Index = () => {
           <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl border border-slate-700/50 h-full overflow-hidden">
             <KnowledgeGraph 
               nodes={filteredNodes}
-              connections={filteredConnections}
-              showConnectionLabels={showConnectionLabels}
+              connections={finalFilteredConnections}
+              showConnectionLabels={showConnectionLabels && showConnections} // Labels only if connections are shown
             />
           </div>
         </div>
