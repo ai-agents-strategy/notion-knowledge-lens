@@ -15,12 +15,14 @@ export interface DatabaseNode {
   category: string;
   description?: string;
   size: number;
+  propertyType?: string;
+  parentDatabase?: string;
 }
 
 export interface DatabaseConnection {
   source: string;
   target: string;
-  type: "relation" | "reference" | "dependency";
+  type: "relation" | "reference" | "dependency" | "contains";
   strength: number;
   label?: string;
 }
@@ -63,11 +65,107 @@ const Index = () => {
   const [realConnections, setRealConnections] = useState<DatabaseConnection[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const transformNotionDataToGraph = (databases: any[]) => {
+    const nodes: DatabaseNode[] = [];
+    const connections: DatabaseConnection[] = [];
+
+    databases.forEach((db: any) => {
+      const dbName = db.title?.[0]?.plain_text || db.properties?.Name?.title?.[0]?.plain_text || `Database ${db.id.slice(0, 8)}`;
+      
+      // Add database node
+      const dbNode: DatabaseNode = {
+        id: db.id,
+        name: dbName,
+        type: "database",
+        category: "database",
+        description: `Notion database with ${Object.keys(db.properties || {}).length} properties`,
+        size: 30
+      };
+      nodes.push(dbNode);
+
+      // Add property nodes for each database property
+      if (db.properties) {
+        Object.entries(db.properties).forEach(([propName, propData]: [string, any]) => {
+          const propertyId = `${db.id}-${propName}`;
+          const propertyNode: DatabaseNode = {
+            id: propertyId,
+            name: propName,
+            type: "property",
+            category: propData.type || "text",
+            description: `${propData.type || 'Unknown'} property`,
+            size: 15,
+            propertyType: propData.type,
+            parentDatabase: db.id
+          };
+          nodes.push(propertyNode);
+
+          // Connect database to its properties
+          connections.push({
+            source: db.id,
+            target: propertyId,
+            type: "contains",
+            strength: 0.9,
+            label: "has property"
+          });
+
+          // Add relations between databases based on relation properties
+          if (propData.type === 'relation' && propData.relation?.database_id) {
+            const targetDbId = propData.relation.database_id;
+            const existingDb = databases.find(d => d.id === targetDbId);
+            
+            if (existingDb) {
+              connections.push({
+                source: db.id,
+                target: targetDbId,
+                type: "relation",
+                strength: 0.8,
+                label: `via ${propName}`
+              });
+            }
+          }
+
+          // Add rollup connections
+          if (propData.type === 'rollup' && propData.rollup?.relation_property_name) {
+            const relationPropName = propData.rollup.relation_property_name;
+            const relationPropId = `${db.id}-${relationPropName}`;
+            
+            connections.push({
+              source: propertyId,
+              target: relationPropId,
+              type: "reference",
+              strength: 0.6,
+              label: "rollup from"
+            });
+          }
+
+          // Add formula dependencies (simplified)
+          if (propData.type === 'formula') {
+            // Connect to other properties that might be referenced in the formula
+            Object.keys(db.properties).forEach(otherPropName => {
+              if (otherPropName !== propName && Math.random() > 0.7) { // Simplified logic
+                const otherPropId = `${db.id}-${otherPropName}`;
+                connections.push({
+                  source: propertyId,
+                  target: otherPropId,
+                  type: "dependency",
+                  strength: 0.4,
+                  label: "references"
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+
+    return { nodes, connections };
+  };
+
   const handleSync = async () => {
     setIsSyncing(true);
     
     try {
-      console.log('Starting Notion sync via Edge Function...');
+      console.log('Starting detailed Notion sync via Edge Function...');
       
       const { data, error } = await supabase.functions.invoke('notion-sync');
 
@@ -82,37 +180,16 @@ const Index = () => {
 
       console.log('Notion sync success:', data);
       
-      // Transform Notion data to our node format
-      const notionNodes: DatabaseNode[] = (data.results || []).map((db: any, index: number) => ({
-        id: db.id,
-        name: db.title?.[0]?.plain_text || `Database ${index + 1}`,
-        type: "database" as const,
-        category: "notion",
-        description: db.description?.[0]?.plain_text || "Notion database",
-        size: 20
-      }));
+      // Transform the detailed Notion data
+      const { nodes, connections } = transformNotionDataToGraph(data.results || []);
 
-      // Generate some basic connections between databases (simplified)
-      const notionConnections: DatabaseConnection[] = [];
-      for (let i = 0; i < notionNodes.length - 1; i++) {
-        if (Math.random() > 0.5) { // Randomly connect some databases
-          notionConnections.push({
-            source: notionNodes[i].id,
-            target: notionNodes[i + 1].id,
-            type: "reference",
-            strength: Math.random() * 0.8 + 0.2,
-            label: "related to"
-          });
-        }
-      }
-
-      setRealNodes(notionNodes);
-      setRealConnections(notionConnections);
+      setRealNodes(nodes);
+      setRealConnections(connections);
       setIsRealData(true);
 
       toast({
         title: "Sync successful!",
-        description: `Loaded ${notionNodes.length} databases from your Notion workspace.`,
+        description: `Loaded ${data.total_databases || 0} databases with ${nodes.length} total nodes and ${connections.length} relationships.`,
       });
 
     } catch (error) {
@@ -172,7 +249,7 @@ const Index = () => {
               Notion Knowledge Graph
             </h1>
             <p className="text-slate-300 text-lg">
-              Visualize the relationships between your databases
+              Visualize relationships between databases, properties, and relations
             </p>
             <div className="flex items-center justify-center gap-2 mt-4">
               <span className="text-sm text-slate-400">

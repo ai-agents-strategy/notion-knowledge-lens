@@ -20,9 +20,10 @@ serve(async (req) => {
       throw new Error('Notion API key not configured');
     }
 
-    console.log('Starting Notion API sync...');
+    console.log('Starting detailed Notion API sync...');
 
-    const response = await fetch('https://api.notion.com/v1/search', {
+    // First, get all databases
+    const databasesResponse = await fetch('https://api.notion.com/v1/search', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${notionApiKey}`,
@@ -37,13 +38,11 @@ serve(async (req) => {
       })
     });
 
-    console.log('Notion API response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!databasesResponse.ok) {
+      const errorText = await databasesResponse.text();
       console.log('Notion API error:', errorText);
       
-      let errorMsg = `API request failed with status ${response.status}`;
+      let errorMsg = `API request failed with status ${databasesResponse.status}`;
       
       try {
         const errorData = JSON.parse(errorText);
@@ -55,25 +54,63 @@ serve(async (req) => {
           errorMsg = `Notion API Error: ${errorData.message}`;
         }
       } catch {
-        if (response.status === 401) {
+        if (databasesResponse.status === 401) {
           errorMsg = "Invalid API key. Please check your Notion integration token.";
-        } else if (response.status === 403) {
+        } else if (databasesResponse.status === 403) {
           errorMsg = "Access forbidden. Make sure your integration has proper permissions.";
-        } else if (response.status === 404) {
-          errorMsg = "Resource not found. Please check your integration setup.";
         }
       }
       
       return new Response(JSON.stringify({ error: errorMsg }), {
-        status: response.status,
+        status: databasesResponse.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const data = await response.json();
-    console.log('Notion API success, found databases:', data.results?.length || 0);
+    const databasesData = await databasesResponse.json();
+    const databases = databasesData.results || [];
+    
+    console.log('Found databases:', databases.length);
 
-    return new Response(JSON.stringify(data), {
+    // Now fetch detailed schema for each database
+    const detailedDatabases = [];
+    
+    for (const db of databases) {
+      try {
+        console.log(`Fetching schema for database: ${db.id}`);
+        
+        const schemaResponse = await fetch(`https://api.notion.com/v1/databases/${db.id}`, {
+          headers: {
+            'Authorization': `Bearer ${notionApiKey}`,
+            'Notion-Version': '2022-06-28',
+          }
+        });
+
+        if (schemaResponse.ok) {
+          const schemaData = await schemaResponse.json();
+          detailedDatabases.push({
+            ...db,
+            properties: schemaData.properties || {},
+            detailed_schema: schemaData
+          });
+        } else {
+          console.log(`Failed to fetch schema for ${db.id}:`, schemaResponse.status);
+          // Still include the database without detailed schema
+          detailedDatabases.push(db);
+        }
+      } catch (error) {
+        console.log(`Error fetching schema for ${db.id}:`, error);
+        // Still include the database without detailed schema
+        detailedDatabases.push(db);
+      }
+    }
+
+    console.log('Detailed sync complete, processed databases:', detailedDatabases.length);
+
+    return new Response(JSON.stringify({
+      results: detailedDatabases,
+      total_databases: detailedDatabases.length
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
