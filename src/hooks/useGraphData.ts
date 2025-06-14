@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,8 +63,8 @@ export const useGraphData = () => {
         if (error && error.code !== 'PGRST116') throw error; // Allow "no rows" error
 
         if (data && data.nodes && data.connections) {
-          setRealNodes(data.nodes as DatabaseNode[]);
-          setRealConnections(data.connections as DatabaseConnection[]);
+          setRealNodes(data.nodes as unknown as DatabaseNode[]);
+          setRealConnections(data.connections as unknown as DatabaseConnection[]);
           setPublicId(data.public_id);
           setIsRealData(true);
         }
