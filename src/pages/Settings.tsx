@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,9 +67,14 @@ const Settings = () => {
     setErrorMessage('');
 
     try {
-      console.log('Starting Notion API sync...');
+      console.log('Starting Notion API sync with CORS proxy...');
       
-      const response = await fetch('https://api.notion.com/v1/search', {
+      // Using CORS proxy to bypass browser restrictions
+      const proxyUrl = 'https://api.allorigins.win/raw?url=';
+      const notionUrl = 'https://api.notion.com/v1/search';
+      const encodedUrl = encodeURIComponent(notionUrl);
+      
+      const response = await fetch(`${proxyUrl}${encodedUrl}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${notionApiKey.trim()}`,
@@ -86,14 +90,25 @@ const Settings = () => {
       });
 
       console.log('Notion API response status:', response.status);
-      console.log('Notion API response headers:', response.headers);
 
       if (!response.ok) {
         let errorMsg = `API request failed with status ${response.status}`;
         
         try {
-          const errorData = await response.json();
-          console.log('Notion API error data:', errorData);
+          const errorText = await response.text();
+          console.log('Raw error response:', errorText);
+          
+          // Try to parse as JSON
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            // If not JSON, use the text as is
+            errorMsg = `API Error: ${errorText}`;
+            throw new Error(errorMsg);
+          }
+          
+          console.log('Parsed error data:', errorData);
           
           if (errorData.code === 'unauthorized') {
             errorMsg = "Invalid API key. Please check your Notion integration token.";
@@ -116,7 +131,17 @@ const Settings = () => {
         throw new Error(errorMsg);
       }
 
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log('Raw response text:', responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response as JSON:', parseError);
+        throw new Error('Invalid response format from Notion API');
+      }
+      
       console.log('Notion API success data:', data);
       
       setSyncedDatabases(data.results || []);
@@ -138,7 +163,7 @@ const Settings = () => {
       let errorMsg = "Unknown error occurred during sync.";
       
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        errorMsg = "Network error: Unable to connect to Notion API. This might be due to CORS restrictions when calling Notion API directly from the browser. Consider using a proxy service or backend API.";
+        errorMsg = "Network error: Unable to connect to the proxy service. Please check your internet connection and try again.";
       } else if (error instanceof Error) {
         errorMsg = error.message;
       }
