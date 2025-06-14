@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Key, Database, Save, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
   const [notionApiKey, setNotionApiKey] = useState(
@@ -51,98 +52,25 @@ const Settings = () => {
   };
 
   const handleSync = async () => {
-    if (!notionApiKey.trim()) {
-      const errorMsg = "Please enter your Notion API key before syncing.";
-      setErrorMessage(errorMsg);
-      toast({
-        title: "API Key Required",
-        description: errorMsg,
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSyncing(true);
     setSyncStatus('idle');
     setErrorMessage('');
 
     try {
-      console.log('Starting Notion API sync with CORS proxy...');
+      console.log('Starting Notion sync via Edge Function...');
       
-      // Using CORS proxy to bypass browser restrictions
-      const proxyUrl = 'https://api.allorigins.win/raw?url=';
-      const notionUrl = 'https://api.notion.com/v1/search';
-      const encodedUrl = encodeURIComponent(notionUrl);
-      
-      const response = await fetch(`${proxyUrl}${encodedUrl}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${notionApiKey.trim()}`,
-          'Content-Type': 'application/json',
-          'Notion-Version': '2022-06-28',
-        },
-        body: JSON.stringify({
-          filter: {
-            property: 'object',
-            value: 'database'
-          }
-        })
-      });
+      const { data, error } = await supabase.functions.invoke('notion-sync');
 
-      console.log('Notion API response status:', response.status);
-
-      if (!response.ok) {
-        let errorMsg = `API request failed with status ${response.status}`;
-        
-        try {
-          const errorText = await response.text();
-          console.log('Raw error response:', errorText);
-          
-          // Try to parse as JSON
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-          } catch {
-            // If not JSON, use the text as is
-            errorMsg = `API Error: ${errorText}`;
-            throw new Error(errorMsg);
-          }
-          
-          console.log('Parsed error data:', errorData);
-          
-          if (errorData.code === 'unauthorized') {
-            errorMsg = "Invalid API key. Please check your Notion integration token.";
-          } else if (errorData.code === 'restricted_resource') {
-            errorMsg = "Access denied. Make sure your integration has access to the databases.";
-          } else if (errorData.message) {
-            errorMsg = `Notion API Error: ${errorData.message}`;
-          }
-        } catch (parseError) {
-          console.log('Could not parse error response:', parseError);
-          if (response.status === 401) {
-            errorMsg = "Invalid API key. Please check your Notion integration token.";
-          } else if (response.status === 403) {
-            errorMsg = "Access forbidden. Make sure your integration has proper permissions.";
-          } else if (response.status === 404) {
-            errorMsg = "Resource not found. Please check your integration setup.";
-          }
-        }
-        
-        throw new Error(errorMsg);
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to sync with Notion');
       }
 
-      const responseText = await response.text();
-      console.log('Raw response text:', responseText);
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Failed to parse response as JSON:', parseError);
-        throw new Error('Invalid response format from Notion API');
+      if (data.error) {
+        throw new Error(data.error);
       }
-      
-      console.log('Notion API success data:', data);
+
+      console.log('Notion sync success:', data);
       
       setSyncedDatabases(data.results || []);
       setSyncStatus('success');
@@ -157,14 +85,11 @@ const Settings = () => {
       });
 
     } catch (error) {
-      console.error('Sync error details:', error);
+      console.error('Sync error:', error);
       setSyncStatus('error');
       
       let errorMsg = "Unknown error occurred during sync.";
-      
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        errorMsg = "Network error: Unable to connect to the proxy service. Please check your internet connection and try again.";
-      } else if (error instanceof Error) {
+      if (error instanceof Error) {
         errorMsg = error.message;
       }
       
@@ -259,15 +184,7 @@ const Settings = () => {
                   className="bg-slate-700/30 border-slate-600 text-white placeholder:text-slate-400"
                 />
                 <p className="text-xs text-slate-400">
-                  Get your integration token from{" "}
-                  <a 
-                    href="https://www.notion.so/my-integrations" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 underline"
-                  >
-                    notion.so/my-integrations
-                  </a>
+                  Your API key is now stored securely in Supabase and used server-side
                 </p>
               </div>
 
@@ -297,7 +214,7 @@ const Settings = () => {
 
                 <Button 
                   onClick={handleSync}
-                  disabled={isSyncing || !notionApiKey.trim()}
+                  disabled={isSyncing}
                   className="bg-green-600 hover:bg-green-700 text-white"
                 >
                   {isSyncing ? (
