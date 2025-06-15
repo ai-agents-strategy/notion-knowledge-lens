@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,15 +25,20 @@ const Settings = () => {
 
   // Load integration data when available
   useEffect(() => {
+    if (integrationsLoading) return;
+    
     const notionIntegration = getIntegration('notion');
-    if (notionIntegration) {
-      setNotionApiKey(notionIntegration.api_key || '');
-      if (notionIntegration.database_id) {
-        setDatabaseId(notionIntegration.database_id);
-        localStorage.setItem('notion_database_id', notionIntegration.database_id);
-      }
+    if (notionIntegration && notionIntegration.api_key) {
+      setNotionApiKey(notionIntegration.api_key);
+    } else {
+      setNotionApiKey('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');
     }
-  }, [getIntegration]);
+
+    if (notionIntegration?.database_id) {
+      setDatabaseId(notionIntegration.database_id);
+      localStorage.setItem('notion_database_id', notionIntegration.database_id);
+    }
+  }, [getIntegration, integrationsLoading]);
 
   const handleSave = async () => {
     if (!user) {
