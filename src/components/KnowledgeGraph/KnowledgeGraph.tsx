@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { GraphNode, GraphLink } from '@/types/graph';
@@ -23,6 +24,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [simulation, setSimulation] = useState<d3.Simulation<GraphNode, GraphLink> | null>(null);
+  const [nodeElements, setNodeElements] = useState<d3.Selection<d3.BaseType, GraphNode, SVGGElement, unknown> | null>(null);
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -45,7 +47,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
       .attr("stroke", "#999")
       .attr("stroke-opacity", 0.6);
 
-    const nodeElements = svg.append("g")
+    const currentNodeElements = svg.append("g")
       .attr("class", "nodes")
       .selectAll("circle")
       .data(nodes)
@@ -62,6 +64,8 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
       .on("mouseout", () => {
         onNodeHover?.(null);
       });
+
+    setNodeElements(currentNodeElements);
 
     // Add labels to nodes
     const labels = svg.append("g")
@@ -83,7 +87,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
         .attr("x2", d => (d.target as GraphNode).x!)
         .attr("y2", d => (d.target as GraphNode).y!);
 
-      nodeElements
+      currentNodeElements
         .attr("cx", d => d.x!)
         .attr("cy", d => d.y!);
 
@@ -92,20 +96,22 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
         .attr("y", d => d.y!);
     });
 
-    // Node highlighting
-    useEffect(() => {
+    return () => {
+      currentSimulation.stop();
+    };
+
+  }, [nodes, links, onNodeClick, onNodeHover, width, height]);
+
+  // Separate useEffect for node highlighting
+  useEffect(() => {
+    if (nodeElements) {
       if (hoveredNode) {
         nodeElements.attr("fill", (d) => (d.id === hoveredNode.id ? "red" : "skyblue"));
       } else {
         nodeElements.attr("fill", "skyblue");
       }
-    }, [hoveredNode, nodeElements]);
-
-    return () => {
-      currentSimulation.stop();
-    };
-
-  }, [nodes, links, onNodeClick, onNodeHover, width, height, hoveredNode]);
+    }
+  }, [hoveredNode, nodeElements]);
 
   return (
     <svg ref={svgRef} width={width} height={height}></svg>
