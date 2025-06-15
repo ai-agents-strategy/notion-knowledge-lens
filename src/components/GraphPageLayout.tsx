@@ -1,4 +1,3 @@
-
 import { ControlPanel } from "@/components/ControlPanel";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
@@ -75,7 +74,7 @@ export const GraphPageLayout = ({
 
         {/* Main Knowledge Graph Area */}
         <SidebarInset className="flex-1">
-          <div className="flex items-center p-2">
+          <div className="flex items-center">
             <SidebarTrigger />
           </div>
           <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 h-[calc(100%-3rem)] mx-2 mb-2 overflow-hidden shadow-sm">
