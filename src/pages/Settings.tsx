@@ -9,14 +9,11 @@ import { Key, Database, Save, RefreshCw, CheckCircle, AlertCircle } from "lucide
 import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@clerk/clerk-react";
 import { useIntegrations } from "@/hooks/useIntegrations";
-import { useSubscriptions } from "@/hooks/useSubscriptions";
-import { SubscriptionGate } from "@/components/SubscriptionGate";
 import { SettingsSidebar } from "@/components/SettingsSidebar";
 
 const Settings = () => {
   const { user } = useUser();
   const { getIntegration, saveIntegration, deleteIntegration, loading: integrationsLoading } = useIntegrations();
-  const { subscription } = useSubscriptions();
   const [notionApiKey, setNotionApiKey] = useState('');
   const [databaseId, setDatabaseId] = useState(localStorage.getItem('notion_database_id') || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -219,103 +216,101 @@ const Settings = () => {
             )}
 
             {/* Notion Integration */}
-            <SubscriptionGate feature="Notion Integration" description="Connect your Notion workspace to visualize your actual database relationships. This premium feature requires an active subscription.">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Key className="w-5 h-5" />
-                    Notion Integration
-                  </CardTitle>
-                  <CardDescription>
-                    Connect your Notion workspace to visualize your actual database relationships
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="notion-key">Notion Integration Token</Label>
-                    <Input
-                      id="notion-key"
-                      type="password"
-                      placeholder="secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      value={notionApiKey}
-                      onChange={(e) => setNotionApiKey(e.target.value)}
-                    />
-                    <p className="text-xs text-gray-500">
-                      Your API key is stored securely in your personal account
-                    </p>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Key className="w-5 h-5" />
+                  Notion Integration
+                </CardTitle>
+                <CardDescription>
+                  Connect your Notion workspace to visualize your actual database relationships
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="notion-key">Notion Integration Token</Label>
+                  <Input
+                    id="notion-key"
+                    type="password"
+                    placeholder="secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    value={notionApiKey}
+                    onChange={(e) => setNotionApiKey(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Your API key is stored securely in your personal account
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="database-id">Database ID (Optional)</Label>
+                  <Input
+                    id="database-id"
+                    placeholder="32 character database ID"
+                    value={databaseId}
+                    onChange={(e) => setDatabaseId(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Specific database ID to focus on (leave empty to discover all accessible databases)
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={handleSave}
+                    disabled={isLoading || !notionApiKey.trim()}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isLoading ? "Saving..." : "Save Settings"}
+                  </Button>
+
+                  <Button
+                    onClick={handleSync}
+                    disabled={isSyncing || !notionApiKey.trim()}
+                    variant="outline"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Sync Databases
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button variant="outline" onClick={handleClear}>
+                    Clear All
+                  </Button>
+                </div>
+
+                {/* Sync Status */}
+                {syncStatus === 'success' && (
+                  <div className="flex items-center gap-2 text-green-600 text-sm">
+                    <CheckCircle className="w-4 h-4" />
+                    Successfully synced {syncedDatabases.length} databases
                   </div>
+                )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="database-id">Database ID (Optional)</Label>
-                    <Input
-                      id="database-id"
-                      placeholder="32 character database ID"
-                      value={databaseId}
-                      onChange={(e) => setDatabaseId(e.target.value)}
-                    />
-                    <p className="text-xs text-gray-500">
-                      Specific database ID to focus on (leave empty to discover all accessible databases)
-                    </p>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <Button
-                      onClick={handleSave}
-                      disabled={isLoading || !notionApiKey.trim()}
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      {isLoading ? "Saving..." : "Save Settings"}
-                    </Button>
-
-                    <Button
-                      onClick={handleSync}
-                      disabled={isSyncing || !notionApiKey.trim()}
-                      variant="outline"
-                    >
-                      {isSyncing ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Syncing...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          Sync Databases
-                        </>
-                      )}
-                    </Button>
-                    
-                    <Button variant="outline" onClick={handleClear}>
-                      Clear All
-                    </Button>
-                  </div>
-
-                  {/* Sync Status */}
-                  {syncStatus === 'success' && (
-                    <div className="flex items-center gap-2 text-green-600 text-sm">
-                      <CheckCircle className="w-4 h-4" />
-                      Successfully synced {syncedDatabases.length} databases
+                {/* Synced Databases Preview */}
+                {syncedDatabases.length > 0 && (
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h4 className="font-medium mb-2">Synced Databases:</h4>
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                      {syncedDatabases.map((db, index) => (
+                        <div key={index} className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                          <Database className="w-3 h-3" />
+                          {db.title?.[0]?.plain_text || 'Untitled Database'}
+                        </div>
+                      ))}
                     </div>
-                  )}
-
-                  {/* Synced Databases Preview */}
-                  {syncedDatabases.length > 0 && (
-                    <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <h4 className="font-medium mb-2">Synced Databases:</h4>
-                      <div className="space-y-1 max-h-40 overflow-y-auto">
-                        {syncedDatabases.map((db, index) => (
-                          <div key={index} className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                            <Database className="w-3 h-3" />
-                            {db.title?.[0]?.plain_text || 'Untitled Database'}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </SubscriptionGate>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Instructions */}
             <Card>
