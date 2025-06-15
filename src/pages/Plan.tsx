@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,10 @@ const Plan = () => {
       </div>
     );
   }
+
+  const freePlan = plans.find(p => p.price_cents === 0);
+  const monthlyPlan = plans.find(p => p.interval === 'month');
+  const yearlyPlan = plans.find(p => p.interval === 'year');
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
@@ -115,17 +120,40 @@ const Plan = () => {
               </h3>
               
               <div className="grid md:grid-cols-3 gap-6">
-                {plans.map((plan) => (
-                  <PricingCard
-                    key={plan.id}
-                    plan={plan}
+                {freePlan && (
+                   <PricingCard
+                    key={freePlan.id}
+                    plan={freePlan}
                     formatPrice={formatPrice}
-                    onSubscribe={() => handleSubscribe(plan.id, plan.price_cents)}
-                    isLoading={checkoutLoading === plan.id || (plan.price_cents === 0 && trialLoading)}
-                    isCurrentPlan={subscription?.plan_id === plan.id}
+                    onSubscribe={() => handleSubscribe(freePlan.id, freePlan.price_cents)}
+                    isLoading={trialLoading}
+                    isCurrentPlan={subscription?.plan_id === freePlan.id}
                     isSubscribedToSomething={!!subscription}
                   />
-                ))}
+                )}
+                {monthlyPlan && (
+                  <PricingCard
+                    key={monthlyPlan.id}
+                    plan={monthlyPlan}
+                    formatPrice={formatPrice}
+                    onSubscribe={() => handleSubscribe(monthlyPlan.id, monthlyPlan.price_cents)}
+                    isLoading={checkoutLoading === monthlyPlan.id}
+                    isCurrentPlan={subscription?.plan_id === monthlyPlan.id}
+                    isSubscribedToSomething={!!subscription}
+                  />
+                )}
+                {yearlyPlan && (
+                  <PricingCard
+                    key={yearlyPlan.id}
+                    plan={yearlyPlan}
+                    formatPrice={formatPrice}
+                    onSubscribe={() => handleSubscribe(yearlyPlan.id, yearlyPlan.price_cents)}
+                    isLoading={checkoutLoading === yearlyPlan.id}
+                    isCurrentPlan={subscription?.plan_id === yearlyPlan.id}
+                    isSubscribedToSomething={!!subscription}
+                    monthlyPriceCents={monthlyPlan?.price_cents}
+                  />
+                )}
               </div>
             </div>
           </div>

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
@@ -42,6 +43,10 @@ const Pricing = () => {
     );
   }
 
+  const freePlan = plans.find(p => p.price_cents === 0);
+  const monthlyPlan = plans.find(p => p.interval === 'month');
+  const yearlyPlan = plans.find(p => p.interval === 'year');
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="container mx-auto px-4 py-16">
@@ -58,17 +63,40 @@ const Pricing = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => (
+          {freePlan && (
             <PricingCard
-              key={plan.id}
-              plan={plan}
+              key={freePlan.id}
+              plan={freePlan}
               formatPrice={formatPrice}
-              onSubscribe={() => handleSubscribe(plan.id, plan.price_cents)}
-              isLoading={checkoutLoading === plan.id || (plan.price_cents === 0 && trialLoading)}
-              isCurrentPlan={subscription?.plan_id === plan.id}
+              onSubscribe={() => handleSubscribe(freePlan.id, freePlan.price_cents)}
+              isLoading={trialLoading}
+              isCurrentPlan={subscription?.plan_id === freePlan.id}
               isSubscribedToSomething={!!subscription}
             />
-          ))}
+          )}
+          {monthlyPlan && (
+            <PricingCard
+              key={monthlyPlan.id}
+              plan={monthlyPlan}
+              formatPrice={formatPrice}
+              onSubscribe={() => handleSubscribe(monthlyPlan.id, monthlyPlan.price_cents)}
+              isLoading={checkoutLoading === monthlyPlan.id}
+              isCurrentPlan={subscription?.plan_id === monthlyPlan.id}
+              isSubscribedToSomething={!!subscription}
+            />
+          )}
+          {yearlyPlan && (
+            <PricingCard
+              key={yearlyPlan.id}
+              plan={yearlyPlan}
+              formatPrice={formatPrice}
+              onSubscribe={() => handleSubscribe(yearlyPlan.id, yearlyPlan.price_cents)}
+              isLoading={checkoutLoading === yearlyPlan.id}
+              isCurrentPlan={subscription?.plan_id === yearlyPlan.id}
+              isSubscribedToSomething={!!subscription}
+              monthlyPriceCents={monthlyPlan?.price_cents}
+            />
+          )}
         </div>
 
         <div className="text-center mt-12">

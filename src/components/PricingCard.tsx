@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +18,7 @@ interface PricingCardProps {
   isLoading: boolean;
   isCurrentPlan?: boolean;
   isSubscribedToSomething?: boolean;
+  monthlyPriceCents?: number;
 }
 
 export const PricingCard = ({ 
@@ -28,6 +28,7 @@ export const PricingCard = ({
   isLoading,
   isCurrentPlan = false,
   isSubscribedToSomething = false, 
+  monthlyPriceCents,
 }: PricingCardProps) => {
   const features = Array.isArray(plan.features) ? plan.features : [];
   const isYearlyPlan = plan.interval === 'year';
@@ -35,8 +36,7 @@ export const PricingCard = ({
   
   // Calculate monthly equivalent for yearly plan
   const monthlyEquivalent = isYearlyPlan ? plan.price_cents / 12 : plan.price_cents;
-  const yearlyTotal = isYearlyPlan ? plan.price_cents : plan.price_cents * 12;
-  const savings = isYearlyPlan ? (500 * 12) - plan.price_cents : 0;
+  const savings = isYearlyPlan && monthlyPriceCents ? (monthlyPriceCents * 12) - plan.price_cents : 0;
 
   const getButtonText = () => {
     if (isCurrentPlan) return 'Current Plan';
@@ -75,15 +75,10 @@ export const PricingCard = ({
               </div>
             </div>
           ) : (
-            formatPrice(plan.price_cents, plan.currency)
-          )}
-          {!isFreeTrial && (
-            <span className="text-lg font-normal text-muted-foreground">
-              /{isYearlyPlan ? 'year' : plan.interval}
-            </span>
+            <span>{formatPrice(plan.price_cents, plan.currency)}/month</span>
           )}
         </div>
-        {isYearlyPlan && (
+        {isYearlyPlan && savings > 0 && (
           <div className="text-sm text-green-600 font-semibold">
             Save {formatPrice(savings, plan.currency)} compared to monthly!
           </div>

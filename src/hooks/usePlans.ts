@@ -44,7 +44,17 @@ export const usePlans = () => {
         return;
       }
 
-      setPlans(data || []);
+      // Filter for the free plan, one specific monthly plan, and one specific yearly plan.
+      const freePlan = (data || []).find(p => p.price_cents === 0);
+      const monthlyPlan = (data || []).find(p => p.interval === 'month' && p.price_cents === 500);
+      const yearlyPlan = (data || []).find(p => p.interval === 'year' && p.price_cents === 3600);
+      
+      const filteredPlans = [];
+      if (freePlan) filteredPlans.push(freePlan);
+      if (monthlyPlan) filteredPlans.push(monthlyPlan);
+      if (yearlyPlan) filteredPlans.push(yearlyPlan);
+
+      setPlans(filteredPlans);
     } catch (error) {
       console.error('Unexpected error fetching plans:', error);
     } finally {
