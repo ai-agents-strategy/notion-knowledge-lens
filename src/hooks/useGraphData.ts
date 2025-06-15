@@ -1,10 +1,10 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/types/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { sampleNodes, sampleConnections } from '@/data/sample-data';
 import { useIntegrations } from './useIntegrations';
@@ -30,9 +30,6 @@ export interface GraphConnection {
   metadata?: any;
   color?: string;
 }
-
-// Type for the public_graphs table
-export type PublicGraph = Database['public']['Tables']['public_graphs']['Row'];
 
 // Hook definition
 export const useGraphData = () => {
@@ -195,11 +192,11 @@ export const useGraphData = () => {
     console.log('🔗 Fetching public graph with ID:', publicId);
 
     try {
-      const { data: publicGraph, error } = await supabase
-        .from('public_graphs')
+      const { data: graph, error } = await supabase
+        .from('graphs')
         .select('*')
         .eq('public_id', publicId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('❌ Error fetching public graph:', error);
@@ -211,7 +208,7 @@ export const useGraphData = () => {
         return;
       }
 
-      if (!publicGraph) {
+      if (!graph) {
         console.error('❌ Public graph not found');
         toast({
           title: "Error",
@@ -221,8 +218,8 @@ export const useGraphData = () => {
         return;
       }
 
-      setNodes(publicGraph.graph_data.nodes);
-      setConnections(publicGraph.graph_data.connections);
+      setNodes(graph.nodes as GraphNode[] || []);
+      setConnections(graph.connections as GraphConnection[] || []);
       setUsingRealData(false);
       setPublicId(publicId);
     } catch (error) {
@@ -297,10 +294,11 @@ export const useGraphData = () => {
       
       // First check if a public graph already exists
       const { data: existingGraph, error: checkError } = await supabase
-        .from('public_graphs')
+        .from('graphs')
         .select('public_id')
         .eq('user_id', user.id)
-        .maybeSingle(); // Use maybeSingle() instead of single() to handle no rows gracefully
+        .not('public_id', 'is', null)
+        .maybeSingle();
 
       if (checkError) {
         console.error('❌ Error checking existing public graph:', checkError);
@@ -312,7 +310,7 @@ export const useGraphData = () => {
         return null;
       }
 
-      if (existingGraph) {
+      if (existingGraph?.public_id) {
         // Return existing public link
         const link = `${window.location.origin}/public/graph/${existingGraph.public_id}`;
         console.log('✅ Using existing public link:', link);
@@ -323,17 +321,15 @@ export const useGraphData = () => {
       // Generate new public ID
       const newPublicId = crypto.randomUUID();
       
-      // Create new public graph entry
+      // Create or update graph entry with public ID
       const { data, error } = await supabase
-        .from('public_graphs')
-        .insert([{
+        .from('graphs')
+        .upsert({
           user_id: user.id,
           public_id: newPublicId,
-          graph_data: {
-            nodes: usingRealData ? realNodes : sampleNodes,
-            connections: usingRealData ? realConnections : sampleConnections
-          }
-        }])
+          nodes: usingRealData ? realNodes : sampleNodes,
+          connections: usingRealData ? realConnections : sampleConnections
+        })
         .select('public_id')
         .single();
 
@@ -383,8 +379,8 @@ export const useGraphData = () => {
       console.log('🔥 Revoking public link for user:', user.id, 'and public ID:', publicId);
 
       const { error } = await supabase
-        .from('public_graphs')
-        .delete()
+        .from('graphs')
+        .update({ public_id: null })
         .eq('user_id', user.id)
         .eq('public_id', publicId);
 
