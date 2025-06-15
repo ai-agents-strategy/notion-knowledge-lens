@@ -1,9 +1,9 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
+import { categoryColors as defaultCategoryColors, connectionColors as defaultConnectionColors } from "@/components/KnowledgeGraph/graphConfig";
 
 // Sample SEO Knowledge Graph data (moved here)
 const sampleNodes: DatabaseNode[] = [
@@ -45,6 +45,9 @@ export const useGraphData = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [publicId, setPublicId] = useState<string | null>(null);
+  const [categoryColors, setCategoryColors] = useState(defaultCategoryColors);
+  const [connectionColors, setConnectionColors] = useState(defaultConnectionColors);
+
 
   useEffect(() => {
     const loadGraphFromDB = async () => {
@@ -56,17 +59,29 @@ export const useGraphData = () => {
       try {
         const { data, error } = await supabase
           .from('graphs')
-          .select('nodes, connections, public_id')
+          .select('nodes, connections, public_id, color_settings')
           .eq('user_id', user.id)
           .single();
         
         if (error && error.code !== 'PGRST116') throw error; // Allow "no rows" error
 
-        if (data && data.nodes && data.connections) {
-          setRealNodes(data.nodes as unknown as DatabaseNode[]);
-          setRealConnections(data.connections as unknown as DatabaseConnection[]);
-          setPublicId(data.public_id);
-          setIsRealData(true);
+        if (data) {
+          if (data.nodes && data.connections) {
+            setRealNodes(data.nodes as unknown as DatabaseNode[]);
+            setRealConnections(data.connections as unknown as DatabaseConnection[]);
+            setPublicId(data.public_id);
+            setIsRealData(true);
+          }
+
+          if (data.color_settings) {
+            const savedColors = data.color_settings as { categoryColors?: Record<string, string>, connectionColors?: Record<string, string> };
+            if (savedColors.categoryColors) {
+              setCategoryColors(currentColors => ({ ...currentColors, ...savedColors.categoryColors }));
+            }
+            if (savedColors.connectionColors) {
+              setConnectionColors(currentColors => ({ ...currentColors, ...savedColors.connectionColors }));
+            }
+          }
         }
       } catch (error) {
         console.error("Error loading graph from DB:", error);
@@ -78,6 +93,40 @@ export const useGraphData = () => {
     
     loadGraphFromDB();
   }, [user]);
+
+  // Save color settings when they change
+  useEffect(() => {
+    if (!user || isLoading || !usingRealData) return;
+
+    const handler = setTimeout(async () => {
+      try {
+        const { error } = await supabase
+          .from('graphs')
+          .update({ color_settings: { categoryColors, connectionColors } })
+          .eq('user_id', user.id);
+
+        if (error) {
+          // It might fail if the user has no graph yet. This is expected if they haven't synced.
+          if (error.code !== '22P02' && error.code !== 'PGRST116') { // Ignore invalid input syntax for type uuid and no rows found
+             throw error;
+          }
+        } else {
+            toast({
+                title: "Color preferences saved",
+                duration: 2000,
+            });
+        }
+      } catch (error) {
+        console.error("Error saving color settings:", error);
+        toast({ title: "Could not save color preferences", variant: "destructive" });
+      }
+    }, 1500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [categoryColors, connectionColors, user, isLoading, usingRealData]);
+
 
   const getPageTitle = (page: any) => {
     if (page.properties) {
@@ -278,5 +327,9 @@ export const useGraphData = () => {
     finalFilteredConnections,
     isolatedNodeCount,
     eligibleConnections, // Keep this for connectionCount in Index
+    categoryColors,
+    setCategoryColors,
+    connectionColors,
+    setConnectionColors,
   };
 };
