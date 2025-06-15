@@ -4,6 +4,7 @@ import { useGraphData } from "@/hooks/useGraphData";
 import { GraphHeader } from "@/components/GraphHeader";
 import { GraphPageLayout } from "@/components/GraphPageLayout";
 import { Loader2 } from "lucide-react";
+import { convertGraphNodesToDatabase, convertGraphConnectionsToDatabase } from "@/utils/graphTypeConversion";
 
 const Index = () => {
   const {
@@ -45,6 +46,10 @@ const Index = () => {
       )
     : finalFilteredConnections;
 
+  // Convert GraphNode[] and GraphConnection[] to DatabaseNode[] and DatabaseConnection[]
+  const databaseNodes = convertGraphNodesToDatabase(searchedNodes);
+  const databaseConnections = convertGraphConnectionsToDatabase(searchedConnections);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -80,8 +85,8 @@ const Index = () => {
         isolatedNodeCount={isolatedNodeCount}
         isSyncing={isSyncing}
         onSync={handleSync}
-        graphNodes={searchedNodes}
-        graphConnections={searchedConnections}
+        graphNodes={databaseNodes}
+        graphConnections={databaseConnections}
         graphShowConnectionLabels={showConnectionLabels}
         usingRealData={usingRealData}
         searchTerm={searchTerm}
