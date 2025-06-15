@@ -2,7 +2,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
-
 interface ControlPanelProps {
   showConnectionLabels: boolean;
   onShowLabelsChange: (show: boolean) => void;
@@ -12,7 +11,6 @@ interface ControlPanelProps {
   connectionCount: number;
   isolatedNodeCount: number;
 }
-
 export const ControlPanel = ({
   showConnectionLabels,
   onShowLabelsChange,
@@ -20,11 +18,10 @@ export const ControlPanel = ({
   onConnectionStrengthChange,
   nodeCount,
   connectionCount,
-  isolatedNodeCount,
+  isolatedNodeCount
 }: ControlPanelProps) => {
-  return (
-    <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white h-fit">
-      <CardHeader>
+  return <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white h-fit">
+      <CardHeader className="bg-slate-50">
         <CardTitle className="text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
           SEO Graph Controls
         </CardTitle>
@@ -33,15 +30,15 @@ export const ControlPanel = ({
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 bg-slate-50">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-blue-400">{nodeCount}</div>
+            <div className="text-lg font-bold text-black-400">{nodeCount}</div>
             <div className="text-xs text-slate-300">Pages</div>
           </div>
           <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-purple-400">{connectionCount}</div>
+            <div className="text-lg font-bold text-blue-400 ">{connectionCount}</div>
             <div className="text-xs text-slate-300">Relations</div>
           </div>
           <div className="bg-slate-700/30 rounded-lg p-3 text-center">
@@ -58,12 +55,7 @@ export const ControlPanel = ({
           
           <div className="flex items-center justify-between">
             <label htmlFor="show-labels-switch" className="text-sm text-slate-300">Show Labels</label>
-            <Switch
-              id="show-labels-switch"
-              checked={showConnectionLabels}
-              onCheckedChange={onShowLabelsChange}
-              disabled={connectionCount === 0}
-            />
+            <Switch id="show-labels-switch" checked={showConnectionLabels} onCheckedChange={onShowLabelsChange} disabled={connectionCount === 0} />
           </div>
 
           <div className="space-y-2">
@@ -71,15 +63,7 @@ export const ControlPanel = ({
               <label className="text-sm text-slate-300">Min Strength</label>
               <span className="text-xs text-slate-400">{connectionStrengthFilter.toFixed(1)}</span>
             </div>
-            <Slider
-              value={[connectionStrengthFilter]}
-              onValueChange={(value) => onConnectionStrengthChange(value[0])}
-              max={1}
-              min={0}
-              step={0.1}
-              className="w-full"
-              disabled={connectionCount === 0}
-            />
+            <Slider value={[connectionStrengthFilter]} onValueChange={value => onConnectionStrengthChange(value[0])} max={1} min={0} step={0.1} className="w-full" disabled={connectionCount === 0} />
           </div>
         </div>
 
@@ -104,6 +88,5 @@ export const ControlPanel = ({
           </div>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
