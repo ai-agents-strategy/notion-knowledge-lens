@@ -88,12 +88,17 @@ export const useGraphData = () => {
   const { user } = useUser();
   const [showConnectionLabels, setShowConnectionLabels] = useState(true);
   const [connectionStrengthFilter, setConnectionStrengthFilter] = useState(0);
-  const [isRealData, setIsRealData] = useState(false);
   const [realNodes, setRealNodes] = useState<DatabaseNode[]>([]);
   const [realConnections, setRealConnections] = useState<DatabaseConnection[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [publicId, setPublicId] = useState<string | null>(null);
+
+  // Check if Notion API key exists in localStorage
+  const hasNotionApiKey = Boolean(localStorage.getItem('notion_api_key'));
+  
+  // Automatically determine if we should use real data based on API key presence and availability
+  const isRealData = hasNotionApiKey && realNodes.length > 0;
 
   const [categoryColors, setCategoryColors] = useState(() => {
     try {
@@ -128,7 +133,6 @@ export const useGraphData = () => {
       if (storedNodes && storedConnections) {
         setRealNodes(JSON.parse(storedNodes));
         setRealConnections(JSON.parse(storedConnections));
-        setIsRealData(true);
         setIsLoading(false);
         return; // Data loaded from localStorage, don't proceed to DB load
       }
@@ -156,7 +160,6 @@ export const useGraphData = () => {
             setRealNodes(data.nodes as unknown as DatabaseNode[]);
             setRealConnections(data.connections as unknown as DatabaseConnection[]);
             setPublicId(data.public_id);
-            setIsRealData(true);
           }
         }
       } catch (error) {
@@ -241,10 +244,22 @@ export const useGraphData = () => {
   };
 
   const handleSync = async () => {
+    const apiKey = localStorage.getItem('notion_api_key');
+    if (!apiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please configure your Notion API key in settings before syncing.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSyncing(true);
     try {
       console.log('Starting SEO Knowledge Graph sync via Edge Function...');
-      const { data, error } = await supabase.functions.invoke('notion-sync');
+      const { data, error } = await supabase.functions.invoke('notion-sync', {
+        body: { apiKey }
+      });
       if (error) throw new Error(error.message || 'Failed to sync with Notion');
       if (data.error) throw new Error(data.error);
 
@@ -255,7 +270,10 @@ export const useGraphData = () => {
       
       setRealNodes(nodes);
       setRealConnections(connections);
-      setIsRealData(true);
+
+      // Save to localStorage
+      localStorage.setItem('notion_graph_nodes', JSON.stringify(nodes));
+      localStorage.setItem('notion_graph_connections', JSON.stringify(connections));
 
       toast({
         title: "Sync successful!",
@@ -317,17 +335,29 @@ export const useGraphData = () => {
   };
 
   const toggleDataSource = () => {
-    const newIsRealData = !isRealData;
-    setIsRealData(newIsRealData);
-    toast({
-      title: newIsRealData ? "Switched to real data" : "Switched to sample data",
-      description: newIsRealData
-        ? (realNodes.length > 0 ? "Now showing your real Notion databases" : "No real data available. Please sync first.")
-        : "Now showing sample SEO Knowledge Graph data",
-    });
+    // This function is kept for backward compatibility but no longer actively toggles
+    // The data source is now automatically determined based on API key presence
+    if (!hasNotionApiKey) {
+      toast({
+        title: "No API key configured",
+        description: "Please configure your Notion API key in settings to view real data.",
+        variant: "destructive"
+      });
+    } else if (realNodes.length === 0) {
+      toast({
+        title: "No real data available",
+        description: "Please sync your Notion data first.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Using real data",
+        description: "Currently showing your Notion database relationships.",
+      });
+    }
   };
 
-  const usingRealData = isRealData && realNodes.length > 0;
+  const usingRealData = isRealData;
   
   const currentNodes = useMemo(() => 
     usingRealData ? realNodes : sampleNodes,
@@ -385,5 +415,6 @@ export const useGraphData = () => {
     setCategoryColors,
     connectionColors,
     setConnectionColors,
+    hasNotionApiKey, // Export this for components to use
   };
 };

@@ -25,6 +25,7 @@ const Index = () => {
     categoryColors,
     setCategoryColors,
     connectionColors,
+    hasNotionApiKey,
   } = useGraphData();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,6 +67,7 @@ const Index = () => {
         publicId={publicId}
         onGenerateLink={generatePublicLink}
         onRevokeLink={revokePublicLink}
+        hasNotionApiKey={hasNotionApiKey}
       />
 
       <GraphPageLayout
