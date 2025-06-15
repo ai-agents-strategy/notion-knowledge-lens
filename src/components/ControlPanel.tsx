@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,6 @@ import { RefreshCw, Settings } from "lucide-react";
 import { useUser, OrganizationSwitcher } from "@clerk/clerk-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useNavigate } from "react-router-dom";
-
 interface ControlPanelProps {
   showConnectionLabels: boolean;
   onShowLabelsChange: (show: boolean) => void;
@@ -20,7 +18,6 @@ interface ControlPanelProps {
   onSync: () => void;
   usingRealData: boolean;
 }
-
 export const ControlPanel = ({
   showConnectionLabels,
   onShowLabelsChange,
@@ -33,20 +30,20 @@ export const ControlPanel = ({
   onSync,
   usingRealData
 }: ControlPanelProps) => {
-  const { isSignedIn, isLoaded } = useUser();
-  const { subscription } = useSubscriptions();
+  const {
+    isSignedIn,
+    isLoaded
+  } = useUser();
+  const {
+    subscription
+  } = useSubscriptions();
   const navigate = useNavigate();
-  
   const authIsLoading = !isLoaded;
   const hasAccess = subscription && subscription.plan;
-
-  return (
-    <div className="flex flex-col h-full">
+  return <div className="flex flex-col h-full">
       <Card className="border-0 shadow-none bg-transparent flex-1">
         <CardHeader className="px-0">
-          <CardTitle className="text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            SEO Graph Controls
-          </CardTitle>
+          <CardTitle className="text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-slate-950">Knowledge Graph</CardTitle>
           <CardDescription className="text-slate-600">
             Customize your knowledge graph view
           </CardDescription>
@@ -55,25 +52,14 @@ export const ControlPanel = ({
         <CardContent className="space-y-6 px-0">
           {/* Sync Button */}
           <div className="space-y-3">
-            <Button
-              onClick={onSync}
-              disabled={isSyncing || !isSignedIn || authIsLoading || !hasAccess}
-              variant="outline"
-              size="sm"
-              className="w-full border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 disabled:opacity-50"
-              title={!hasAccess ? "Sign up for free trial to use Notion sync" : ""}
-            >
-              {isSyncing ? (
-                <>
+            <Button onClick={onSync} disabled={isSyncing || !isSignedIn || authIsLoading || !hasAccess} variant="outline" size="sm" className="w-full border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 disabled:opacity-50" title={!hasAccess ? "Sign up for free trial to use Notion sync" : ""}>
+              {isSyncing ? <>
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   Syncing...
-                </>
-              ) : (
-                <>
+                </> : <>
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Sync Notion
-                </>
-              )}
+                </>}
             </Button>
           </div>
 
@@ -89,13 +75,7 @@ export const ControlPanel = ({
 
           {/* Settings Button */}
           <div className="space-y-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate('/settings')}
-              disabled={!isSignedIn || authIsLoading}
-              className="w-full"
-            >
+            <Button variant="outline" size="sm" onClick={() => navigate('/settings')} disabled={!isSignedIn || authIsLoading} className="w-full">
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
@@ -127,12 +107,7 @@ export const ControlPanel = ({
             
             <div className="flex items-center justify-between">
               <label htmlFor="show-labels-switch" className="text-sm text-slate-600">Show Labels</label>
-              <Switch 
-                id="show-labels-switch" 
-                checked={showConnectionLabels} 
-                onCheckedChange={onShowLabelsChange} 
-                disabled={connectionCount === 0} 
-              />
+              <Switch id="show-labels-switch" checked={showConnectionLabels} onCheckedChange={onShowLabelsChange} disabled={connectionCount === 0} />
             </div>
           </div>
 
@@ -160,20 +135,15 @@ export const ControlPanel = ({
       </Card>
       
       {/* Organization Switcher at bottom */}
-      {isSignedIn && !authIsLoading && (
-        <div className="mt-auto pt-4 border-t border-slate-200">
+      {isSignedIn && !authIsLoading && <div className="mt-auto pt-4 border-t border-slate-200">
           <div className="flex justify-center">
-            <OrganizationSwitcher 
-              appearance={{
-                elements: {
-                  organizationSwitcherTrigger: "w-full justify-start text-sm",
-                  organizationSwitcherPopoverCard: "w-64"
-                }
-              }}
-            />
+            <OrganizationSwitcher appearance={{
+          elements: {
+            organizationSwitcherTrigger: "w-full justify-start text-sm",
+            organizationSwitcherPopoverCard: "w-64"
+          }
+        }} />
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
