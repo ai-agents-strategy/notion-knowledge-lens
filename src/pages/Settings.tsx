@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,8 +25,6 @@ const Settings = () => {
     const storedApiKey = localStorage.getItem('notion_api_key');
     if (storedApiKey) {
       setNotionApiKey(storedApiKey);
-    } else {
-      setNotionApiKey('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');
     }
 
     const storedDatabaseId = localStorage.getItem('notion_database_id');
