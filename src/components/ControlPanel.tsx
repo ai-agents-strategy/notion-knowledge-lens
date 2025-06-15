@@ -1,7 +1,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { RefreshCw } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
+import { useSubscriptions } from "@/hooks/useSubscriptions";
 
 interface ControlPanelProps {
   showConnectionLabels: boolean;
@@ -11,6 +15,8 @@ interface ControlPanelProps {
   nodeCount: number;
   connectionCount: number;
   isolatedNodeCount: number;
+  isSyncing: boolean;
+  onSync: () => void;
 }
 
 export const ControlPanel = ({
@@ -20,8 +26,16 @@ export const ControlPanel = ({
   onConnectionStrengthChange,
   nodeCount,
   connectionCount,
-  isolatedNodeCount
+  isolatedNodeCount,
+  isSyncing,
+  onSync
 }: ControlPanelProps) => {
+  const { isSignedIn, isLoaded } = useUser();
+  const { subscription } = useSubscriptions();
+  
+  const authIsLoading = !isLoaded;
+  const hasAccess = subscription && subscription.plan;
+
   return (
     <Card className="border-0 shadow-none bg-transparent">
       <CardHeader className="px-0">
@@ -34,6 +48,32 @@ export const ControlPanel = ({
       </CardHeader>
       
       <CardContent className="space-y-6 px-0">
+        {/* Sync Button */}
+        <div className="space-y-3">
+          <Button
+            onClick={onSync}
+            disabled={isSyncing || !isSignedIn || authIsLoading || !hasAccess}
+            variant="outline"
+            size="sm"
+            className="w-full border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 disabled:opacity-50"
+            title={!hasAccess ? "Sign up for free trial to use Notion sync" : ""}
+          >
+            {isSyncing ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Sync Notion
+              </>
+            )}
+          </Button>
+        </div>
+
+        <Separator />
+
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-slate-100 rounded-lg p-3 text-center">

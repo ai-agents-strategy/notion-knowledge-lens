@@ -1,5 +1,6 @@
+
 import { Button } from "@/components/ui/button";
-import { Settings, RefreshCw, LogIn } from "lucide-react";
+import { Settings, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser, UserButton } from "@clerk/clerk-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
@@ -7,8 +8,6 @@ import { ShareGraph } from './ShareGraph';
 
 interface GraphHeaderProps {
   usingRealData: boolean;
-  isSyncing: boolean;
-  onSync: () => void;
   realDataExists: boolean;
   onToggleDataSource: () => void;
   isRealData: boolean;
@@ -19,8 +18,6 @@ interface GraphHeaderProps {
 
 export const GraphHeader = ({
   usingRealData,
-  isSyncing,
-  onSync,
   realDataExists,
   onToggleDataSource,
   isRealData,
@@ -59,26 +56,6 @@ export const GraphHeader = ({
           </div>
         </div>
         <div className="flex gap-2 items-center">
-          <Button
-            onClick={onSync}
-            disabled={isSyncing || !isSignedIn || authIsLoading || !hasAccess}
-            variant="outline"
-            size="sm"
-            className="border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 disabled:opacity-50"
-            title={!hasAccess ? "Sign up for free trial to use Notion sync" : ""}
-          >
-            {isSyncing ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Syncing...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Sync Notion
-              </>
-            )}
-          </Button>
           {realDataExists && (
             <Button
               onClick={onToggleDataSource}

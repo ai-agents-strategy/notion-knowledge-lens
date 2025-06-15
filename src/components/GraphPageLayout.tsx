@@ -12,6 +12,8 @@ interface GraphPageLayoutProps {
   nodeCount: number;
   connectionCount: number;
   isolatedNodeCount: number;
+  isSyncing: boolean;
+  onSync: () => void;
   // Knowledge Graph Props
   graphNodes: DatabaseNode[];
   graphConnections: DatabaseConnection[];
@@ -26,6 +28,8 @@ export const GraphPageLayout = ({
   nodeCount,
   connectionCount,
   isolatedNodeCount,
+  isSyncing,
+  onSync,
   graphNodes,
   graphConnections,
   graphShowConnectionLabels
@@ -43,7 +47,9 @@ export const GraphPageLayout = ({
               onConnectionStrengthChange={onConnectionStrengthChange} 
               nodeCount={nodeCount} 
               connectionCount={connectionCount} 
-              isolatedNodeCount={isolatedNodeCount} 
+              isolatedNodeCount={isolatedNodeCount}
+              isSyncing={isSyncing}
+              onSync={onSync}
             />
           </SidebarContent>
         </Sidebar>
