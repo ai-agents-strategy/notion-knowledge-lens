@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useSearchParams } from 'react-router-dom';
@@ -48,6 +47,7 @@ export const useGraphData = () => {
   const [usingRealData, setUsingRealData] = useState<boolean>(false);
   const [categoryColors, setCategoryColors] = useState<{ [category: string]: string }>({});
   const [connectionColors, setConnectionColors] = useState<{ [connectionId: string]: string }>({});
+  const [dataInitialized, setDataInitialized] = useState<boolean>(false);
 
   const hasNotionApiKey = !!localStorage.getItem('notion_api_key');
 
@@ -63,8 +63,9 @@ export const useGraphData = () => {
         setRealNodes(parsedNodes);
         setRealConnections(parsedConnections);
         
-        // If we have real data and no current data set, use real data
-        if (parsedNodes.length > 0 && nodes.length === 0) {
+        // If we have real data, use it by default
+        if (parsedNodes.length > 0) {
+          console.log('📱 Loading real data from localStorage on refresh');
           setNodes(parsedNodes);
           setConnections(parsedConnections);
           setUsingRealData(true);
@@ -73,6 +74,7 @@ export const useGraphData = () => {
         console.error('Error parsing stored real data:', error);
       }
     }
+    setDataInitialized(true);
   }, []);
 
   // Sync data from Notion via Edge Function
@@ -165,12 +167,17 @@ export const useGraphData = () => {
     }
   }, [user]);
 
-  // Fetch data on mount and when user changes
+  // Fetch data on mount and when user changes - only if data not already initialized
   useEffect(() => {
+    if (!dataInitialized) return;
+
     if (!user) {
       console.log('ℹ️ No user, using sample data');
-      setNodes(sampleNodes);
-      setConnections(sampleConnections);
+      if (nodes.length === 0) {
+        setNodes(sampleNodes);
+        setConnections(sampleConnections);
+        setUsingRealData(false);
+      }
       setIsLoading(false);
       return;
     }
@@ -182,15 +189,15 @@ export const useGraphData = () => {
     } else {
       console.log('🔌 User logged in, checking for stored data');
       
-      // Check if we have real data, otherwise use sample data
-      if (realNodes.length === 0) {
+      // Only set sample data if we don't have any data at all
+      if (nodes.length === 0 && realNodes.length === 0) {
         setNodes(sampleNodes);
         setConnections(sampleConnections);
         setUsingRealData(false);
       }
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, dataInitialized]);
 
   const fetchPublicGraph = async (publicId: string) => {
     setIsLoading(true);
