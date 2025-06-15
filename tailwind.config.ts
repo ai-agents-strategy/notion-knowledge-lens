@@ -57,19 +57,12 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				// Notion simplified colors
-				notion: {
-					black: '#37352F',
-					white: '#FFFFFF',
-					blue: '#2383E2',
-					gray: {
-						50: '#F7F6F3',
-						100: '#F1F0EC',
-						200: '#E9E9E7',
-						300: '#A8A6A1',
-						400: '#787774',
-						500: '#49483E'
-					}
+				chart: {
+					'1': 'hsl(var(--chart-1))',
+					'2': 'hsl(var(--chart-2))',
+					'3': 'hsl(var(--chart-3))',
+					'4': 'hsl(var(--chart-4))',
+					'5': 'hsl(var(--chart-5))'
 				}
 			},
 			borderRadius: {

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Settings, RefreshCw, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -46,17 +45,17 @@ export const GraphHeader = ({
     <div className="relative z-10 p-6">
       <div className="flex justify-between items-start mb-8">
         <div className="text-center flex-1">
-          <h1 className="text-4xl font-bold text-notion-black mb-2 bg-gradient-to-r from-notion-blue to-notion-blue bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-foreground mb-2 bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">
             SEO Knowledge Graph
           </h1>
-          <p className="text-notion-gray-600 text-lg">
+          <p className="text-muted-foreground text-lg">
             Visualize semantic relationships between pages and content
           </p>
           <div className="flex items-center justify-center gap-2 mt-4">
-            <span className="text-sm text-notion-gray-500">
+            <span className="text-sm text-muted-foreground">
               {usingRealData ? "Real Notion Pages" : "Sample SEO Data"}
             </span>
-            <div className={`w-2 h-2 rounded-full ${usingRealData ? "bg-notion-green" : "bg-notion-blue"}`} />
+            <div className={`w-2 h-2 rounded-full ${usingRealData ? "bg-green-500" : "bg-primary"}`} />
           </div>
         </div>
         <div className="flex gap-2 items-center">
@@ -65,7 +64,7 @@ export const GraphHeader = ({
             disabled={isSyncing || !isSignedIn || authIsLoading || !hasAccess}
             variant="outline"
             size="sm"
-            className="bg-notion-green/10 border-notion-green text-notion-green hover:bg-notion-green/20 disabled:opacity-50"
+            className="border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 disabled:opacity-50"
             title={!hasAccess ? "Sign up for free trial to use Notion sync" : ""}
           >
             {isSyncing ? (
@@ -85,7 +84,7 @@ export const GraphHeader = ({
               onClick={onToggleDataSource}
               variant="outline"
               size="sm"
-              className="bg-notion-blue/10 border-notion-blue text-notion-blue hover:bg-notion-blue/20"
+              className="border-primary text-primary hover:bg-primary/10"
               disabled={!isSignedIn || authIsLoading}
             >
               {isRealData ? "Show Sample" : "Show Real Data"}
@@ -103,7 +102,6 @@ export const GraphHeader = ({
           <Button 
             variant="outline" 
             size="sm" 
-            className="bg-notion-gray-100 border-notion-gray-300 text-notion-black hover:bg-notion-gray-200"
             onClick={() => navigate('/settings')}
             disabled={!isSignedIn || authIsLoading}
           >
@@ -112,14 +110,14 @@ export const GraphHeader = ({
           </Button>
 
           {authIsLoading ? (
-            <div className="w-8 h-8 bg-notion-gray-200 rounded-full animate-pulse" />
+            <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
           ) : isSignedIn ? (
             <UserButton afterSignOutUrl="/" />
           ) : (
             <Button
               variant="outline"
               size="sm"
-              className="bg-notion-blue/10 border-notion-blue text-notion-blue hover:bg-notion-blue/20"
+              className="border-primary text-primary hover:bg-primary/10"
               onClick={handleAuthAction}
             >
               <LogIn className="w-4 h-4 mr-2" />
