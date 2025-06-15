@@ -26,13 +26,16 @@ const Settings = () => {
   useEffect(() => {
     if (integrationsLoading) return;
     
-    const notionIntegration = getIntegration('notion');
-    if (notionIntegration && notionIntegration.api_key) {
-      setNotionApiKey(notionIntegration.api_key);
+    // Load API key from localStorage
+    const storedApiKey = localStorage.getItem('notion_api_key');
+    if (storedApiKey) {
+      setNotionApiKey(storedApiKey);
     } else {
       setNotionApiKey('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');
     }
 
+    // Load database ID from integration or localStorage
+    const notionIntegration = getIntegration('notion');
     if (notionIntegration?.database_id) {
       setDatabaseId(notionIntegration.database_id);
       localStorage.setItem('notion_database_id', notionIntegration.database_id);
@@ -164,6 +167,7 @@ const Settings = () => {
       await deleteIntegration('notion');
 
       // Clear localStorage data
+      localStorage.removeItem('notion_api_key');
       localStorage.removeItem('notion_database_id');
       localStorage.removeItem('notion_synced_databases');
       localStorage.removeItem('notion_last_sync');
@@ -236,7 +240,8 @@ const Settings = () => {
                   Notion Integration
                 </CardTitle>
                 <CardDescription>
-                  Connect your Notion workspace to visualize your actual database relationships
+                  Connect your Notion workspace to visualize your actual database relationships.
+                  Your API key is stored securely in your browser's local storage.
                 </CardDescription>
               </CardHeader>
               
@@ -251,7 +256,7 @@ const Settings = () => {
                     onChange={(e) => setNotionApiKey(e.target.value)}
                   />
                   <p className="text-xs text-gray-500">
-                    Your API key is stored securely in your personal account
+                    Your API key is stored securely in your browser's local storage (not on our servers)
                   </p>
                 </div>
 

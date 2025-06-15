@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +8,7 @@ interface Integration {
   id: string;
   user_id: string;
   integration_type: string;
-  api_key: string;
+  api_key: string; // This will now come from localStorage
   database_id: string | null;
   created_at: string;
   updated_at: string;
@@ -28,9 +29,10 @@ export const useIntegrations = () => {
     console.log('🚀 Triggering fetch integrations for user:', user.id);
 
     try {
+      // Fetch integration metadata from database (without API keys)
       const { data, error } = await supabase
         .from('integrations')
-        .select('*')
+        .select('id, user_id, integration_type, database_id, created_at, updated_at')
         .eq('user_id', user.id);
 
       if (error) {
@@ -43,8 +45,14 @@ export const useIntegrations = () => {
         return;
       }
 
-      console.log('✅ Fetched integrations:', data);
-      setIntegrations(data || []);
+      // Merge database data with localStorage API keys
+      const integrationsWithKeys = (data || []).map(integration => ({
+        ...integration,
+        api_key: localStorage.getItem(`${integration.integration_type}_api_key`) || ''
+      }));
+
+      console.log('✅ Fetched integrations:', integrationsWithKeys);
+      setIntegrations(integrationsWithKeys);
     } catch (error) {
       console.error('❌ Unexpected error in fetchIntegrations:', error);
       toast({
@@ -83,12 +91,14 @@ export const useIntegrations = () => {
     try {
       const existingIntegration = getIntegration(type);
       
+      // Save API key to localStorage
+      localStorage.setItem(`${type}_api_key`, apiKey);
+      
       if (existingIntegration) {
-        // Update existing integration
+        // Update existing integration metadata in database (without API key)
         const { data, error } = await supabase
           .from('integrations')
           .update({
-            api_key: apiKey,
             database_id: databaseId || null,
             updated_at: new Date().toISOString()
           })
@@ -109,17 +119,18 @@ export const useIntegrations = () => {
         console.log('✅ Integration updated successfully');
         setIntegrations(prev => 
           prev.map(integration => 
-            integration.id === existingIntegration.id ? data : integration
+            integration.id === existingIntegration.id 
+              ? { ...data, api_key: apiKey } 
+              : integration
           )
         );
       } else {
-        // Create new integration
+        // Create new integration metadata in database (without API key)
         const { data, error } = await supabase
           .from('integrations')
           .insert([{
             user_id: user.id,
             integration_type: type,
-            api_key: apiKey,
             database_id: databaseId || null
           }])
           .select()
@@ -136,7 +147,7 @@ export const useIntegrations = () => {
         }
 
         console.log('✅ Integration created successfully');
-        setIntegrations(prev => [...prev, data]);
+        setIntegrations(prev => [...prev, { ...data, api_key: apiKey }]);
       }
 
       toast({
@@ -165,6 +176,7 @@ export const useIntegrations = () => {
     console.log('🗑️ Deleting integration:', integration.id);
 
     try {
+      // Remove from database
       const { error } = await supabase
         .from('integrations')
         .delete()
@@ -179,6 +191,9 @@ export const useIntegrations = () => {
         });
         return false;
       }
+
+      // Remove API key from localStorage
+      localStorage.removeItem(`${type}_api_key`);
 
       console.log('✅ Integration deleted successfully');
       setIntegrations(prev => prev.filter(i => i.id !== integration.id));
