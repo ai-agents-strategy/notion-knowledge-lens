@@ -1,8 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { LogIn } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useUser, UserButton } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { ShareGraph } from './ShareGraph';
 
@@ -32,10 +30,6 @@ export const GraphHeader = ({
   const {
     subscription
   } = useSubscriptions();
-  const navigate = useNavigate();
-  const handleAuthAction = () => {
-    navigate('/auth/sign-in');
-  };
   const authIsLoading = !isLoaded;
 
   // Allow access for any subscription (including free trial)
@@ -66,22 +60,6 @@ export const GraphHeader = ({
               onGenerateLink={onGenerateLink} 
               onRevokeLink={onRevokeLink} 
             />
-          )}
-
-          {authIsLoading ? (
-            <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
-          ) : isSignedIn ? (
-            <UserButton afterSignOutUrl="/" />
-          ) : (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-primary text-primary hover:bg-primary/10" 
-              onClick={handleAuthAction}
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Login / Sign Up
-            </Button>
           )}
         </div>
       </div>

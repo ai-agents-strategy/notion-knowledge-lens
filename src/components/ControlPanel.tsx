@@ -1,11 +1,13 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { RefreshCw, Settings } from "lucide-react";
-import { useUser, OrganizationSwitcher } from "@clerk/clerk-react";
+import { RefreshCw, Settings, LogIn } from "lucide-react";
+import { useUser, OrganizationSwitcher, UserButton } from "@clerk/clerk-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useNavigate } from "react-router-dom";
+
 interface ControlPanelProps {
   showConnectionLabels: boolean;
   onShowLabelsChange: (show: boolean) => void;
@@ -18,6 +20,7 @@ interface ControlPanelProps {
   onSync: () => void;
   usingRealData: boolean;
 }
+
 export const ControlPanel = ({
   showConnectionLabels,
   onShowLabelsChange,
@@ -40,6 +43,11 @@ export const ControlPanel = ({
   const navigate = useNavigate();
   const authIsLoading = !isLoaded;
   const hasAccess = subscription && subscription.plan;
+
+  const handleAuthAction = () => {
+    navigate('/auth/sign-in');
+  };
+
   return <div className="flex flex-col h-full">
       <Card className="border-0 shadow-none bg-transparent flex-1">
         <CardHeader className="px-0">
@@ -50,6 +58,29 @@ export const ControlPanel = ({
         </CardHeader>
         
         <CardContent className="space-y-6 px-0">
+          {/* Authentication Section */}
+          <div className="space-y-3">
+            {authIsLoading ? (
+              <div className="w-full h-8 bg-muted rounded animate-pulse" />
+            ) : isSignedIn ? (
+              <div className="flex justify-center">
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full border-primary text-primary hover:bg-primary/10" 
+                onClick={handleAuthAction}
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Login / Sign Up
+              </Button>
+            )}
+          </div>
+
+          <Separator />
+
           {/* Sync Button */}
           <div className="space-y-3">
             <Button onClick={onSync} disabled={isSyncing || !isSignedIn || authIsLoading || !hasAccess} variant="outline" size="sm" className="w-full border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 disabled:opacity-50" title={!hasAccess ? "Sign up for free trial to use Notion sync" : ""}>
