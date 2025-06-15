@@ -44,7 +44,7 @@ export const ControlPanel = ({
     subscription
   } = useSubscriptions();
   const navigate = useNavigate();
-  const hasAccess = subscription && subscription.plan;
+  const hasNotionApiKey = !!localStorage.getItem('notion_api_key');
 
   return (
     <div className="flex flex-col h-full">
@@ -59,7 +59,14 @@ export const ControlPanel = ({
         <CardContent className="space-y-6 px-0">
           {/* Sync Button */}
           <div className="space-y-3">
-            <Button onClick={onSync} disabled={isSyncing || !isSignedIn || authIsLoading || !hasAccess} variant="outline" size="sm" className="w-full border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 disabled:opacity-50" title={!hasAccess ? "Sign up for free trial to use Notion sync" : ""}>
+            <Button 
+              onClick={onSync} 
+              disabled={isSyncing || !isSignedIn || authIsLoading || !hasNotionApiKey} 
+              variant="outline" 
+              size="sm" 
+              className="w-full border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 disabled:opacity-50" 
+              title={!hasNotionApiKey ? "Configure your Notion API key in Settings first" : ""}
+            >
               {isSyncing ? <>
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   Syncing...
