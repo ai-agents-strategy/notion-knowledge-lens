@@ -14,7 +14,6 @@ import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { SubscriptionGate } from "@/components/SubscriptionGate";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { SettingsHeader } from "@/components/SettingsHeader";
-import { SettingsNavigation } from "@/components/SettingsNavigation";
 
 const Settings = () => {
   const {
@@ -211,7 +210,27 @@ const Settings = () => {
         {/* Sidebar */}
         <Sidebar side="left" className="border-r">
           <SidebarContent className="p-6 bg-slate-50">
-            <SettingsNavigation />
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-slate-700">Settings Navigation</h2>
+              <div className="space-y-2">
+                <Link to="/settings" className="block">
+                  <Button variant="default" size="sm" className="w-full justify-start">
+                    <Key className="w-4 h-4 mr-2" />
+                    Integrations
+                  </Button>
+                </Link>
+                <Link to="/plan" className="block">
+                  <Button variant="outline" size="sm" className="w-full justify-start">
+                    Plan
+                  </Button>
+                </Link>
+                <Link to="/organization" className="block">
+                  <Button variant="outline" size="sm" className="w-full justify-start">
+                    Organization
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </SidebarContent>
         </Sidebar>
 

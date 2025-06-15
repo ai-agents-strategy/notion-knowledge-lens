@@ -10,7 +10,6 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Plan from "./pages/Plan";
 import Organization from "./pages/Organization";
-import Onboarding from "./pages/Onboarding";
 import PublicGraph from "./pages/PublicGraph";
 import { SignIn, SignUp, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { useEffect } from "react";
@@ -53,11 +52,10 @@ const App = () => (
           path="/auth/sign-up"
           element={
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
-              <SignUp path="/auth/sign-up" routing="path" signInUrl="/auth/sign-in" fallbackRedirectUrl="/onboarding" />
+              <SignUp path="/auth/sign-up" routing="path" signInUrl="/auth/sign-in" fallbackRedirectUrl="/" />
             </div>
           }
         />
-        <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route
           path="/settings"

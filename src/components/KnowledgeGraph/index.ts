@@ -1,2 +1,2 @@
 
-export { default as KnowledgeGraph } from './KnowledgeGraph';
+export { KnowledgeGraph } from './KnowledgeGraph';

@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { KnowledgeGraph } from '@/components/KnowledgeGraph';
 import { DatabaseNode, DatabaseConnection } from '@/types/graph';
-import { transformGraphData } from '@/utils/graphTransforms';
 import { Loader2, ServerCrash } from 'lucide-react';
 
 const fetchPublicGraph = async (publicId: string) => {
@@ -32,9 +31,6 @@ const PublicGraph = () => {
     retry: 1,
   });
 
-  // Transform the data if it exists
-  const transformedData = data ? transformGraphData(data.nodes, data.connections) : null;
-
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 relative overflow-hidden">
       <div className="absolute top-4 left-4 z-20 text-black dark:text-white bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-2 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -58,11 +54,8 @@ const PublicGraph = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400">{error instanceof Error ? error.message : 'Unknown error'}</p>
           </div>
         )}
-        {transformedData && (
-          <KnowledgeGraph 
-            nodes={transformedData.graphNodes} 
-            links={transformedData.graphLinks}
-          />
+        {data && (
+          <KnowledgeGraph nodes={data.nodes} connections={data.connections} showConnectionLabels={true} />
         )}
       </div>
     </div>
