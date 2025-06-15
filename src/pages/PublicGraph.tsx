@@ -1,10 +1,10 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { KnowledgeGraph } from '@/components/KnowledgeGraph';
 import { DatabaseNode, DatabaseConnection } from '@/types/graph';
 import { Loader2, ServerCrash } from 'lucide-react';
+import { categoryColors, connectionColors } from '@/components/KnowledgeGraph/graphConfig';
 
 const fetchPublicGraph = async (publicId: string) => {
   const { data, error } = await supabase.functions.invoke('get-public-graph', {
@@ -55,7 +55,13 @@ const PublicGraph = () => {
           </div>
         )}
         {data && (
-          <KnowledgeGraph nodes={data.nodes} connections={data.connections} showConnectionLabels={true} />
+          <KnowledgeGraph 
+            nodes={data.nodes} 
+            connections={data.connections} 
+            showConnectionLabels={true}
+            categoryColors={categoryColors}
+            connectionColors={connectionColors}
+          />
         )}
       </div>
     </div>
