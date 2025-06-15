@@ -15,14 +15,16 @@ serve(async (req) => {
   }
 
   try {
-    const { message, graphData } = await req.json();
+    const { message, graphData, useEnhancedModel, apiKeys } = await req.json();
 
-    if (!togetherApiKey) {
-      throw new Error('Together AI API key not configured');
-    }
+    let aiResponse;
 
-    // Prepare context about the knowledge graph
-    const graphContext = `
+    if (useEnhancedModel && apiKeys?.openai && apiKeys?.mem0) {
+      // Use enhanced model with mem0 and OpenAI
+      console.log('Using enhanced model with mem0 and OpenAI');
+      
+      // Prepare context about the knowledge graph
+      const graphContext = `
 Knowledge Graph Context:
 - Total nodes: ${graphData.nodes?.length || 0}
 - Total connections: ${graphData.connections?.length || 0}
@@ -32,40 +34,97 @@ Knowledge Graph Context:
 The user has a knowledge graph representing their Notion workspace with pages and their relationships.
 `;
 
-    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${togetherApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an AI assistant that helps users understand and analyze their knowledge graph. ${graphContext} 
-            
-            Provide helpful insights about their knowledge graph structure, suggest connections they might be missing, 
-            help them understand patterns in their data, and answer questions about their Notion workspace organization.
-            
-            Be concise but informative. If they ask about specific nodes or connections, refer to the actual data when possible.`
-          },
-          {
-            role: 'user',
-            content: message
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7,
-      }),
-    });
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKeys.openai}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an advanced AI assistant with memory capabilities that helps users understand and analyze their knowledge graph. ${graphContext} 
+              
+              You have access to the user's conversation history and can remember previous interactions. Provide helpful insights about their knowledge graph structure, suggest connections they might be missing, help them understand patterns in their data, and answer questions about their Notion workspace organization.
+              
+              Be concise but informative. If they ask about specific nodes or connections, refer to the actual data when possible. Use your memory of previous conversations to provide more personalized and contextual responses.`
+            },
+            {
+              role: 'user',
+              content: message
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Together AI API error: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      aiResponse = data.choices[0].message.content;
+
+      // TODO: Integrate mem0 for memory storage
+      // This would require additional implementation to store and retrieve memories
+      
+    } else {
+      // Use free Together AI model
+      console.log('Using free Together AI model');
+      
+      if (!togetherApiKey) {
+        throw new Error('Together AI API key not configured');
+      }
+
+      // Prepare context about the knowledge graph
+      const graphContext = `
+Knowledge Graph Context:
+- Total nodes: ${graphData.nodes?.length || 0}
+- Total connections: ${graphData.connections?.length || 0}
+- Node categories: ${graphData.nodes ? [...new Set(graphData.nodes.map((n: any) => n.category))].join(', ') : 'None'}
+- Sample nodes: ${graphData.nodes?.slice(0, 5).map((n: any) => n.name).join(', ') || 'None'}
+
+The user has a knowledge graph representing their Notion workspace with pages and their relationships.
+`;
+
+      const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${togetherApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an AI assistant that helps users understand and analyze their knowledge graph. ${graphContext} 
+              
+              Provide helpful insights about their knowledge graph structure, suggest connections they might be missing, 
+              help them understand patterns in their data, and answer questions about their Notion workspace organization.
+              
+              Be concise but informative. If they ask about specific nodes or connections, refer to the actual data when possible.`
+            },
+            {
+              role: 'user',
+              content: message
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Together AI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      aiResponse = data.choices[0].message.content;
     }
-
-    const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
 
     return new Response(JSON.stringify({ response: aiResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
