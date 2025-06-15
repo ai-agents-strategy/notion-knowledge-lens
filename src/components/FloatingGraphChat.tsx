@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { Loader2, Send, MessageCircle, Minimize2, Maximize2, X, Bot } from "luci
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
+import { convertMarkdownToHtml } from "@/utils/markdownToHtml";
 
 interface Message {
   id: string;
@@ -188,7 +188,12 @@ export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps
                         : 'bg-gray-100 text-gray-900'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <div 
+                      className="text-sm prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ 
+                        __html: convertMarkdownToHtml(message.content) 
+                      }}
+                    />
                     <p className="text-xs opacity-70 mt-1">
                       {message.timestamp.toLocaleTimeString()}
                     </p>
