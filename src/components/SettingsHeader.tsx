@@ -1,24 +1,26 @@
-
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-
 interface SettingsHeaderProps {
   title: string;
   description: string;
 }
-
-export const SettingsHeader = ({ title, description }: SettingsHeaderProps) => {
+export const SettingsHeader = ({
+  title,
+  description
+}: SettingsHeaderProps) => {
   const location = useLocation();
-
-  const navigationItems = [
-    { path: '/settings', label: 'Integrations' },
-    { path: '/plan', label: 'Plan' },
-    { path: '/organization', label: 'Organization' },
-  ];
-
-  return (
-    <div className="relative z-10 p-6">
+  const navigationItems = [{
+    path: '/settings',
+    label: 'Integrations'
+  }, {
+    path: '/plan',
+    label: 'Plan'
+  }, {
+    path: '/organization',
+    label: 'Organization'
+  }];
+  return <div className="relative z-10 p-6">
       <div className="flex items-center gap-4 mb-8">
         <Link to="/">
           <Button variant="outline" size="sm" className="bg-white border-gray-300 text-black hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700">
@@ -38,22 +40,9 @@ export const SettingsHeader = ({ title, description }: SettingsHeaderProps) => {
 
       {/* Navigation Tabs */}
       <div className="flex gap-2 mb-6">
-        {navigationItems.map((item) => (
-          <Link key={item.path} to={item.path}>
-            <Button
-              variant={location.pathname === item.path ? "default" : "outline"}
-              size="sm"
-              className={
-                location.pathname === item.path
-                  ? "bg-notion-blue hover:bg-blue-700 text-white"
-                  : "bg-white border-gray-300 text-black hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
-              }
-            >
-              {item.label}
-            </Button>
-          </Link>
-        ))}
+        {navigationItems.map(item => <Link key={item.path} to={item.path}>
+            
+          </Link>)}
       </div>
-    </div>
-  );
+    </div>;
 };
