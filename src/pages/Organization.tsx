@@ -1,14 +1,14 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Users, Mail, Phone, MapPin, Save, Crown, Key } from "lucide-react";
+import { Building2, Users, Mail, Phone, MapPin, Save } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 import { toast } from "@/hooks/use-toast";
 import { SettingsHeader } from "@/components/SettingsHeader";
+import { SettingsNavigation } from "@/components/SettingsNavigation";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
 
@@ -61,29 +61,7 @@ const Organization = () => {
         {/* Sidebar */}
         <Sidebar side="left" className="border-r">
           <SidebarContent className="p-6 bg-slate-50">
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-slate-700">Settings Navigation</h2>
-              <div className="space-y-2">
-                <Link to="/settings" className="block">
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    <Key className="w-4 h-4 mr-2" />
-                    Integrations
-                  </Button>
-                </Link>
-                <Link to="/plan" className="block">
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    <Crown className="w-4 h-4 mr-2" />
-                    Plan
-                  </Button>
-                </Link>
-                <Link to="/organization" className="block">
-                  <Button variant="default" size="sm" className="w-full justify-start">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Organization
-                  </Button>
-                </Link>
-              </div>
-            </div>
+            <SettingsNavigation />
           </SidebarContent>
         </Sidebar>
 
