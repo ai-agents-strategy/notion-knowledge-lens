@@ -15,7 +15,7 @@ const Settings = () => {
   const { user } = useUser();
   const { getIntegration, saveIntegration, deleteIntegration, loading: integrationsLoading } = useIntegrations();
   const [notionApiKey, setNotionApiKey] = useState('');
-  const [databaseId, setDatabaseId] = useState(localStorage.getItem('notion_database_id') || '');
+  const [databaseId, setDatabaseId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -34,13 +34,12 @@ const Settings = () => {
       setNotionApiKey('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');
     }
 
-    // Load database ID from integration or localStorage
-    const notionIntegration = getIntegration('notion');
-    if (notionIntegration?.database_id) {
-      setDatabaseId(notionIntegration.database_id);
-      localStorage.setItem('notion_database_id', notionIntegration.database_id);
+    // Load database ID from localStorage
+    const storedDatabaseId = localStorage.getItem('notion_database_id');
+    if (storedDatabaseId) {
+      setDatabaseId(storedDatabaseId);
     }
-  }, [getIntegration, integrationsLoading]);
+  }, [integrationsLoading]);
 
   const handleSave = async () => {
     if (!user) {
@@ -64,18 +63,12 @@ const Settings = () => {
     try {
       console.log('💾 Attempting to save integration settings...');
 
-      // Save API key and database ID to integrations table
+      // Save API key and database ID to localStorage via integrations hook
       const success = await saveIntegration('notion', notionApiKey.trim(), databaseId.trim() || undefined);
       if (!success) {
         throw new Error('Failed to save integration to database');
       }
 
-      // Save database ID to localStorage (non-sensitive)
-      if (databaseId.trim()) {
-        localStorage.setItem('notion_database_id', databaseId.trim());
-      } else {
-        localStorage.removeItem('notion_database_id');
-      }
       console.log('✅ Settings saved successfully');
       toast({
         title: "Settings saved!",
@@ -94,6 +87,7 @@ const Settings = () => {
       setIsLoading(false);
     }
   };
+
   const handleSync = async () => {
     if (!user) {
       toast({
@@ -161,14 +155,13 @@ const Settings = () => {
       setIsSyncing(false);
     }
   };
+
   const handleClear = async () => {
     try {
       // Clear integrations data
       await deleteIntegration('notion');
 
-      // Clear localStorage data
-      localStorage.removeItem('notion_api_key');
-      localStorage.removeItem('notion_database_id');
+      // Clear localStorage data (this is now handled by deleteIntegration)
       localStorage.removeItem('notion_synced_databases');
       localStorage.removeItem('notion_last_sync');
       localStorage.removeItem('notion_graph_nodes');

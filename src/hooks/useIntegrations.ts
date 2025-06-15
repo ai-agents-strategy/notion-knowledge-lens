@@ -8,8 +8,8 @@ interface Integration {
   id: string;
   user_id: string;
   integration_type: string;
-  api_key: string; // This will now come from localStorage
-  database_id: string | null;
+  api_key: string; // This comes from localStorage
+  database_id: string | null; // This will now come from localStorage
   created_at: string;
   updated_at: string;
 }
@@ -29,10 +29,10 @@ export const useIntegrations = () => {
     console.log('🚀 Triggering fetch integrations for user:', user.id);
 
     try {
-      // Fetch integration metadata from database (without API keys)
+      // Fetch integration metadata from database (without API keys or database IDs)
       const { data, error } = await supabase
         .from('integrations')
-        .select('id, user_id, integration_type, database_id, created_at, updated_at')
+        .select('id, user_id, integration_type, created_at, updated_at')
         .eq('user_id', user.id);
 
       if (error) {
@@ -45,10 +45,11 @@ export const useIntegrations = () => {
         return;
       }
 
-      // Merge database data with localStorage API keys
+      // Merge database data with localStorage API keys and database IDs
       const integrationsWithKeys = (data || []).map(integration => ({
         ...integration,
-        api_key: localStorage.getItem(`${integration.integration_type}_api_key`) || ''
+        api_key: localStorage.getItem(`${integration.integration_type}_api_key`) || '',
+        database_id: localStorage.getItem(`${integration.integration_type}_database_id`) || null
       }));
 
       console.log('✅ Fetched integrations:', integrationsWithKeys);
@@ -91,15 +92,19 @@ export const useIntegrations = () => {
     try {
       const existingIntegration = getIntegration(type);
       
-      // Save API key to localStorage
+      // Save API key and database ID to localStorage
       localStorage.setItem(`${type}_api_key`, apiKey);
+      if (databaseId) {
+        localStorage.setItem(`${type}_database_id`, databaseId);
+      } else {
+        localStorage.removeItem(`${type}_database_id`);
+      }
       
       if (existingIntegration) {
-        // Update existing integration metadata in database (without API key)
+        // Update existing integration metadata in database (only timestamp)
         const { data, error } = await supabase
           .from('integrations')
           .update({
-            database_id: databaseId || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingIntegration.id)
@@ -120,17 +125,15 @@ export const useIntegrations = () => {
         setIntegrations(prev => 
           prev.map(integration => 
             integration.id === existingIntegration.id 
-              ? { ...data, api_key: apiKey } 
+              ? { ...data, api_key: apiKey, database_id: databaseId || null } 
               : integration
           )
         );
       } else {
-        // Create new integration metadata in database (without API key)
-        // Using type assertion to work around TypeScript type mismatch
+        // Create new integration metadata in database (without API key or database ID)
         const insertData = {
           user_id: user.id,
-          integration_type: type,
-          database_id: databaseId || null
+          integration_type: type
         } as any;
 
         const { data, error } = await supabase
@@ -150,7 +153,7 @@ export const useIntegrations = () => {
         }
 
         console.log('✅ Integration created successfully');
-        setIntegrations(prev => [...prev, { ...data, api_key: apiKey }]);
+        setIntegrations(prev => [...prev, { ...data, api_key: apiKey, database_id: databaseId || null }]);
       }
 
       toast({
@@ -195,8 +198,9 @@ export const useIntegrations = () => {
         return false;
       }
 
-      // Remove API key from localStorage
+      // Remove API key and database ID from localStorage
       localStorage.removeItem(`${type}_api_key`);
+      localStorage.removeItem(`${type}_database_id`);
 
       console.log('✅ Integration deleted successfully');
       setIntegrations(prev => prev.filter(i => i.id !== integration.id));
