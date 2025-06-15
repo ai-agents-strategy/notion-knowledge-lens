@@ -40,8 +40,6 @@ const Index = () => {
       
       <GraphHeader
         usingRealData={usingRealData}
-        isSyncing={isSyncing}
-        onSync={handleSync}
         realDataExists={realNodes.length > 0}
         onToggleDataSource={toggleDataSource}
         isRealData={isRealData}
@@ -58,6 +56,8 @@ const Index = () => {
         nodeCount={filteredNodes.length}
         connectionCount={eligibleConnections.length}
         isolatedNodeCount={isolatedNodeCount}
+        isSyncing={isSyncing}
+        onSync={handleSync}
         graphNodes={filteredNodes}
         graphConnections={finalFilteredConnections}
         graphShowConnectionLabels={showConnectionLabels}

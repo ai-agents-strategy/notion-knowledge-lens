@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Settings, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser, UserButton } from "@clerk/clerk-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
@@ -75,16 +75,6 @@ export const GraphHeader = ({
               onRevokeLink={onRevokeLink}
             />
           )}
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate('/settings')}
-            disabled={!isSignedIn || authIsLoading}
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
 
           {authIsLoading ? (
             <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />

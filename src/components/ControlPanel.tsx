@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Settings } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useNavigate } from "react-router-dom";
 
 interface ControlPanelProps {
   showConnectionLabels: boolean;
@@ -32,6 +33,7 @@ export const ControlPanel = ({
 }: ControlPanelProps) => {
   const { isSignedIn, isLoaded } = useUser();
   const { subscription } = useSubscriptions();
+  const navigate = useNavigate();
   
   const authIsLoading = !isLoaded;
   const hasAccess = subscription && subscription.plan;
@@ -69,6 +71,22 @@ export const ControlPanel = ({
                 Sync Notion
               </>
             )}
+          </Button>
+        </div>
+
+        <Separator />
+
+        {/* Settings Button */}
+        <div className="space-y-3">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/settings')}
+            disabled={!isSignedIn || authIsLoading}
+            className="w-full"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Settings
           </Button>
         </div>
 
