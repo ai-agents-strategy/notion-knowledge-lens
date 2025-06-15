@@ -5,6 +5,21 @@ import { GraphControls } from './GraphControls';
 import { HoveredNodeDetails } from './HoveredNodeDetails';
 import { useFullscreen } from 'usehooks-ts';
 
+// Define extended types for D3 simulation
+interface GraphNode extends DatabaseNode {
+  x?: number;
+  y?: number;
+  vx?: number;
+  vy?: number;
+  fx?: number | null;
+  fy?: number | null;
+}
+
+interface GraphConnection extends DatabaseConnection {
+  source: string | GraphNode;
+  target: string | GraphNode;
+}
+
 interface KnowledgeGraphProps {
   nodes: DatabaseNode[];
   connections: DatabaseConnection[];
@@ -13,10 +28,10 @@ interface KnowledgeGraphProps {
 
 export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connections, showConnectionLabels }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [simulation, setSimulation] = useState<d3.Simulation<DatabaseNode, undefined> | null>(null);
-  const [graphNodes, setGraphNodes] = useState<DatabaseNode[]>(nodes);
-  const [graphConnections, setGraphConnections] = useState<DatabaseConnection[]>(connections);
-  const [hoveredNode, setHoveredNode] = useState<DatabaseNode | null>(null);
+  const [simulation, setSimulation] = useState<d3.Simulation<GraphNode, undefined> | null>(null);
+  const [graphNodes, setGraphNodes] = useState<GraphNode[]>(nodes);
+  const [graphConnections, setGraphConnections] = useState<GraphConnection[]>(connections);
+  const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const { isFullscreen, toggleFullscreen } = useFullscreen(document.documentElement);
 
   // Define color scales for node categories and connection types
@@ -55,8 +70,8 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
     const width = svgRef.current.clientWidth;
     const height = svgRef.current.clientHeight;
 
-    const forceSimulation = d3.forceSimulation<DatabaseNode, undefined>()
-      .force("link", d3.forceLink<DatabaseNode, DatabaseConnection>().id(d => d.id).distance(120))
+    const forceSimulation = d3.forceSimulation<GraphNode, undefined>()
+      .force("link", d3.forceLink<GraphNode, GraphConnection>().id(d => d.id).distance(120))
       .force("charge", d3.forceManyBody().strength(-200))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collide", d3.forceCollide().radius(d => (d.size || 10) + 10).iterations(2))
@@ -75,7 +90,7 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
     if (!simulation) return;
 
     simulation.nodes(graphNodes);
-    simulation.force<d3.ForceLink<DatabaseNode, DatabaseConnection>>("link")
+    simulation.force<d3.ForceLink<GraphNode, GraphConnection>>("link")
       ?.links(graphConnections);
 
     simulation.alpha(1).restart();
@@ -86,18 +101,18 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
   const drag = useCallback(() => {
     if (!simulation) return {};
 
-    const dragstarted = (event: d3.D3DragEvent<SVGCircleElement, DatabaseNode, any>, d: DatabaseNode) => {
+    const dragstarted = (event: d3.D3DragEvent<SVGCircleElement, GraphNode, any>, d: GraphNode) => {
       if (!event.active) simulation.alphaTarget(0.3).restart();
       d.fx = d.x;
       d.fy = d.y;
     };
 
-    const dragged = (event: d3.D3DragEvent<SVGCircleElement, DatabaseNode, any>, d: DatabaseNode) => {
+    const dragged = (event: d3.D3DragEvent<SVGCircleElement, GraphNode, any>, d: GraphNode) => {
       d.fx = event.x;
       d.fy = event.y;
     };
 
-    const dragended = (event: d3.D3DragEvent<SVGCircleElement, DatabaseNode, any>, d: DatabaseNode) => {
+    const dragended = (event: d3.D3DragEvent<SVGCircleElement, GraphNode, any>, d: GraphNode) => {
       if (!event.active) simulation.alphaTarget(0);
       d.fx = null;
       d.fy = null;
@@ -110,16 +125,22 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
     if (!svgRef.current || !simulation) return;
 
     const { dragstarted, dragged, dragended } = drag();
+    
+    const getLinkKey = (d: GraphConnection) => {
+        const sourceId = typeof d.source === 'string' ? d.source : d.source.id;
+        const targetId = typeof d.target === 'string' ? d.target : d.target.id;
+        return `${sourceId}-${targetId}`;
+    };
 
     const nodeElements = d3.select(svgRef.current)
-      .selectAll<SVGCircleElement, DatabaseNode>(".node")
-      .data(graphNodes, (d: DatabaseNode) => d.id)
+      .selectAll<SVGCircleElement, GraphNode>(".node")
+      .data(graphNodes, (d: GraphNode) => d.id)
       .join(
         enter => enter.append("circle")
           .attr("class", "node")
           .attr("r", d => d.size || 10)
           .style("fill", d => categoryColors[d.category] || "#ccc")
-          .call(d3.drag<SVGCircleElement, DatabaseNode>()
+          .call(d3.drag<SVGCircleElement, GraphNode>()
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended))
@@ -134,8 +155,8 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
       );
 
     const linkElements = d3.select(svgRef.current)
-      .selectAll<SVGLineElement, DatabaseConnection>(".link")
-      .data(graphConnections, (d: DatabaseConnection) => `${d.source}-${d.target}`)
+      .selectAll<SVGLineElement, GraphConnection>(".link")
+      .data(graphConnections, getLinkKey)
       .join(
         enter => enter.append("line")
           .attr("class", "link")
@@ -147,8 +168,8 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
       );
 
     const labelElements = d3.select(svgRef.current)
-      .selectAll<SVGTextElement, DatabaseConnection>(".link-label")
-      .data(graphConnections, (d: DatabaseConnection) => `${d.source}-${d.target}`)
+      .selectAll<SVGTextElement, GraphConnection>(".link-label")
+      .data(graphConnections, getLinkKey)
       .join(
         enter => enter.append("text")
           .attr("class", "link-label")
@@ -167,14 +188,14 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
         .attr("cy", d => d.y || 0);
 
       linkElements
-        .attr("x1", d => (d.source as DatabaseNode).x || 0)
-        .attr("y1", d => (d.source as DatabaseNode).y || 0)
-        .attr("x2", d => (d.target as DatabaseNode).x || 0)
-        .attr("y2", d => (d.target as DatabaseNode).y || 0);
+        .attr("x1", d => (d.source as GraphNode).x || 0)
+        .attr("y1", d => (d.source as GraphNode).y || 0)
+        .attr("x2", d => (d.target as GraphNode).x || 0)
+        .attr("y2", d => (d.target as GraphNode).y || 0);
 
       labelElements
-        .attr("x", d => ((d.source as DatabaseNode).x || 0 + (d.target as DatabaseNode).x || 0) / 2)
-        .attr("y", d => ((d.source as DatabaseNode).y || 0 + (d.target as DatabaseNode).y || 0) / 2);
+        .attr("x", d => (((d.source as GraphNode).x || 0) + ((d.target as GraphNode).x || 0)) / 2)
+        .attr("y", d => (((d.source as GraphNode).y || 0) + ((d.target as GraphNode).y || 0)) / 2);
     });
 
     return () => {
@@ -217,7 +238,7 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
       />
 
       {hoveredNode && (
-        <HoveredNodeDetails node={hoveredNode} />
+        <HoveredNodeDetails node={hoveredNode} categoryColors={categoryColors} />
       )}
     </div>
   );
