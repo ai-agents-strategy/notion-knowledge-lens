@@ -39,9 +39,14 @@ const Pricing = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-black dark:text-white mb-4">Choose Your Plan</h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
-            Select the perfect plan for your needs
+          <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">
+            Start with our 7-day free trial - no credit card required
           </p>
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 max-w-2xl mx-auto">
+            <p className="text-green-800 dark:text-green-200 font-medium">
+              🎉 Free Trial includes full access to all features for 7 days!
+            </p>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -60,10 +65,10 @@ const Pricing = () => {
         <div className="text-center mt-12">
           <SignedOut>
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 max-w-md mx-auto">
-              <p className="text-black dark:text-white mb-4">Sign in to get started</p>
+              <p className="text-black dark:text-white mb-4">Sign up to start your free trial</p>
               <SignInButton mode="modal">
                 <Button variant="outline" className="bg-white text-black hover:bg-gray-100 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
-                  Sign In
+                  Sign Up for Free Trial
                 </Button>
               </SignInButton>
             </div>

@@ -39,8 +39,8 @@ export const GraphHeader = ({
   
   const authIsLoading = !isLoaded;
   
-  // Check if user has active subscription (not free trial)
-  const hasActiveSubscription = subscription && subscription.plan?.price_cents && subscription.plan.price_cents > 0;
+  // Allow access for any subscription (including free trial)
+  const hasAccess = subscription && subscription.plan;
 
   return (
     <div className="relative z-10 p-6">
@@ -62,11 +62,11 @@ export const GraphHeader = ({
         <div className="flex gap-2 items-center">
           <Button
             onClick={onSync}
-            disabled={isSyncing || !isSignedIn || authIsLoading || !hasActiveSubscription}
+            disabled={isSyncing || !isSignedIn || authIsLoading || !hasAccess}
             variant="outline"
             size="sm"
             className="bg-notion-green/10 border-notion-green text-notion-green hover:bg-notion-green/20 disabled:opacity-50"
-            title={!hasActiveSubscription ? "Upgrade to use Notion sync" : ""}
+            title={!hasAccess ? "Sign up for free trial to use Notion sync" : ""}
           >
             {isSyncing ? (
               <>
@@ -92,7 +92,7 @@ export const GraphHeader = ({
             </Button>
           )}
 
-          {realDataExists && isSignedIn && hasActiveSubscription && (
+          {realDataExists && isSignedIn && hasAccess && (
             <ShareGraph 
               publicId={publicId}
               onGenerateLink={onGenerateLink}

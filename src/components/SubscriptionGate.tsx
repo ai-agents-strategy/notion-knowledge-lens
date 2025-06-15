@@ -23,10 +23,11 @@ export const SubscriptionGate = ({ children, feature, description }: Subscriptio
     );
   }
 
-  // Allow access if user has any active subscription (not free trial)
-  const hasActiveSubscription = subscription && subscription.plan?.price_cents && subscription.plan.price_cents > 0;
+  // Allow access if user has any subscription (including free trial)
+  // Free trial has price_cents = 0, paid plans have price_cents > 0
+  const hasSubscription = subscription && subscription.plan;
 
-  if (!hasActiveSubscription) {
+  if (!hasSubscription) {
     return (
       <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 text-white">
         <CardHeader className="text-center">
@@ -43,12 +44,13 @@ export const SubscriptionGate = ({ children, feature, description }: Subscriptio
         
         <CardContent className="space-y-4 text-center">
           <div className="bg-slate-700/30 rounded-lg p-4">
-            <h4 className="font-semibold text-slate-200 mb-2">What you get with a subscription:</h4>
+            <h4 className="font-semibold text-slate-200 mb-2">Get started with our free trial:</h4>
             <ul className="text-sm text-slate-400 space-y-1">
+              <li>• 7-day free trial - no credit card required</li>
+              <li>• Full access to all features</li>
               <li>• Real-time Notion integration</li>
               <li>• Unlimited knowledge graphs</li>
               <li>• Public sharing capabilities</li>
-              <li>• Priority support</li>
             </ul>
           </div>
           
@@ -56,7 +58,7 @@ export const SubscriptionGate = ({ children, feature, description }: Subscriptio
             <Link to="/pricing">
               <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white">
                 <Crown className="w-4 h-4 mr-2" />
-                Upgrade Now
+                Start Free Trial
               </Button>
             </Link>
             <Link to="/plan">
