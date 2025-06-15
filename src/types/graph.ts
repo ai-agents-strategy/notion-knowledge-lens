@@ -1,4 +1,6 @@
 
+import * as d3 from 'd3';
+
 export interface DatabaseNode {
   id: string;
   name: string;
@@ -18,3 +20,20 @@ export interface DatabaseConnection {
   label?: string;
 }
 
+// Add the missing GraphNode and GraphLink interfaces for D3.js compatibility
+export interface GraphNode extends d3.SimulationNodeDatum {
+  id: string;
+  label: string;
+  type?: string;
+  category?: string;
+  x?: number;
+  y?: number;
+}
+
+export interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
+  source: string | GraphNode;
+  target: string | GraphNode;
+  type?: string;
+  strength?: number;
+  label?: string;
+}
