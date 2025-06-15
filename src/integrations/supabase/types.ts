@@ -11,7 +11,6 @@ export type Database = {
     Tables: {
       graphs: {
         Row: {
-          color_settings: Json | null
           connections: Json | null
           created_at: string
           id: string
@@ -21,7 +20,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          color_settings?: Json | null
           connections?: Json | null
           created_at?: string
           id?: string
@@ -31,7 +29,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          color_settings?: Json | null
           connections?: Json | null
           created_at?: string
           id?: string

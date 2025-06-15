@@ -45,8 +45,30 @@ export const useGraphData = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [publicId, setPublicId] = useState<string | null>(null);
-  const [categoryColors, setCategoryColors] = useState(defaultCategoryColors);
-  const [connectionColors, setConnectionColors] = useState(defaultConnectionColors);
+
+  const [categoryColors, setCategoryColors] = useState(() => {
+    try {
+      const saved = localStorage.getItem('categoryColors');
+      if (saved) {
+        return { ...defaultCategoryColors, ...JSON.parse(saved) };
+      }
+    } catch (error) {
+      console.error("Error reading category colors from localStorage:", error);
+    }
+    return defaultCategoryColors;
+  });
+
+  const [connectionColors, setConnectionColors] = useState(() => {
+    try {
+      const saved = localStorage.getItem('connectionColors');
+      if (saved) {
+        return { ...defaultConnectionColors, ...JSON.parse(saved) };
+      }
+    } catch (error) {
+      console.error("Error reading connection colors from localStorage:", error);
+    }
+    return defaultConnectionColors;
+  });
 
 
   useEffect(() => {
@@ -59,7 +81,7 @@ export const useGraphData = () => {
       try {
         const { data, error } = await supabase
           .from('graphs')
-          .select('nodes, connections, public_id, color_settings')
+          .select('nodes, connections, public_id')
           .eq('user_id', user.id)
           .single();
         
@@ -71,16 +93,6 @@ export const useGraphData = () => {
             setRealConnections(data.connections as unknown as DatabaseConnection[]);
             setPublicId(data.public_id);
             setIsRealData(true);
-          }
-
-          if (data.color_settings) {
-            const savedColors = data.color_settings as { categoryColors?: Record<string, string>, connectionColors?: Record<string, string> };
-            if (savedColors.categoryColors) {
-              setCategoryColors(currentColors => ({ ...currentColors, ...savedColors.categoryColors }));
-            }
-            if (savedColors.connectionColors) {
-              setConnectionColors(currentColors => ({ ...currentColors, ...savedColors.connectionColors }));
-            }
           }
         }
       } catch (error) {
@@ -94,38 +106,15 @@ export const useGraphData = () => {
     loadGraphFromDB();
   }, [user]);
 
-  // Save color settings when they change
+  // Save color settings to localStorage when they change
   useEffect(() => {
-    if (!user || isLoading || !usingRealData) return;
-
-    const handler = setTimeout(async () => {
-      try {
-        const { error } = await supabase
-          .from('graphs')
-          .update({ color_settings: { categoryColors, connectionColors } })
-          .eq('user_id', user.id);
-
-        if (error) {
-          // It might fail if the user has no graph yet. This is expected if they haven't synced.
-          if (error.code !== '22P02' && error.code !== 'PGRST116') { // Ignore invalid input syntax for type uuid and no rows found
-             throw error;
-          }
-        } else {
-            toast({
-                title: "Color preferences saved",
-                duration: 2000,
-            });
-        }
-      } catch (error) {
-        console.error("Error saving color settings:", error);
-        toast({ title: "Could not save color preferences", variant: "destructive" });
-      }
-    }, 1500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [categoryColors, connectionColors, user, isLoading, usingRealData]);
+    try {
+      localStorage.setItem('categoryColors', JSON.stringify(categoryColors));
+      localStorage.setItem('connectionColors', JSON.stringify(connectionColors));
+    } catch (error) {
+      console.error("Error saving color settings to localStorage:", error);
+    }
+  }, [categoryColors, connectionColors]);
 
 
   const getPageTitle = (page: any) => {
