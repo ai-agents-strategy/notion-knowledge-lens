@@ -9,8 +9,6 @@ interface GraphHeaderProps {
   realDataExists: boolean;
   onToggleDataSource: () => void;
   isRealData: boolean;
-  publicId: string | null;
-  onRevokeLink: () => Promise<void>;
   hasNotionApiKey?: boolean;
 }
 
@@ -19,8 +17,6 @@ export const GraphHeader = ({
   realDataExists, 
   onToggleDataSource, 
   isRealData, 
-  publicId, 
-  onRevokeLink,
   hasNotionApiKey = false
 }: GraphHeaderProps) => {
   const navigate = useNavigate();
@@ -44,12 +40,12 @@ export const GraphHeader = ({
   return (
     <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Database className="w-6 h-6 text-notion-blue" />
-            <h1 className="text-2xl font-bold text-notion-black">Knowledge Graph</h1>
-          </div>
-          
+        <div className="flex items-center gap-2">
+          <Database className="w-6 h-6 text-notion-blue" />
+          <h1 className="text-2xl font-bold text-notion-black">Knowledge Graph</h1>
+        </div>
+
+        <div className="flex items-center gap-3 ml-auto">
           <div className="flex items-center gap-2">
             <Badge 
               variant={usingRealData ? "default" : "secondary"} 
@@ -70,9 +66,7 @@ export const GraphHeader = ({
               {getDataSourceDescription()}
             </span>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3 ml-auto">
           {/* Only show toggle button if API key is configured */}
           {hasNotionApiKey && (
             <Button
