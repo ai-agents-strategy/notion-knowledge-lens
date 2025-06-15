@@ -1,6 +1,9 @@
+
 import { ControlPanel } from "@/components/ControlPanel";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
+import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+
 interface GraphPageLayoutProps {
   showConnectionLabels: boolean;
   onShowLabelsChange: (show: boolean) => void;
@@ -14,6 +17,7 @@ interface GraphPageLayoutProps {
   graphConnections: DatabaseConnection[];
   graphShowConnectionLabels: boolean;
 }
+
 export const GraphPageLayout = ({
   showConnectionLabels,
   onShowLabelsChange,
@@ -26,17 +30,38 @@ export const GraphPageLayout = ({
   graphConnections,
   graphShowConnectionLabels
 }: GraphPageLayoutProps) => {
-  return <div className="relative z-10 flex flex-col lg:flex-row h-[calc(100vh-120px)]">
-      {/* Control Panel */}
-      <div className="lg:w-80 p-6 bg-slate-50">
-        <ControlPanel showConnectionLabels={showConnectionLabels} onShowLabelsChange={onShowLabelsChange} connectionStrengthFilter={connectionStrengthFilter} onConnectionStrengthChange={onConnectionStrengthChange} nodeCount={nodeCount} connectionCount={connectionCount} isolatedNodeCount={isolatedNodeCount} />
-      </div>
+  return (
+    <SidebarProvider>
+      <div className="relative z-10 flex h-[calc(100vh-120px)] w-full">
+        {/* Collapsible Control Panel Sidebar */}
+        <Sidebar side="left" className="border-r">
+          <SidebarContent className="p-6 bg-slate-50">
+            <ControlPanel 
+              showConnectionLabels={showConnectionLabels} 
+              onShowLabelsChange={onShowLabelsChange} 
+              connectionStrengthFilter={connectionStrengthFilter} 
+              onConnectionStrengthChange={onConnectionStrengthChange} 
+              nodeCount={nodeCount} 
+              connectionCount={connectionCount} 
+              isolatedNodeCount={isolatedNodeCount} 
+            />
+          </SidebarContent>
+        </Sidebar>
 
-      {/* Knowledge Graph */}
-      <div className="flex-1 p-6">
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 h-full overflow-hidden shadow-sm">
-          <KnowledgeGraph nodes={graphNodes} connections={graphConnections} showConnectionLabels={graphShowConnectionLabels} />
-        </div>
+        {/* Main Knowledge Graph Area */}
+        <SidebarInset className="flex-1 p-6">
+          <div className="mb-4">
+            <SidebarTrigger />
+          </div>
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 h-full overflow-hidden shadow-sm">
+            <KnowledgeGraph 
+              nodes={graphNodes} 
+              connections={graphConnections} 
+              showConnectionLabels={graphShowConnectionLabels} 
+            />
+          </div>
+        </SidebarInset>
       </div>
-    </div>;
+    </SidebarProvider>
+  );
 };
