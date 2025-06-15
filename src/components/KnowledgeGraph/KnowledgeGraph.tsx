@@ -1,19 +1,21 @@
+
 import { useEffect, useRef, useState } from "react";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 import { GraphLegend } from "./GraphLegend";
 import { HoveredNodeDetails } from "./HoveredNodeDetails";
 import { GraphControls } from "./GraphControls";
 import { useKnowledgeGraph } from "./useKnowledgeGraph";
-import { categoryColors, connectionColors } from "./graphConfig";
 
 interface KnowledgeGraphProps {
   nodes: DatabaseNode[];
   connections: DatabaseConnection[];
   showConnectionLabels: boolean;
   onNodeClick?: (nodeId: string) => void;
+  categoryColors: Record<string, string>;
+  connectionColors: Record<string, string>;
 }
 
-export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels, onNodeClick }: KnowledgeGraphProps) => {
+export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels, onNodeClick, categoryColors, connectionColors }: KnowledgeGraphProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -24,6 +26,8 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels, onNod
     connections,
     showConnectionLabels,
     onNodeClick,
+    categoryColors,
+    connectionColors,
   });
 
   const toggleFullscreen = () => {

@@ -2,7 +2,6 @@
 import { useEffect, useState, RefObject } from "react";
 import * as d3 from "d3";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
-import { categoryColors, connectionColors } from "./graphConfig";
 
 interface UseKnowledgeGraphProps {
   svgRef: RefObject<SVGSVGElement>;
@@ -10,9 +9,11 @@ interface UseKnowledgeGraphProps {
   connections: DatabaseConnection[];
   showConnectionLabels: boolean;
   onNodeClick?: (nodeId: string) => void;
+  categoryColors: Record<string, string>;
+  connectionColors: Record<string, string>;
 }
 
-export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLabels, onNodeClick }: UseKnowledgeGraphProps) => {
+export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLabels, onNodeClick, categoryColors, connectionColors }: UseKnowledgeGraphProps) => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
   useEffect(() => {
@@ -289,7 +290,7 @@ export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLa
     return () => {
       simulation.stop();
     };
-  }, [nodes, connections, showConnectionLabels, svgRef, onNodeClick]);
+  }, [nodes, connections, showConnectionLabels, svgRef, onNodeClick, categoryColors, connectionColors]);
 
   return { hoveredNode };
 };

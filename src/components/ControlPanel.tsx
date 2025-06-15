@@ -7,6 +7,9 @@ import { RefreshCw, Settings, LogIn } from "lucide-react";
 import { useUser, UserButton } from "@clerk/clerk-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useNavigate } from "react-router-dom";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface ControlPanelProps {
   showConnectionLabels: boolean;
@@ -23,6 +26,11 @@ interface ControlPanelProps {
   isSignedIn: boolean;
   authIsLoading: boolean;
   onAuthAction: () => void;
+  // Appearance props
+  categoryColors: Record<string, string>;
+  onCategoryColorsChange: (colors: Record<string, string>) => void;
+  connectionColors: Record<string, string>;
+  onConnectionColorsChange: (colors: Record<string, string>) => void;
 }
 
 export const ControlPanel = ({
@@ -38,13 +46,25 @@ export const ControlPanel = ({
   usingRealData,
   isSignedIn,
   authIsLoading,
-  onAuthAction
+  onAuthAction,
+  categoryColors,
+  onCategoryColorsChange,
+  connectionColors,
+  onConnectionColorsChange,
 }: ControlPanelProps) => {
   const {
     subscription
   } = useSubscriptions();
   const navigate = useNavigate();
   const hasAccess = subscription && subscription.plan;
+
+  const handleCategoryColorChange = (category: string, color: string) => {
+    onCategoryColorsChange({ ...categoryColors, [category]: color });
+  };
+
+  const handleConnectionColorChange = (type: string, color: string) => {
+    onConnectionColorsChange({ ...connectionColors, [type]: color });
+  };
 
   return <div className="flex flex-col h-full">
       <Card className="border-0 shadow-none bg-transparent flex-1">
@@ -119,24 +139,50 @@ export const ControlPanel = ({
 
           <Separator />
 
-          {/* Legend */}
-          <div>
-            <h3 className="text-sm font-semibold mb-3 text-slate-700">Relationship Types</h3>
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-red-400 rounded"></div>
-                <span className="text-slate-600">Direct Relation</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-green-400 rounded"></div>
-                <span className="text-slate-600">Reference</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-yellow-400 rounded"></div>
-                <span className="text-slate-600">Dependency</span>
-              </div>
-            </div>
-          </div>
+          {/* Appearance Customization */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="appearance">
+              <AccordionTrigger className="text-sm font-semibold text-slate-700 hover:no-underline">Graph Appearance</AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-xs font-semibold uppercase text-slate-500 tracking-wider">Node Category Colors</h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                    {Object.entries(categoryColors).map(([category, color]) => (
+                      <div key={category} className="flex items-center justify-between gap-2">
+                        <Label htmlFor={`color-${category}`} className="text-sm text-slate-600 capitalize flex-1 truncate">{category.replace(/_/g, ' ')}</Label>
+                        <Input
+                          id={`color-${category}`}
+                          type="color"
+                          value={color}
+                          onChange={(e) => handleCategoryColorChange(category, e.target.value)}
+                          className="p-1 h-8 w-14 rounded cursor-pointer"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <Separator />
+
+                  <h4 className="text-xs font-semibold uppercase text-slate-500 tracking-wider">Connection Type Colors</h4>
+                  <div className="space-y-2">
+                    {Object.entries(connectionColors).map(([type, color]) => (
+                      <div key={type} className="flex items-center justify-between gap-2">
+                        <Label htmlFor={`color-${type}`} className="text-sm text-slate-600 capitalize">{type}</Label>
+                         <Input
+                          id={`color-${type}`}
+                          type="color"
+                          value={color}
+                          onChange={(e) => handleConnectionColorChange(type, e.target.value)}
+                          className="p-1 h-8 w-14 rounded cursor-pointer"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
         </CardContent>
       </Card>
       

@@ -29,6 +29,11 @@ interface GraphPageLayoutProps {
   // Selected Node Props
   selectedNodeId: string | null;
   onNodeSelect: (nodeId: string | null) => void;
+  // Appearance props
+  categoryColors: Record<string, string>;
+  onCategoryColorsChange: (colors: Record<string, string>) => void;
+  connectionColors: Record<string, string>;
+  onConnectionColorsChange: (colors: Record<string, string>) => void;
 }
 
 export const GraphPageLayout = ({
@@ -49,6 +54,10 @@ export const GraphPageLayout = ({
   onSearchTermChange,
   selectedNodeId,
   onNodeSelect,
+  categoryColors,
+  onCategoryColorsChange,
+  connectionColors,
+  onConnectionColorsChange,
 }: GraphPageLayoutProps) => {
   const { isSignedIn, isLoaded } = useUser();
   const navigate = useNavigate();
@@ -79,6 +88,11 @@ export const GraphPageLayout = ({
               isSignedIn={isSignedIn}
               authIsLoading={authIsLoading}
               onAuthAction={handleAuthAction}
+              // Pass appearance props
+              categoryColors={categoryColors}
+              onCategoryColorsChange={onCategoryColorsChange}
+              connectionColors={connectionColors}
+              onConnectionColorsChange={onConnectionColorsChange}
             />
           </SidebarContent>
         </Sidebar>
@@ -97,6 +111,8 @@ export const GraphPageLayout = ({
               connections={graphConnections} 
               showConnectionLabels={graphShowConnectionLabels} 
               onNodeClick={onNodeSelect}
+              categoryColors={categoryColors}
+              connectionColors={connectionColors}
             />
           </div>
         </SidebarInset>

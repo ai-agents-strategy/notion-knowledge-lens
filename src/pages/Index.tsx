@@ -4,6 +4,7 @@ import { useGraphData } from "@/hooks/useGraphData";
 import { GraphHeader } from "@/components/GraphHeader";
 import { GraphPageLayout } from "@/components/GraphPageLayout";
 import { Loader2 } from "lucide-react";
+import { categoryColors as defaultCategoryColors, connectionColors as defaultConnectionColors } from "@/components/KnowledgeGraph/graphConfig";
 
 const Index = () => {
   const {
@@ -27,6 +28,8 @@ const Index = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [categoryColors, setCategoryColors] = useState(defaultCategoryColors);
+  const [connectionColors, setConnectionColors] = useState(defaultConnectionColors);
 
   const searchedNodes = searchTerm
     ? filteredNodes.filter(node => 
@@ -84,6 +87,10 @@ const Index = () => {
         onSearchTermChange={setSearchTerm}
         selectedNodeId={selectedNodeId}
         onNodeSelect={setSelectedNodeId}
+        categoryColors={categoryColors}
+        onCategoryColorsChange={setCategoryColors}
+        connectionColors={connectionColors}
+        onConnectionColorsChange={setConnectionColors}
       />
     </div>
   );
