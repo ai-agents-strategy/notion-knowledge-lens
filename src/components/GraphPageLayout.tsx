@@ -1,4 +1,3 @@
-
 import { ControlPanel } from "@/components/ControlPanel";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
@@ -7,6 +6,8 @@ import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { GraphFilterControls } from "./GraphFilterControls";
 import { DetailedNodeView } from "./DetailedNodeView";
+import { GraphChat } from "./GraphChat";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface GraphPageLayoutProps {
   showConnectionLabels: boolean;
@@ -71,22 +72,34 @@ export const GraphPageLayout = ({
         {/* Collapsible Control Panel Sidebar */}
         <Sidebar side="left" className="border-r">
           <SidebarContent className="p-6 bg-slate-50">
-            <ControlPanel 
-              showConnectionLabels={showConnectionLabels} 
-              onShowLabelsChange={onShowLabelsChange} 
-              connectionStrengthFilter={connectionStrengthFilter} 
-              onConnectionStrengthChange={onConnectionStrengthChange} 
-              nodeCount={nodeCount} 
-              connectionCount={connectionCount} 
-              isolatedNodeCount={isolatedNodeCount}
-              isSyncing={isSyncing}
-              onSync={onSync}
-              usingRealData={usingRealData}
-              // Pass auth props to ControlPanel
-              isSignedIn={isSignedIn}
-              authIsLoading={authIsLoading}
-              onAuthAction={handleAuthAction}
-            />
+            <Tabs defaultValue="controls" className="h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="controls">Controls</TabsTrigger>
+                <TabsTrigger value="chat">AI Chat</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="controls" className="flex-1 mt-4">
+                <ControlPanel 
+                  showConnectionLabels={showConnectionLabels} 
+                  onShowLabelsChange={onShowLabelsChange} 
+                  connectionStrengthFilter={connectionStrengthFilter} 
+                  onConnectionStrengthChange={onConnectionStrengthChange} 
+                  nodeCount={nodeCount} 
+                  connectionCount={connectionCount} 
+                  isolatedNodeCount={isolatedNodeCount}
+                  isSyncing={isSyncing}
+                  onSync={onSync}
+                  usingRealData={usingRealData}
+                  isSignedIn={isSignedIn}
+                  authIsLoading={authIsLoading}
+                  onAuthAction={handleAuthAction}
+                />
+              </TabsContent>
+              
+              <TabsContent value="chat" className="flex-1 mt-4">
+                <GraphChat nodes={graphNodes} connections={graphConnections} />
+              </TabsContent>
+            </Tabs>
           </SidebarContent>
         </Sidebar>
 
