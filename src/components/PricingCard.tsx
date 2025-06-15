@@ -15,9 +15,10 @@ interface PricingCardProps {
     features: any;
   };
   formatPrice: (priceCents: number, currency: string) => string;
-  onSubscribe: (planId: string) => void;
+  onSubscribe: () => void;
   isLoading: boolean;
   isCurrentPlan?: boolean;
+  isSubscribedToSomething?: boolean;
 }
 
 export const PricingCard = ({ 
@@ -25,7 +26,8 @@ export const PricingCard = ({
   formatPrice, 
   onSubscribe, 
   isLoading,
-  isCurrentPlan = false 
+  isCurrentPlan = false,
+  isSubscribedToSomething = false, 
 }: PricingCardProps) => {
   const features = Array.isArray(plan.features) ? plan.features : [];
   const isYearlyPlan = plan.interval === 'year';
@@ -35,6 +37,17 @@ export const PricingCard = ({
   const monthlyEquivalent = isYearlyPlan ? plan.price_cents / 12 : plan.price_cents;
   const yearlyTotal = isYearlyPlan ? plan.price_cents : plan.price_cents * 12;
   const savings = isYearlyPlan ? (500 * 12) - plan.price_cents : 0;
+
+  const getButtonText = () => {
+    if (isCurrentPlan) return 'Current Plan';
+    if (isFreeTrial) {
+      if (isSubscribedToSomething) return 'Already Subscribed';
+      return 'Start Free Trial';
+    }
+    return 'Subscribe';
+  }
+
+  const isButtonDisabled = isLoading || isCurrentPlan || (isFreeTrial && isSubscribedToSomething);
 
   return (
     <Card className={`relative ${isCurrentPlan ? 'border-green-500 border-2' : ''} ${isYearlyPlan ? 'border-blue-500 border-2' : ''}`}>
@@ -89,10 +102,10 @@ export const PricingCard = ({
       <CardFooter>
         <Button 
           className="w-full" 
-          onClick={() => onSubscribe(plan.id)}
-          disabled={isLoading || isCurrentPlan}
+          onClick={onSubscribe}
+          disabled={isButtonDisabled}
         >
-          {isCurrentPlan ? 'Current Plan' : isFreeTrial ? 'Start Free Trial' : 'Subscribe'}
+          {getButtonText()}
         </Button>
       </CardFooter>
     </Card>

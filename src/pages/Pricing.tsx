@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
@@ -11,18 +10,27 @@ import { Loader2 } from 'lucide-react';
 const Pricing = () => {
   const navigate = useNavigate();
   const { plans, loading: plansLoading, formatPrice } = usePlans();
-  const { subscription, createCheckoutSession, openCustomerPortal } = useSubscriptions();
+  const { subscription, createCheckoutSession, openCustomerPortal, startFreeTrial } = useSubscriptions();
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [trialLoading, setTrialLoading] = useState(false);
 
-  const handleSubscribe = async (planId: string) => {
-    setCheckoutLoading(planId);
-    try {
-      const url = await createCheckoutSession(planId);
-      if (url) {
-        window.open(url, '_blank');
+  const handleSubscribe = async (planId: string, priceCents: number) => {
+    if (priceCents === 0) {
+      // It's a free trial
+      setTrialLoading(true);
+      await startFreeTrial();
+      setTrialLoading(false);
+    } else {
+      // It's a paid plan
+      setCheckoutLoading(planId);
+      try {
+        const url = await createCheckoutSession(planId);
+        if (url) {
+          window.open(url, '_blank');
+        }
+      } finally {
+        setCheckoutLoading(null);
       }
-    } finally {
-      setCheckoutLoading(null);
     }
   };
 
@@ -55,9 +63,10 @@ const Pricing = () => {
               key={plan.id}
               plan={plan}
               formatPrice={formatPrice}
-              onSubscribe={handleSubscribe}
-              isLoading={checkoutLoading === plan.id}
+              onSubscribe={() => handleSubscribe(plan.id, plan.price_cents)}
+              isLoading={checkoutLoading === plan.id || (plan.price_cents === 0 && trialLoading)}
               isCurrentPlan={subscription?.plan_id === plan.id}
+              isSubscribedToSomething={!!subscription}
             />
           ))}
         </div>

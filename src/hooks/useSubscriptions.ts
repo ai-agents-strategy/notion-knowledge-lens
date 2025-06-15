@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,7 +69,12 @@ export const useSubscriptions = () => {
         return;
       }
 
-      setSubscription(data);
+      // Check if the subscription is an expired trial
+      if (data && data.plan?.price_cents === 0 && data.current_period_end && new Date(data.current_period_end) < new Date()) {
+        setSubscription(null); // Trial has expired
+      } else {
+        setSubscription(data); // It's a valid paid sub or an active trial
+      }
     } catch (error) {
       console.error('Unexpected error fetching subscription:', error);
     } finally {
@@ -115,6 +119,48 @@ export const useSubscriptions = () => {
     }
   };
 
+  const startFreeTrial = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to start a free trial",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('start-free-trial');
+
+      if (error) {
+        console.error('Error starting free trial:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to start free trial. You may already have an active subscription.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      toast({
+        title: "Success!",
+        description: "Your 7-day free trial has started.",
+      });
+      // Refetch subscription to update UI
+      await fetchSubscription();
+      return true;
+
+    } catch (error) {
+      console.error('Unexpected error starting trial:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const openCustomerPortal = async () => {
     if (!user) {
       toast({
@@ -154,6 +200,7 @@ export const useSubscriptions = () => {
     loading,
     createCheckoutSession,
     openCustomerPortal,
+    startFreeTrial,
     refetch: fetchSubscription,
   };
 };

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,18 +10,25 @@ import { SettingsSidebar } from "@/components/SettingsSidebar";
 
 const Plan = () => {
   const { plans, loading: plansLoading, formatPrice } = usePlans();
-  const { subscription, loading: subscriptionLoading, createCheckoutSession, openCustomerPortal } = useSubscriptions();
+  const { subscription, loading: subscriptionLoading, createCheckoutSession, openCustomerPortal, startFreeTrial } = useSubscriptions();
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [trialLoading, setTrialLoading] = useState(false);
 
-  const handleSubscribe = async (planId: string) => {
-    setCheckoutLoading(planId);
-    try {
-      const url = await createCheckoutSession(planId);
-      if (url) {
-        window.open(url, '_blank');
+  const handleSubscribe = async (planId: string, priceCents: number) => {
+    if (priceCents === 0) {
+      setTrialLoading(true);
+      await startFreeTrial();
+      setTrialLoading(false);
+    } else {
+      setCheckoutLoading(planId);
+      try {
+        const url = await createCheckoutSession(planId);
+        if (url) {
+          window.open(url, '_blank');
+        }
+      } finally {
+        setCheckoutLoading(null);
       }
-    } finally {
-      setCheckoutLoading(null);
     }
   };
 
@@ -114,9 +120,10 @@ const Plan = () => {
                     key={plan.id}
                     plan={plan}
                     formatPrice={formatPrice}
-                    onSubscribe={handleSubscribe}
-                    isLoading={checkoutLoading === plan.id}
+                    onSubscribe={() => handleSubscribe(plan.id, plan.price_cents)}
+                    isLoading={checkoutLoading === plan.id || (plan.price_cents === 0 && trialLoading)}
                     isCurrentPlan={subscription?.plan_id === plan.id}
+                    isSubscribedToSomething={!!subscription}
                   />
                 ))}
               </div>
