@@ -53,10 +53,11 @@ const App = () => (
           path="/auth/sign-up"
           element={
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
-              <SignUp path="/auth/sign-up" routing="path" signInUrl="/auth/sign-in" fallbackRedirectUrl="/" />
+              <SignUp path="/auth/sign-up" routing="path" signInUrl="/auth/sign-in" fallbackRedirectUrl="/onboarding" />
             </div>
           }
         />
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route
           path="/settings"
