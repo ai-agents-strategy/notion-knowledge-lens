@@ -44,10 +44,10 @@ export const usePlans = () => {
         return;
       }
 
-      // Filter for the free plan, one specific monthly plan, and one specific yearly plan.
+      // Filter for the free plan, the cheapest monthly plan, and the cheapest yearly plan.
       const freePlan = (data || []).find(p => p.price_cents === 0);
-      const monthlyPlan = (data || []).find(p => p.interval === 'month' && p.price_cents === 500);
-      const yearlyPlan = (data || []).find(p => p.interval === 'year' && p.price_cents === 3600);
+      const monthlyPlan = (data || []).find(p => p.interval === 'month' && p.price_cents > 0);
+      const yearlyPlan = (data || []).find(p => p.interval === 'year' && p.price_cents > 0);
       
       const filteredPlans = [];
       if (freePlan) filteredPlans.push(freePlan);
