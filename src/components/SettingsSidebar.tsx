@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Key, CreditCard, Building2 } from "lucide-react";
+import { ArrowLeft, Key, Building2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export const SettingsSidebar = () => {
@@ -8,7 +8,6 @@ export const SettingsSidebar = () => {
 
   const navigationItems = [
     { path: '/settings', label: 'Integrations', icon: Key },
-    { path: '/plan', label: 'Plan', icon: CreditCard },
     { path: '/organization', label: 'Organization', icon: Building2 },
   ];
 
@@ -36,7 +35,7 @@ export const SettingsSidebar = () => {
       <nav className="space-y-2">
         {navigationItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname.startsWith(item.path);
           
           return (
             <Link key={item.path} to={item.path}>
