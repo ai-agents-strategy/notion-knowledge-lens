@@ -28,7 +28,6 @@ export const GraphHeader = ({
   hasNotionApiKey = false
 }: GraphHeaderProps) => {
   const navigate = useNavigate();
-  const [showShareDialog, setShowShareDialog] = useState(false);
 
   const getDataSourceText = () => {
     if (!hasNotionApiKey) {
@@ -101,15 +100,11 @@ export const GraphHeader = ({
             </Button>
           )}
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowShareDialog(true)}
-            className="flex items-center gap-2"
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </Button>
+          <ShareGraph
+            publicId={publicId}
+            onGenerateLink={onGenerateLink}
+            onRevokeLink={onRevokeLink}
+          />
 
           <Button
             variant="outline"
@@ -122,14 +117,6 @@ export const GraphHeader = ({
           </Button>
         </div>
       </div>
-
-      <ShareGraph
-        open={showShareDialog}
-        onOpenChange={setShowShareDialog}
-        publicId={publicId}
-        onGenerateLink={onGenerateLink}
-        onRevokeLink={onRevokeLink}
-      />
     </div>
   );
 };
