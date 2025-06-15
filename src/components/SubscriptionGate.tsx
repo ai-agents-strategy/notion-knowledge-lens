@@ -1,17 +1,14 @@
-
 import { ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Crown, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
-
 interface SubscriptionGateProps {
   children: ReactNode;
   feature: string;
   description: string;
 }
-
 export const SubscriptionGate = ({
   children,
   feature,
@@ -21,7 +18,6 @@ export const SubscriptionGate = ({
     subscription,
     loading
   } = useSubscriptions();
-
   if (loading) {
     return <div className="flex items-center justify-center p-8">
         <div className="text-black">Loading subscription status...</div>
@@ -31,13 +27,10 @@ export const SubscriptionGate = ({
   // Allow access if user has any subscription (including free trial)
   // Free trial has price_cents = 0, paid plans have price_cents > 0
   const hasSubscription = subscription && subscription.plan;
-
   if (!hasSubscription) {
     return <Card className="backdrop-blur-sm border-slate-700/50 bg-white">
         <CardHeader className="text-center bg-white">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mb-4">
-            <Lock className="w-8 h-8 text-white" />
-          </div>
+          
           <CardTitle className="text-xl text-black">
             Premium Feature: {feature}
           </CardTitle>
@@ -74,6 +67,5 @@ export const SubscriptionGate = ({
         </CardContent>
       </Card>;
   }
-
   return <>{children}</>;
 };
