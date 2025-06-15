@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useGraphData } from "@/hooks/useGraphData";
 import { GraphHeader } from "@/components/GraphHeader";
 import { GraphPageLayout } from "@/components/GraphPageLayout";
@@ -28,6 +28,11 @@ const Index = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  // Memoize the node selection handler to prevent graph refreshing
+  const handleNodeSelect = useCallback((nodeId: string | null) => {
+    setSelectedNodeId(nodeId);
+  }, []);
 
   const searchedNodes = searchTerm
     ? filteredNodes.filter(node => 
@@ -86,7 +91,7 @@ const Index = () => {
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
         selectedNodeId={selectedNodeId}
-        onNodeSelect={setSelectedNodeId}
+        onNodeSelect={handleNodeSelect}
         categoryColors={categoryColors}
         onCategoryColorsChange={setCategoryColors}
         connectionColors={connectionColors}
