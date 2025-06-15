@@ -133,6 +133,10 @@ const Settings = () => {
       // Save synced data to localStorage
       localStorage.setItem('notion_synced_databases', JSON.stringify(data.results || []));
       localStorage.setItem('notion_last_sync', new Date().toISOString());
+      if (data.nodes && data.connections) {
+        localStorage.setItem('notion_graph_nodes', JSON.stringify(data.nodes));
+        localStorage.setItem('notion_graph_connections', JSON.stringify(data.connections));
+      }
       toast({
         title: "Sync successful!",
         description: `Found ${data.results?.length || 0} databases in your Notion workspace.`
@@ -163,6 +167,8 @@ const Settings = () => {
       localStorage.removeItem('notion_database_id');
       localStorage.removeItem('notion_synced_databases');
       localStorage.removeItem('notion_last_sync');
+      localStorage.removeItem('notion_graph_nodes');
+      localStorage.removeItem('notion_graph_connections');
       setNotionApiKey('');
       setDatabaseId('');
       setSyncedDatabases([]);

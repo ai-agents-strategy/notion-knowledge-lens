@@ -72,6 +72,22 @@ export const useGraphData = () => {
 
 
   useEffect(() => {
+    // Try to load from localStorage first
+    try {
+      const storedNodes = localStorage.getItem('notion_graph_nodes');
+      const storedConnections = localStorage.getItem('notion_graph_connections');
+
+      if (storedNodes && storedConnections) {
+        setRealNodes(JSON.parse(storedNodes));
+        setRealConnections(JSON.parse(storedConnections));
+        setIsRealData(true);
+        setIsLoading(false);
+        return; // Data loaded from localStorage, don't proceed to DB load
+      }
+    } catch (e) {
+      console.error("Failed to load graph from localStorage", e);
+    }
+
     const loadGraphFromDB = async () => {
       if (!user) {
         setIsLoading(false);
