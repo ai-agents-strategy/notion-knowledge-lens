@@ -23,6 +23,17 @@ interface DetailedNodeViewProps {
 
 const findNodeName = (id: string, nodes: DatabaseNode[]) => nodes.find(n => n.id === id)?.name || "Unknown Node";
 
+// Helper function to get the ID from connection source/target (handles both string IDs and D3 objects)
+const getConnectionId = (sourceOrTarget: any): string => {
+  if (typeof sourceOrTarget === 'string') {
+    return sourceOrTarget;
+  }
+  if (sourceOrTarget && typeof sourceOrTarget === 'object' && sourceOrTarget.id) {
+    return sourceOrTarget.id;
+  }
+  return '';
+};
+
 export const DetailedNodeView = ({ nodeId, nodes, connections, onClose, categoryColors, onCategoryColorsChange }: DetailedNodeViewProps) => {
   const selectedNode = nodeId ? nodes.find(n => n.id === nodeId) : null;
 
@@ -30,8 +41,9 @@ export const DetailedNodeView = ({ nodeId, nodes, connections, onClose, category
     return null;
   }
 
-  const outgoingConnections = connections.filter(c => c.source === nodeId);
-  const incomingConnections = connections.filter(c => c.target === nodeId);
+  // Filter connections using the helper function to handle D3 objects
+  const outgoingConnections = connections.filter(c => getConnectionId(c.source) === nodeId);
+  const incomingConnections = connections.filter(c => getConnectionId(c.target) === nodeId);
 
   const nodeColor = categoryColors[selectedNode.category.toLowerCase()] || defaultCategoryColors[selectedNode.category.toLowerCase()] || defaultCategoryColors[selectedNode.type] || "#6b7280";
 
@@ -90,7 +102,7 @@ export const DetailedNodeView = ({ nodeId, nodes, connections, onClose, category
                         <li key={`out-${i}`} className="text-sm flex items-center gap-2">
                           <span className="text-muted-foreground">{conn.label || conn.type}</span>
                           <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                          <span className="truncate">{findNodeName(conn.target, nodes)}</span>
+                          <span className="truncate">{findNodeName(getConnectionId(conn.target), nodes)}</span>
                         </li>
                       ))}
                     </ul>
@@ -102,7 +114,7 @@ export const DetailedNodeView = ({ nodeId, nodes, connections, onClose, category
                     <ul className="space-y-2">
                       {incomingConnections.map((conn, i) => (
                         <li key={`in-${i}`} className="text-sm flex items-center gap-2">
-                         <span className="truncate">{findNodeName(conn.source, nodes)}</span>
+                         <span className="truncate">{findNodeName(getConnectionId(conn.source), nodes)}</span>
                          <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                          <span className="text-muted-foreground">{conn.label || conn.type}</span>
                         </li>
