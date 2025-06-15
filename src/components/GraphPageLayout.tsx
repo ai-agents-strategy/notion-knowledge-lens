@@ -74,11 +74,11 @@ export const GraphPageLayout = ({
         </Sidebar>
 
         {/* Main Knowledge Graph Area */}
-        <SidebarInset className="flex-1 p-6">
-          <div className="mb-4 flex items-center justify-between">
+        <SidebarInset className="flex-1">
+          <div className="flex items-center p-2">
             <SidebarTrigger />
           </div>
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 h-full overflow-hidden shadow-sm">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 h-[calc(100%-3rem)] mx-2 mb-2 overflow-hidden shadow-sm">
             <KnowledgeGraph 
               nodes={graphNodes} 
               connections={graphConnections} 
