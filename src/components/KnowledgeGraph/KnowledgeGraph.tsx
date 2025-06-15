@@ -256,6 +256,43 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
     nodeGroups
       .on("mouseenter", (event, d) => {
         setHoveredNode(d.id);
+        
+        const connectedNodeIds = new Set<string>();
+        connectedNodeIds.add(d.id);
+
+        links.data().forEach((conn: any) => {
+            if (conn.source.id === d.id) {
+                connectedNodeIds.add(conn.target.id);
+            }
+            if (conn.target.id === d.id) {
+                connectedNodeIds.add(conn.source.id);
+            }
+        });
+
+        nodeGroups
+            .style("transition", "opacity 0.3s")
+            .style("opacity", 0.1);
+        links
+            .style("transition", "stroke-opacity 0.3s")
+            .attr("stroke-opacity", 0.05);
+        linkLabels
+            .style("transition", "opacity 0.3s")
+            .style("opacity", 0);
+
+        nodeGroups
+            .filter(node => connectedNodeIds.has(node.id))
+            .style("opacity", 1);
+
+        links
+            .filter((link: any) => link.source.id === d.id || link.target.id === d.id)
+            .attr("stroke-opacity", (link: any) => link.type === 'contains' ? 0.8 : 0.6);
+
+        if (showConnectionLabels) {
+            linkLabels
+                .filter((link: any) => link.source.id === d.id || link.target.id === d.id)
+                .style("opacity", 0.7);
+        }
+        
         const element = d3.select(event.currentTarget);
         
         if (d.type === 'database' || d.type === 'page') {
@@ -277,6 +314,11 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       })
       .on("mouseleave", (event, d) => {
         setHoveredNode(null);
+
+        nodeGroups.style("opacity", 1);
+        links.attr("stroke-opacity", (link: any) => link.type === 'contains' ? 0.8 : 0.6);
+        linkLabels.style("opacity", showConnectionLabels ? 0.7 : 0);
+        
         const element = d3.select(event.currentTarget);
         
         if (d.type === 'database' || d.type === 'page') {
