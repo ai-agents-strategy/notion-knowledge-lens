@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,6 +75,13 @@ export const useIntegrations = () => {
     if (!user) {
       console.error('❌ Cannot save integration: missing user');
       return false;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('🔑 Supabase session before save:', session);
+    if (session) {
+      console.log('👤 JWT user ID from session:', session.user.id);
+      console.log('👤 Clerk user ID from hook:', user.id);
     }
 
     console.log('💾 Saving integration for user:', user.id, 'type:', type);
