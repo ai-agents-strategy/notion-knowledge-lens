@@ -148,7 +148,7 @@ export const useGraphData = () => {
     if (visibleCategories.size === 0) {
       setVisibleCategories(new Set([...allCategories, ...allTypes]));
     }
-  }, [realNodes, isRealData]);
+  }, [realNodes, isRealData, visibleCategories]);
 
   const getPageTitle = (page: any) => {
     if (page.properties) {
@@ -315,7 +315,7 @@ export const useGraphData = () => {
     );
   }, [currentNodes, visibleCategories]);
 
-  const eligibleConnections = useMemo(() => {
+  const finalFilteredConnections = useMemo(() => {
     // Create a Set of filtered node IDs for efficient lookup.
     const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
     
@@ -326,15 +326,13 @@ export const useGraphData = () => {
       );
   }, [currentConnections, connectionStrengthFilter, filteredNodes]);
 
-  const finalFilteredConnections = eligibleConnections;
-
   const isolatedNodeCount = useMemo(() => {
     const connectedNodeIds = new Set([
-      ...eligibleConnections.map(conn => conn.source),
-      ...eligibleConnections.map(conn => conn.target)
+      ...finalFilteredConnections.map(conn => conn.source),
+      ...finalFilteredConnections.map(conn => conn.target)
     ]);
     return filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
-  }, [filteredNodes, eligibleConnections]);
+  }, [filteredNodes, finalFilteredConnections]);
 
   const availableCategories = useMemo(() => {
     const categories = new Set<string>();
@@ -368,7 +366,6 @@ export const useGraphData = () => {
     filteredNodes,
     finalFilteredConnections,
     isolatedNodeCount,
-    eligibleConnections, // Keep this for connectionCount in Index
     categoryColors,
     setCategoryColors,
     connectionColors,

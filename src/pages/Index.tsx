@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useGraphData } from "@/hooks/useGraphData";
 import { GraphHeader } from "@/components/GraphHeader";
@@ -19,7 +20,6 @@ const Index = () => {
     generatePublicLink,
     revokePublicLink,
     filteredNodes,
-    eligibleConnections,
     finalFilteredConnections,
     isolatedNodeCount,
     categoryColors,
