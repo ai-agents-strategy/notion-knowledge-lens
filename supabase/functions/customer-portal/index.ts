@@ -53,7 +53,7 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "http://localhost:3000";
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${origin}/settings`,
+      return_url: `${origin}/organization`,
     });
     logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
 

@@ -1,3 +1,4 @@
+
 import { ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,9 +61,9 @@ export const SubscriptionGate = ({
                 Start Free Trial
               </Button>
             </Link>
-            <Link to="/plan">
+            <Link to="/organization">
               <Button variant="outline" className="bg-slate-700/50 border-slate-600 text-slate-200 hover:bg-slate-600/50">
-                View Plans
+                Manage Subscription
               </Button>
             </Link>
           </div>
