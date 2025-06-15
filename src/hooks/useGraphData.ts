@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useSearchParams } from 'react-router-dom';
@@ -337,6 +336,8 @@ export const useGraphData = () => {
           public_id: newPublicId,
           nodes: usingRealData ? realNodes : sampleNodes,
           connections: usingRealData ? realConnections : sampleConnections
+        }, {
+          onConflict: 'user_id'
         })
         .select('public_id')
         .single();
