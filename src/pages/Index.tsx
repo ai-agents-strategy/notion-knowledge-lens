@@ -17,8 +17,6 @@ const Index = () => {
     handleSync,
     toggleDataSource,
     usingRealData,
-    publicId,
-    revokePublicLink,
     filteredNodes,
     finalFilteredConnections,
     isolatedNodeCount,
@@ -68,8 +66,6 @@ const Index = () => {
         realDataExists={realNodes.length > 0}
         onToggleDataSource={toggleDataSource}
         isRealData={isRealData}
-        publicId={publicId}
-        onRevokeLink={revokePublicLink}
         hasNotionApiKey={hasNotionApiKey}
       />
 
