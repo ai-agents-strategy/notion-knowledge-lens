@@ -1,7 +1,7 @@
-
 import { useEffect, useState, RefObject } from "react";
 import * as d3 from "d3";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
+import { getCategoryColor } from "./graphConfig";
 
 interface UseKnowledgeGraphProps {
   svgRef: RefObject<SVGSVGElement>;
@@ -149,7 +149,8 @@ export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLa
 
     nodeGroups.each(function(d) {
       const group = d3.select(this);
-      const color = categoryColors[d.category.toLowerCase()] || categoryColors[d.type] || "#6b7280";
+      // Use improved color logic that falls back gracefully
+      const color = categoryColors[d.category.toLowerCase()] || getCategoryColor(d.category);
       
       if (d.type === 'database' || d.type === 'page') {
         group.append("circle")

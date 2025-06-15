@@ -7,7 +7,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
-import { categoryColors as defaultCategoryColors } from "@/components/KnowledgeGraph/graphConfig";
+import { getCategoryColor } from "@/components/KnowledgeGraph/graphConfig";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Link as LinkIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -45,7 +45,8 @@ export const DetailedNodeView = ({ nodeId, nodes, connections, onClose, category
   const outgoingConnections = connections.filter(c => getConnectionId(c.source) === nodeId);
   const incomingConnections = connections.filter(c => getConnectionId(c.target) === nodeId);
 
-  const nodeColor = categoryColors[selectedNode.category.toLowerCase()] || defaultCategoryColors[selectedNode.category.toLowerCase()] || defaultCategoryColors[selectedNode.type] || "#6b7280";
+  // Use improved color logic that falls back gracefully for real Notion data
+  const nodeColor = categoryColors[selectedNode.category.toLowerCase()] || getCategoryColor(selectedNode.category);
 
   const handleCategoryColorChange = (category: string, color: string) => {
     onCategoryColorsChange({ ...categoryColors, [category.toLowerCase()]: color });
@@ -72,7 +73,7 @@ export const DetailedNodeView = ({ nodeId, nodes, connections, onClose, category
                 <Badge style={{ backgroundColor: nodeColor, color: 'white' }}>{selectedNode.category}</Badge>
                 <Input
                   type="color"
-                  value={categoryColors[selectedNode.category.toLowerCase()] || '#ffffff'}
+                  value={categoryColors[selectedNode.category.toLowerCase()] || nodeColor}
                   onChange={(e) => handleCategoryColorChange(selectedNode.category, e.target.value)}
                   className="p-1 h-6 w-8 rounded cursor-pointer"
                 />
