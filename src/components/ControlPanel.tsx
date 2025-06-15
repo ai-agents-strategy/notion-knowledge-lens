@@ -7,6 +7,7 @@ import { RefreshCw, Settings, LogIn } from "lucide-react";
 import { useUser, UserButton } from "@clerk/clerk-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useNavigate } from "react-router-dom";
+import { CategoryFilters } from "./CategoryFilters";
 
 interface ControlPanelProps {
   showConnectionLabels: boolean;
@@ -23,6 +24,10 @@ interface ControlPanelProps {
   isSignedIn: boolean;
   authIsLoading: boolean;
   onAuthAction: () => void;
+  // Category filter props
+  visibleCategories: Set<string>;
+  onCategoryToggle: (category: string) => void;
+  availableCategories: string[];
 }
 
 export const ControlPanel = ({
@@ -39,6 +44,9 @@ export const ControlPanel = ({
   isSignedIn,
   authIsLoading,
   onAuthAction,
+  visibleCategories,
+  onCategoryToggle,
+  availableCategories,
 }: ControlPanelProps) => {
   const {
     subscription
@@ -46,7 +54,8 @@ export const ControlPanel = ({
   const navigate = useNavigate();
   const hasAccess = subscription && subscription.plan;
 
-  return <div className="flex flex-col h-full">
+  return (
+    <div className="flex flex-col h-full">
       <Card className="border-0 shadow-none bg-transparent flex-1">
         <CardHeader className="px-0">
           <CardTitle className="text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-slate-950">Knowledge Graph</CardTitle>
@@ -76,6 +85,15 @@ export const ControlPanel = ({
             </span>
             <div className={`w-2 h-2 rounded-full ${usingRealData ? "bg-green-500" : "bg-primary"}`} />
           </div>
+
+          <Separator />
+
+          {/* Category Filters */}
+          <CategoryFilters
+            visibleCategories={visibleCategories}
+            onCategoryToggle={onCategoryToggle}
+            availableCategories={availableCategories}
+          />
 
           <Separator />
 
@@ -116,7 +134,6 @@ export const ControlPanel = ({
               <Switch id="show-labels-switch" checked={showConnectionLabels} onCheckedChange={onShowLabelsChange} disabled={connectionCount === 0} />
             </div>
           </div>
-
         </CardContent>
       </Card>
       
@@ -140,5 +157,6 @@ export const ControlPanel = ({
           </Button>
         )}
       </div>
-    </div>;
+    </div>
+  );
 };

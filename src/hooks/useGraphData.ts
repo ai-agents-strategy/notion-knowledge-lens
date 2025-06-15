@@ -45,6 +45,7 @@ export const useGraphData = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [publicId, setPublicId] = useState<string | null>(null);
+  const [visibleCategories, setVisibleCategories] = useState<Set<string>>(new Set());
 
   const [categoryColors, setCategoryColors] = useState(() => {
     try {
@@ -132,6 +133,22 @@ export const useGraphData = () => {
     }
   }, [categoryColors, connectionColors]);
 
+  // Initialize visible categories when nodes change
+  useEffect(() => {
+    const currentNodes = usingRealData ? realNodes : sampleNodes;
+    const allCategories = new Set<string>();
+    const allTypes = new Set<string>();
+    
+    currentNodes.forEach(node => {
+      allCategories.add(node.category);
+      allTypes.add(node.type);
+    });
+    
+    // If no categories are selected, select all by default
+    if (visibleCategories.size === 0) {
+      setVisibleCategories(new Set([...allCategories, ...allTypes]));
+    }
+  }, [realNodes, isRealData]);
 
   const getPageTitle = (page: any) => {
     if (page.properties) {
@@ -292,7 +309,11 @@ export const useGraphData = () => {
     [usingRealData, realConnections]
   );
 
-  const filteredNodes = currentNodes;
+  const filteredNodes = useMemo(() => {
+    return currentNodes.filter(node => 
+      visibleCategories.has(node.category) && visibleCategories.has(node.type)
+    );
+  }, [currentNodes, visibleCategories]);
 
   const eligibleConnections = useMemo(() => {
     // Create a Set of filtered node IDs for efficient lookup.
@@ -314,6 +335,22 @@ export const useGraphData = () => {
     ]);
     return filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
   }, [filteredNodes, eligibleConnections]);
+
+  const availableCategories = useMemo(() => {
+    const categories = new Set<string>();
+    currentNodes.forEach(node => categories.add(node.category));
+    return Array.from(categories).sort();
+  }, [currentNodes]);
+
+  const handleCategoryToggle = (category: string) => {
+    const newVisible = new Set(visibleCategories);
+    if (newVisible.has(category)) {
+      newVisible.delete(category);
+    } else {
+      newVisible.add(category);
+    }
+    setVisibleCategories(newVisible);
+  };
   
   return {
     showConnectionLabels, setShowConnectionLabels,
@@ -336,5 +373,8 @@ export const useGraphData = () => {
     setCategoryColors,
     connectionColors,
     setConnectionColors,
+    visibleCategories,
+    handleCategoryToggle,
+    availableCategories,
   };
 };

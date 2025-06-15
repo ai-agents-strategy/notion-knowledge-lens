@@ -32,6 +32,10 @@ interface GraphPageLayoutProps {
   categoryColors: Record<string, string>;
   onCategoryColorsChange: (colors: Record<string, string>) => void;
   connectionColors: Record<string, string>;
+  // Category filter props
+  visibleCategories: Set<string>;
+  onCategoryToggle: (category: string) => void;
+  availableCategories: string[];
 }
 
 export const GraphPageLayout = ({
@@ -55,6 +59,9 @@ export const GraphPageLayout = ({
   categoryColors,
   onCategoryColorsChange,
   connectionColors,
+  visibleCategories,
+  onCategoryToggle,
+  availableCategories,
 }: GraphPageLayoutProps) => {
   const { isSignedIn, isLoaded } = useUser();
   const navigate = useNavigate();
@@ -85,6 +92,10 @@ export const GraphPageLayout = ({
               isSignedIn={isSignedIn}
               authIsLoading={authIsLoading}
               onAuthAction={handleAuthAction}
+              // Pass category filter props
+              visibleCategories={visibleCategories}
+              onCategoryToggle={onCategoryToggle}
+              availableCategories={availableCategories}
             />
           </SidebarContent>
         </Sidebar>
