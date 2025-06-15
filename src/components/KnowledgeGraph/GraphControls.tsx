@@ -10,7 +10,7 @@ interface GraphControlsProps {
 
 export const GraphControls: React.FC<GraphControlsProps> = ({ isFullscreen, onToggleFullscreen }) => {
   return (
-    <div className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-border text-card-foreground text-xs space-y-1 z-20 flex flex-col items-end">
+    <div className="absolute top-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-border text-card-foreground text-xs space-y-1 z-20 flex flex-col items-start">
       <div>🖱️ Drag nodes to reposition</div>
       <div>🔍 Scroll to zoom in/out</div>
       <div>👆 Hover for node details</div>
