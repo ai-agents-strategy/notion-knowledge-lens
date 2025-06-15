@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -237,13 +236,9 @@ export const useGraphData = () => {
     [usingRealData, realConnections]
   );
 
-  // Debug: Log the connections to see what's happening
-  console.log('🔍 Debug - Current connections:', currentConnections);
-  console.log('🔍 Debug - Connection strength filter:', connectionStrengthFilter);
-
   const filteredNodes = currentNodes;
 
-  const eligibleConnections = useMemo(() => {
+  const finalFilteredConnections = useMemo(() => {
     const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
     
     const filtered = currentConnections
@@ -252,23 +247,21 @@ export const useGraphData = () => {
         filteredNodeIds.has(conn.source) && filteredNodeIds.has(conn.target)
       );
 
-    console.log('🔍 Debug - Eligible connections after filtering:', filtered.length);
+    console.log('🔍 Debug - Final filtered connections:', filtered.length);
     return filtered;
   }, [currentConnections, connectionStrengthFilter, filteredNodes]);
 
-  const finalFilteredConnections = eligibleConnections;
-
   const isolatedNodeCount = useMemo(() => {
     const connectedNodeIds = new Set([
-      ...eligibleConnections.map(conn => conn.source),
-      ...eligibleConnections.map(conn => conn.target)
+      ...finalFilteredConnections.map(conn => conn.source),
+      ...finalFilteredConnections.map(conn => conn.target)
     ]);
     return filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
-  }, [filteredNodes, eligibleConnections]);
+  }, [filteredNodes, finalFilteredConnections]);
 
   console.log('🔍 Debug - Final stats:', {
     nodeCount: filteredNodes.length,
-    connectionCount: eligibleConnections.length,
+    connectionCount: finalFilteredConnections.length,
     isolatedNodeCount,
     usingRealData
   });
@@ -289,6 +282,5 @@ export const useGraphData = () => {
     filteredNodes,
     finalFilteredConnections,
     isolatedNodeCount,
-    eligibleConnections, // Keep this for connectionCount in Index
   };
 };
