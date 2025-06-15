@@ -1,11 +1,11 @@
+
 import { ControlPanel } from "@/components/ControlPanel";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { LogIn } from "lucide-react";
-import { useUser, UserButton } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
+import { GraphFilterControls } from "./GraphFilterControls";
 
 interface GraphPageLayoutProps {
   showConnectionLabels: boolean;
@@ -22,6 +22,9 @@ interface GraphPageLayoutProps {
   graphConnections: DatabaseConnection[];
   graphShowConnectionLabels: boolean;
   usingRealData: boolean;
+  // Search Props
+  searchTerm: string;
+  onSearchTermChange: (term: string) => void;
 }
 
 export const GraphPageLayout = ({
@@ -37,7 +40,9 @@ export const GraphPageLayout = ({
   graphNodes,
   graphConnections,
   graphShowConnectionLabels,
-  usingRealData
+  usingRealData,
+  searchTerm,
+  onSearchTermChange,
 }: GraphPageLayoutProps) => {
   const { isSignedIn, isLoaded } = useUser();
   const navigate = useNavigate();
@@ -73,11 +78,14 @@ export const GraphPageLayout = ({
         </Sidebar>
 
         {/* Main Knowledge Graph Area */}
-        <SidebarInset className="flex-1">
-          <div className="flex items-center">
+        <SidebarInset className="flex-1 flex flex-col">
+          <div className="flex items-center gap-4 p-2 border-b">
             <SidebarTrigger />
+            <div className="flex-1 max-w-xs">
+              <GraphFilterControls searchTerm={searchTerm} onSearchTermChange={onSearchTermChange} />
+            </div>
           </div>
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 h-[calc(100%-3rem)] mx-2 mb-2 overflow-hidden shadow-sm">
+          <div className="flex-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 m-2 overflow-hidden shadow-sm">
             <KnowledgeGraph 
               nodes={graphNodes} 
               connections={graphConnections} 

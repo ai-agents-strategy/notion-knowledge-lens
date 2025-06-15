@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { useGraphData } from "@/hooks/useGraphData";
 import { GraphHeader } from "@/components/GraphHeader";
 import { GraphPageLayout } from "@/components/GraphPageLayout";
@@ -23,6 +24,22 @@ const Index = () => {
     finalFilteredConnections,
     isolatedNodeCount,
   } = useGraphData();
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const searchedNodes = searchTerm
+    ? filteredNodes.filter(node => 
+        node.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : filteredNodes;
+  
+  const searchedNodeIds = new Set(searchedNodes.map(n => n.id));
+
+  const searchedConnections = searchTerm
+    ? finalFilteredConnections.filter(conn =>
+        searchedNodeIds.has(conn.source) && searchedNodeIds.has(conn.target)
+      )
+    : finalFilteredConnections;
 
   if (isLoading) {
     return (
@@ -53,15 +70,17 @@ const Index = () => {
         onShowLabelsChange={setShowConnectionLabels}
         connectionStrengthFilter={connectionStrengthFilter}
         onConnectionStrengthChange={setConnectionStrengthFilter}
-        nodeCount={filteredNodes.length}
-        connectionCount={eligibleConnections.length}
+        nodeCount={searchedNodes.length}
+        connectionCount={searchedConnections.length}
         isolatedNodeCount={isolatedNodeCount}
         isSyncing={isSyncing}
         onSync={handleSync}
-        graphNodes={filteredNodes}
-        graphConnections={finalFilteredConnections}
+        graphNodes={searchedNodes}
+        graphConnections={searchedConnections}
         graphShowConnectionLabels={showConnectionLabels}
         usingRealData={usingRealData}
+        searchTerm={searchTerm}
+        onSearchTermChange={setSearchTerm}
       />
     </div>
   );
