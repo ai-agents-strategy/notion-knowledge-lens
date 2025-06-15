@@ -3,23 +3,23 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Crown, Calendar, CreditCard, ExternalLink, Key } from "lucide-react";
+import { Crown, Calendar, CreditCard, ExternalLink, Key } from "lucide-react";
 import { Link } from "react-router-dom";
-import { usePlans } from "@/hooks/usePlans";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { PricingCard } from "@/components/PricingCard";
 import { SettingsHeader } from "@/components/SettingsHeader";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 
 const Plan = () => {
-  const { plans, loading: plansLoading, formatPrice } = usePlans();
   const { subscription, loading: subscriptionLoading, createCheckoutSession, openCustomerPortal } = useSubscriptions();
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<'monthly' | 'yearly' | null>(null);
 
-  const handleSubscribe = async (planId: string) => {
-    setCheckoutLoading(planId);
+  const handleSubscribe = async (planType: 'monthly' | 'yearly') => {
+    setCheckoutLoading(planType);
     try {
-      const url = await createCheckoutSession(planId);
+      // This would normally use the actual plan ID from your database
+      const mockPlanId = planType === 'monthly' ? 'monthly-plan-id' : 'yearly-plan-id';
+      const url = await createCheckoutSession(mockPlanId);
       if (url) {
         window.open(url, '_blank');
       }
@@ -28,9 +28,25 @@ const Plan = () => {
     }
   };
 
-  const loading = plansLoading || subscriptionLoading;
+  const monthlyFeatures = [
+    "Knowledge Graph Visualization",
+    "Basic Notion Integration",
+    "Up to 1,000 nodes",
+    "Email Support",
+    "Export to PNG/SVG"
+  ];
 
-  if (loading) {
+  const yearlyFeatures = [
+    "Everything in Monthly",
+    "Advanced Notion Integration",
+    "Unlimited nodes",
+    "Priority Support",
+    "Advanced Analytics",
+    "Custom Integrations",
+    "Team Collaboration"
+  ];
+
+  if (subscriptionLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-black dark:text-white text-lg">Loading subscription details...</div>
@@ -110,7 +126,7 @@ const Plan = () => {
                       <div className="grid grid-cols-2 gap-4 pt-4">
                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                           <CreditCard className="w-4 h-4" />
-                          <span>{formatPrice(subscription.plan?.price_cents || 0, subscription.plan?.currency)}/{subscription.plan?.interval}</span>
+                          <span>${subscription.plan?.price_cents ? (subscription.plan.price_cents / 100).toFixed(2) : '0.00'}/{subscription.plan?.interval}</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                           <Calendar className="w-4 h-4" />
@@ -142,17 +158,33 @@ const Plan = () => {
                     {subscription ? 'Upgrade or Change Plan' : 'Choose Your Plan'}
                   </h2>
                   
-                  <div className="grid md:grid-cols-3 gap-6">
-                    {plans.map((plan) => (
-                      <PricingCard
-                        key={plan.id}
-                        plan={plan}
-                        formatPrice={formatPrice}
-                        onSubscribe={handleSubscribe}
-                        isLoading={checkoutLoading === plan.id}
-                        isCurrentPlan={subscription?.plan_id === plan.id}
-                      />
-                    ))}
+                  <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                    <PricingCard
+                      title="Monthly Plan"
+                      price="$29"
+                      period="month"
+                      description="Perfect for individuals and small teams"
+                      features={monthlyFeatures}
+                      onSubscribe={() => handleSubscribe('monthly')}
+                      isLoading={checkoutLoading === 'monthly'}
+                    />
+                    
+                    <PricingCard
+                      title="Yearly Plan"
+                      price="$290"
+                      period="year"
+                      description="Best value for growing teams and businesses"
+                      features={yearlyFeatures}
+                      isPopular={true}
+                      onSubscribe={() => handleSubscribe('yearly')}
+                      isLoading={checkoutLoading === 'yearly'}
+                    />
+                  </div>
+                  
+                  <div className="text-center mt-6">
+                    <p className="text-green-600 font-semibold">
+                      Save $58 per year with the yearly plan!
+                    </p>
                   </div>
                 </div>
               </div>
