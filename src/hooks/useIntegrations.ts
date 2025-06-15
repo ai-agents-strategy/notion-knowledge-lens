@@ -126,13 +126,16 @@ export const useIntegrations = () => {
         );
       } else {
         // Create new integration metadata in database (without API key)
+        // Using type assertion to work around TypeScript type mismatch
+        const insertData = {
+          user_id: user.id,
+          integration_type: type,
+          database_id: databaseId || null
+        } as any;
+
         const { data, error } = await supabase
           .from('integrations')
-          .insert([{
-            user_id: user.id,
-            integration_type: type,
-            database_id: databaseId || null
-          }])
+          .insert([insertData])
           .select()
           .single();
 
