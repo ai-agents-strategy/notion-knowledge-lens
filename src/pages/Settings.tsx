@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,12 +9,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Key, Database, Save, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@clerk/clerk-react";
-import { useIntegrations } from "@/hooks/useIntegrations";
 import { SettingsSidebar } from "@/components/SettingsSidebar";
 
 const Settings = () => {
   const { user } = useUser();
-  const { getIntegration, loading: integrationsLoading } = useIntegrations();
   const [notionApiKey, setNotionApiKey] = useState('');
   const [databaseId, setDatabaseId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,30 +21,30 @@ const Settings = () => {
   const [syncedDatabases, setSyncedDatabases] = useState<any[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  // Load integration data when available
+  // Load data from localStorage only
   useEffect(() => {
-    if (integrationsLoading) return;
-    
-    // Load from database integration
-    const integration = getIntegration('notion');
-    if (integration) {
-      setNotionApiKey(integration.api_key || '');
-      setDatabaseId(integration.database_id || '');
+    const storedApiKey = localStorage.getItem('notion_api_key');
+    if (storedApiKey) {
+      setNotionApiKey(storedApiKey);
     } else {
-      // Fallback to localStorage if no database record exists
-      const storedApiKey = localStorage.getItem('notion_api_key');
-      if (storedApiKey) {
-        setNotionApiKey(storedApiKey);
-      } else {
-        setNotionApiKey('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');
-      }
+      setNotionApiKey('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');
+    }
 
-      const storedDatabaseId = localStorage.getItem('notion_database_id');
-      if (storedDatabaseId) {
-        setDatabaseId(storedDatabaseId);
+    const storedDatabaseId = localStorage.getItem('notion_database_id');
+    if (storedDatabaseId) {
+      setDatabaseId(storedDatabaseId);
+    }
+
+    // Load synced databases from localStorage
+    const storedSyncedDatabases = localStorage.getItem('notion_synced_databases');
+    if (storedSyncedDatabases) {
+      try {
+        setSyncedDatabases(JSON.parse(storedSyncedDatabases));
+      } catch (error) {
+        console.error('Error parsing synced databases:', error);
       }
     }
-  }, [integrationsLoading, getIntegration]);
+  }, []);
 
   const handleSave = async () => {
     if (!user) {
@@ -67,42 +66,9 @@ const Settings = () => {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      console.log('💾 Attempting to save integration settings to database...');
+      console.log('💾 Saving integration settings to localStorage...');
 
-      // Save directly to database
-      const existingIntegration = getIntegration('notion');
-      
-      if (existingIntegration) {
-        // Update existing integration
-        const { error } = await supabase
-          .from('integrations')
-          .update({
-            api_key: notionApiKey.trim(),
-            database_id: databaseId.trim() || null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingIntegration.id);
-
-        if (error) {
-          throw new Error(error.message);
-        }
-      } else {
-        // Create new integration
-        const { error } = await supabase
-          .from('integrations')
-          .insert([{
-            user_id: user.id,
-            integration_type: 'notion',
-            api_key: notionApiKey.trim(),
-            database_id: databaseId.trim() || null
-          }]);
-
-        if (error) {
-          throw new Error(error.message);
-        }
-      }
-
-      // Also save to localStorage as backup
+      // Save to localStorage only
       localStorage.setItem('notion_api_key', notionApiKey.trim());
       if (databaseId.trim()) {
         localStorage.setItem('notion_database_id', databaseId.trim());
@@ -110,10 +76,10 @@ const Settings = () => {
         localStorage.removeItem('notion_database_id');
       }
 
-      console.log('✅ Settings saved successfully to database');
+      console.log('✅ Settings saved successfully to localStorage');
       toast({
         title: "Settings saved!",
-        description: "Your Notion integration settings have been saved to the database."
+        description: "Your Notion integration settings have been saved to localStorage."
       });
     } catch (error) {
       console.error('❌ Error saving settings:', error);
@@ -199,20 +165,7 @@ const Settings = () => {
 
   const handleClear = async () => {
     try {
-      // Clear from database
-      const integration = getIntegration('notion');
-      if (integration) {
-        const { error } = await supabase
-          .from('integrations')
-          .delete()
-          .eq('id', integration.id);
-
-        if (error) {
-          throw new Error(error.message);
-        }
-      }
-
-      // Clear localStorage data
+      // Clear localStorage data only
       localStorage.removeItem('notion_api_key');
       localStorage.removeItem('notion_database_id');
       localStorage.removeItem('notion_synced_databases');
@@ -227,7 +180,7 @@ const Settings = () => {
       setErrorMessage('');
       toast({
         title: "Settings cleared",
-        description: "All Notion integration settings have been cleared from the database."
+        description: "All Notion integration settings have been cleared from localStorage."
       });
     } catch (error) {
       console.error('❌ Error clearing settings:', error);
@@ -238,14 +191,6 @@ const Settings = () => {
       });
     }
   };
-
-  if (integrationsLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-700 dark:text-gray-300 text-lg">Loading integrations...</div>
-      </div>
-    );
-  }
 
   if (!user) {
     return (
@@ -288,7 +233,7 @@ const Settings = () => {
                 </CardTitle>
                 <CardDescription>
                   Connect your Notion workspace to visualize your actual database relationships.
-                  Your API key is stored securely in the database.
+                  Your API key is stored securely in your browser's localStorage.
                 </CardDescription>
               </CardHeader>
               
@@ -303,7 +248,7 @@ const Settings = () => {
                     onChange={(e) => setNotionApiKey(e.target.value)}
                   />
                   <p className="text-xs text-gray-500">
-                    Your API key is stored securely in the database
+                    Your API key is stored securely in your browser's localStorage
                   </p>
                 </div>
 
