@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Database, Settings, Eye, EyeOff, Share2, Link2 } from "lucide-react";
@@ -46,7 +45,7 @@ export const GraphHeader = ({
   };
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-6 py-4 relative z-20">
+    <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
