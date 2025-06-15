@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { useUser, useAuth } from '@clerk/clerk-react';
+import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -16,48 +15,8 @@ interface Integration {
 
 export const useIntegrations = () => {
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const syncClerkToSupabase = useCallback(async () => {
-    console.log('🔄 Syncing Clerk token to Supabase...');
-    const token = await getToken({ template: 'supabase' });
-
-    if (!token) {
-      console.error('❌ Failed to get Supabase token from Clerk. Make sure the "supabase" JWT template is configured in your Clerk dashboard.');
-      toast({
-        title: "Authentication Error",
-        description: "Could not get Supabase token from Clerk. You may need to configure a 'supabase' JWT template in your Clerk dashboard.",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    console.log('🔐 Got Supabase token from Clerk.');
-    const { error } = await supabase.auth.setSession({
-      access_token: token,
-      refresh_token: token,
-    });
-
-    if (error) {
-      console.error('❌ Error setting Supabase session:', error);
-      toast({
-        title: "Authentication Error",
-        description: `Failed to set Supabase session: ${error.message}`,
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    console.log('✅ Supabase session synced successfully.');
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('🔑 Current Supabase session:', session ? 'Active' : 'Inactive');
-    if (session) {
-      console.log('👤 JWT user ID from session:', session.user.id);
-    }
-    return true;
-  }, [getToken]);
 
   const fetchIntegrations = useCallback(async () => {
     if (!user) {
@@ -66,14 +25,7 @@ export const useIntegrations = () => {
     }
 
     setLoading(true);
-    console.log('🚀 Triggering fetch integrations...');
-    const synced = await syncClerkToSupabase();
-    if (!synced) {
-      setLoading(false);
-      return;
-    }
-
-    console.log('🔍 Fetching integrations for user:', user.id);
+    console.log('🚀 Triggering fetch integrations for user:', user.id);
 
     try {
       const { data, error } = await supabase
@@ -103,7 +55,7 @@ export const useIntegrations = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, syncClerkToSupabase]);
+  }, [user]);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -125,9 +77,6 @@ export const useIntegrations = () => {
       console.error('❌ Cannot save integration: missing user');
       return false;
     }
-
-    const synced = await syncClerkToSupabase();
-    if (!synced) return false;
 
     console.log('💾 Saving integration for user:', user.id, 'type:', type);
 
@@ -207,9 +156,6 @@ export const useIntegrations = () => {
       return false;
     }
     
-    const synced = await syncClerkToSupabase();
-    if (!synced) return false;
-
     const integration = getIntegration(type);
     if (!integration) {
       console.log('ℹ️ No integration found to delete');

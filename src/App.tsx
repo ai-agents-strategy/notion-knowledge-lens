@@ -13,7 +13,7 @@ import PublicGraph from "./pages/PublicGraph";
 import { SignIn, SignUp, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import SyncClerkToSupabase from "./components/SyncClerkToSupabase";
+import SupabaseAuthProvider from "./components/SupabaseAuthProvider";
 
 const queryClient = new QueryClient();
 
@@ -33,7 +33,7 @@ const RedirectToSignIn = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <SyncClerkToSupabase />
+      <SupabaseAuthProvider />
       <Toaster />
       <Sonner />
       <Routes>
