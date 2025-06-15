@@ -3,13 +3,6 @@ import * as d3 from "d3";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 import { GraphLegend } from "./GraphLegend";
 import { HoveredNodeDetails } from "./HoveredNodeDetails";
-import { GraphControls } from "./GraphControls";
-
-interface KnowledgeGraphProps {
-  nodes: DatabaseNode[];
-  connections: DatabaseConnection[];
-  showConnectionLabels: boolean;
-}
 
 // Notion-inspired color palette
 const categoryColors: Record<string, string> = {
@@ -330,9 +323,6 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       <GraphLegend 
         categoryColors={categoryColors}
         connectionColors={connectionColors}
-      />
-      
-      <GraphControls 
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
       />
