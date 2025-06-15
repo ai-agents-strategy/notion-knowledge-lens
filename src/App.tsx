@@ -10,6 +10,7 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Plan from "./pages/Plan";
 import Organization from "./pages/Organization";
+import Onboarding from "./pages/Onboarding";
 import PublicGraph from "./pages/PublicGraph";
 import { SignIn, SignUp, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { useEffect } from "react";
