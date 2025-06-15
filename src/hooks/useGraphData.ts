@@ -7,7 +7,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { sampleNodes, sampleConnections } from '@/data/sample-data';
-import { useIntegrations } from './useIntegrations';
 
 // Define node and connection types
 export interface GraphNode {
@@ -50,99 +49,121 @@ export const useGraphData = () => {
   const [categoryColors, setCategoryColors] = useState<{ [category: string]: string }>({});
   const [connectionColors, setConnectionColors] = useState<{ [connectionId: string]: string }>({});
 
-  const { integrations, loading: integrationsLoading, getIntegration } = useIntegrations();
+  const hasNotionApiKey = !!localStorage.getItem('notion_api_key');
 
-  const hasNotionApiKey = !!getIntegration('notion')?.api_key;
-
-  // Load graph data from local storage on mount
+  // Load stored real data on mount
   useEffect(() => {
-    const storedNodes = localStorage.getItem('graphNodes');
-    const storedConnections = localStorage.getItem('graphConnections');
-    if (storedNodes && storedConnections) {
-      setNodes(JSON.parse(storedNodes));
-      setConnections(JSON.parse(storedConnections));
+    const storedRealNodes = localStorage.getItem('notion_graph_nodes');
+    const storedRealConnections = localStorage.getItem('notion_graph_connections');
+    
+    if (storedRealNodes && storedRealConnections) {
+      try {
+        const parsedNodes = JSON.parse(storedRealNodes);
+        const parsedConnections = JSON.parse(storedRealConnections);
+        setRealNodes(parsedNodes);
+        setRealConnections(parsedConnections);
+        
+        // If we have real data and no current data set, use real data
+        if (parsedNodes.length > 0 && nodes.length === 0) {
+          setNodes(parsedNodes);
+          setConnections(parsedConnections);
+          setUsingRealData(true);
+        }
+      } catch (error) {
+        console.error('Error parsing stored real data:', error);
+      }
     }
   }, []);
 
-  // Save graph data to local storage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('graphNodes', JSON.stringify(nodes));
-    localStorage.setItem('graphConnections', JSON.stringify(connections));
-  }, [nodes, connections]);
-
-  // Sync data from Supabase
+  // Sync data from Notion via Edge Function
   const handleSync = useCallback(async () => {
     if (!user) {
-      console.error('❌ Cannot sync: no user');
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to sync with Notion.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const notionApiKey = localStorage.getItem('notion_api_key');
+    if (!notionApiKey?.trim()) {
+      toast({
+        title: "API Key Required",
+        description: "Please configure your Notion API key in settings first.",
+        variant: "destructive"
+      });
       return;
     }
 
     setIsSyncing(true);
-    console.log('🚀 Syncing data for user:', user.id);
+    console.log('🚀 Starting Notion sync...');
 
     try {
-      const notionIntegration = getIntegration('notion');
+      const { data, error } = await supabase.functions.invoke('notion-sync', {
+        body: { apiKey: notionApiKey.trim() }
+      });
 
-      if (!notionIntegration?.api_key || !notionIntegration?.database_id) {
-        toast({
-          title: "Error",
-          description: "Notion API key or database ID not configured",
-          variant: "destructive",
-        });
-        return;
+      if (error) {
+        console.error('❌ Edge function error:', error);
+        throw new Error(error.message || 'Failed to sync with Notion');
       }
 
-      // Function to fetch data from the Supabase function
-      const res = await fetch(`/api/sync-notion?notion_api_key=${notionIntegration.api_key}&database_id=${notionIntegration.database_id}`);
-      if (!res.ok) {
-        console.error('❌ Error syncing data:', res.statusText);
-        toast({
-          title: "Sync Error",
-          description: `Failed to sync data: ${res.statusText}`,
-          variant: "destructive",
-        });
-        return;
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
-      const { nodes: fetchedNodes, connections: fetchedConnections } = await res.json() as { nodes: GraphNode[], connections: GraphConnection[] };
-
-      if (!fetchedNodes || !fetchedConnections) {
-        console.error('❌ Invalid data received from sync');
-        toast({
-          title: "Sync Error",
-          description: "Invalid data received from sync",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Add a unique ID to each node if it doesn't have one
-      const nodesWithIds = fetchedNodes.map(node => ({
-        ...node,
+      console.log('✅ Notion sync success:', data);
+      
+      // Transform the data to our GraphNode format
+      const fetchedNodes: GraphNode[] = (data.nodes || []).map((node: any) => ({
         id: node.id || uuidv4(),
+        name: node.name || 'Untitled',
+        category: node.category || 'content',
+        description: node.description || '',
+        metadata: node.metadata || {}
       }));
 
-      setRealNodes(nodesWithIds);
+      const fetchedConnections: GraphConnection[] = (data.connections || []).map((conn: any) => ({
+        id: conn.id || uuidv4(),
+        source: conn.source,
+        target: conn.target,
+        label: conn.label || '',
+        strength: conn.strength || 0.5,
+        metadata: conn.metadata || {}
+      }));
+
+      setRealNodes(fetchedNodes);
       setRealConnections(fetchedConnections);
-      setNodes(nodesWithIds);
+      setNodes(fetchedNodes);
       setConnections(fetchedConnections);
       setUsingRealData(true);
 
+      // Save to localStorage for persistence
+      localStorage.setItem('notion_graph_nodes', JSON.stringify(fetchedNodes));
+      localStorage.setItem('notion_graph_connections', JSON.stringify(fetchedConnections));
+      localStorage.setItem('notion_last_sync', new Date().toISOString());
+
       toast({
-        title: "Success",
-        description: "Graph synced successfully",
+        title: "Sync successful!",
+        description: `Synced ${fetchedNodes.length} pages and ${fetchedConnections.length} connections from your Notion workspace.`
       });
+
     } catch (error) {
-      console.error('❌ Unexpected error during sync:', error);
+      console.error('❌ Sync error:', error);
+      let errorMsg = "Unknown error occurred during sync.";
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      }
       toast({
-        title: "Unexpected Error",
-        description: "An unexpected error occurred during sync",
-        variant: "destructive",
+        title: "Sync failed",
+        description: errorMsg,
+        variant: "destructive"
       });
     } finally {
       setIsSyncing(false);
     }
-  }, [user, getIntegration]);
+  }, [user]);
 
   // Fetch data on mount and when user changes
   useEffect(() => {
@@ -150,14 +171,7 @@ export const useGraphData = () => {
       console.log('ℹ️ No user, using sample data');
       setNodes(sampleNodes);
       setConnections(sampleConnections);
-      setRealNodes(sampleNodes);
-      setRealConnections(sampleConnections);
       setIsLoading(false);
-      return;
-    }
-
-    if (integrationsLoading) {
-      console.log('ℹ️ Integrations loading, skipping data fetch');
       return;
     }
 
@@ -166,25 +180,17 @@ export const useGraphData = () => {
       console.log('ℹ️ Public ID found in URL, fetching public graph');
       fetchPublicGraph(publicIdParam);
     } else {
-      console.log('🔌 User logged in, fetching graph data');
-      fetchGraphData();
-    }
-  }, [user, integrationsLoading]);
-
-  const fetchGraphData = async () => {
-    setIsLoading(true);
-    if (realNodes.length > 0 && realConnections.length > 0) {
-      console.log('✅ Using cached real data');
-      setNodes(realNodes);
-      setConnections(realConnections);
+      console.log('🔌 User logged in, checking for stored data');
+      
+      // Check if we have real data, otherwise use sample data
+      if (realNodes.length === 0) {
+        setNodes(sampleNodes);
+        setConnections(sampleConnections);
+        setUsingRealData(false);
+      }
       setIsLoading(false);
-      return;
     }
-
-    setNodes(sampleNodes);
-    setConnections(sampleConnections);
-    setIsLoading(false);
-  };
+  }, [user]);
 
   const fetchPublicGraph = async (publicId: string) => {
     setIsLoading(true);
@@ -253,10 +259,18 @@ export const useGraphData = () => {
       setConnections(sampleConnections);
       setUsingRealData(false);
     } else {
-      console.log('✅ Switching to real data');
-      setNodes(realNodes);
-      setConnections(realConnections);
-      setUsingRealData(true);
+      if (realNodes.length > 0) {
+        console.log('✅ Switching to real data');
+        setNodes(realNodes);
+        setConnections(realConnections);
+        setUsingRealData(true);
+      } else {
+        toast({
+          title: "No real data available",
+          description: "Please sync with Notion first to get real data.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
