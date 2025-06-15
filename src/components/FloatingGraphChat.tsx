@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,10 +138,10 @@ export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps
   return (
     <div className={chatWindowClasses}>
       <Card className="h-full flex flex-col">
-        <CardHeader className="pb-3 flex-row items-center justify-between space-y-0 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            <div className="flex flex-col">
+        <CardHeader className="pb-4 flex-row items-center justify-between space-y-0 flex-shrink-0 border-b">
+          <div className="flex items-center gap-3">
+            <MessageCircle className="w-5 h-5 text-blue-500" />
+            <div className="flex flex-col gap-1">
               <CardTitle className="text-lg">Graph Insights Chat</CardTitle>
               <div className="flex items-center gap-2">
                 <Badge variant={canUseEnhancedModel ? "default" : "secondary"} className="text-xs">
@@ -173,28 +174,32 @@ export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col gap-4 p-4 min-h-0">
+        <CardContent className="flex-1 flex flex-col gap-4 p-6 min-h-0">
           <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-4">
+            <div className="space-y-6">
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] p-3 rounded-lg ${
+                    className={`max-w-[85%] p-4 rounded-lg shadow-sm ${
                       message.role === 'user'
                         ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-900'
+                        : 'bg-gray-50 text-gray-900 border'
                     }`}
                   >
                     <div 
-                      className="text-sm prose prose-sm max-w-none"
+                      className="text-sm prose prose-sm max-w-none leading-relaxed"
                       dangerouslySetInnerHTML={{ 
                         __html: convertMarkdownToHtml(message.content) 
                       }}
                     />
-                    <p className="text-xs opacity-70 mt-1">
+                    <p className={`text-xs mt-3 pt-2 border-t ${
+                      message.role === 'user' 
+                        ? 'opacity-70 border-blue-400' 
+                        : 'opacity-50 border-gray-200'
+                    }`}>
                       {message.timestamp.toLocaleTimeString()}
                     </p>
                   </div>
@@ -202,27 +207,28 @@ export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-gray-100 p-3 rounded-lg">
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                  <div className="bg-gray-50 p-4 rounded-lg border shadow-sm">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
                   </div>
                 </div>
               )}
             </div>
           </ScrollArea>
           
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex gap-3 pt-2 border-t flex-shrink-0">
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask about your knowledge graph..."
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 h-10"
             />
             <Button
               onClick={sendMessage}
               disabled={!inputMessage.trim() || isLoading}
               size="sm"
+              className="h-10 px-4"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
