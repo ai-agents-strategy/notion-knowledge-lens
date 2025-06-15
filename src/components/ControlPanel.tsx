@@ -18,6 +18,7 @@ interface ControlPanelProps {
   isolatedNodeCount: number;
   isSyncing: boolean;
   onSync: () => void;
+  usingRealData: boolean;
 }
 
 export const ControlPanel = ({
@@ -29,7 +30,8 @@ export const ControlPanel = ({
   connectionCount,
   isolatedNodeCount,
   isSyncing,
-  onSync
+  onSync,
+  usingRealData
 }: ControlPanelProps) => {
   const { isSignedIn, isLoaded } = useUser();
   const { subscription } = useSubscriptions();
@@ -73,6 +75,14 @@ export const ControlPanel = ({
                 </>
               )}
             </Button>
+          </div>
+
+          {/* Data Source Indicator */}
+          <div className="flex items-center justify-center gap-2 p-3 bg-slate-100 rounded-lg">
+            <span className="text-sm text-muted-foreground">
+              {usingRealData ? "Real Notion Pages" : "Sample SEO Data"}
+            </span>
+            <div className={`w-2 h-2 rounded-full ${usingRealData ? "bg-green-500" : "bg-primary"}`} />
           </div>
 
           <Separator />

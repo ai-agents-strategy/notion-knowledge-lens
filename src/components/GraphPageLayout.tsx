@@ -18,6 +18,7 @@ interface GraphPageLayoutProps {
   graphNodes: DatabaseNode[];
   graphConnections: DatabaseConnection[];
   graphShowConnectionLabels: boolean;
+  usingRealData: boolean;
 }
 
 export const GraphPageLayout = ({
@@ -32,7 +33,8 @@ export const GraphPageLayout = ({
   onSync,
   graphNodes,
   graphConnections,
-  graphShowConnectionLabels
+  graphShowConnectionLabels,
+  usingRealData
 }: GraphPageLayoutProps) => {
   return (
     <SidebarProvider>
@@ -50,6 +52,7 @@ export const GraphPageLayout = ({
               isolatedNodeCount={isolatedNodeCount}
               isSyncing={isSyncing}
               onSync={onSync}
+              usingRealData={usingRealData}
             />
           </SidebarContent>
         </Sidebar>

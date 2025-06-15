@@ -61,6 +61,7 @@ const Index = () => {
         graphNodes={filteredNodes}
         graphConnections={finalFilteredConnections}
         graphShowConnectionLabels={showConnectionLabels}
+        usingRealData={usingRealData}
       />
     </div>
   );
