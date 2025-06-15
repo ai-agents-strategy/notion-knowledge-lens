@@ -13,16 +13,21 @@ import { useIntegrations } from "@/hooks/useIntegrations";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { SettingsHeader } from "@/components/SettingsHeader";
 import { SubscriptionGate } from "@/components/SubscriptionGate";
-
 const Settings = () => {
-  const { user } = useUser();
-  const { getIntegration, saveIntegration, deleteIntegration, loading: integrationsLoading } = useIntegrations();
-  const { subscription } = useSubscriptions();
-  
+  const {
+    user
+  } = useUser();
+  const {
+    getIntegration,
+    saveIntegration,
+    deleteIntegration,
+    loading: integrationsLoading
+  } = useIntegrations();
+  const {
+    subscription
+  } = useSubscriptions();
   const [notionApiKey, setNotionApiKey] = useState('');
-  const [databaseId, setDatabaseId] = useState(
-    localStorage.getItem('notion_database_id') || ''
-  );
+  const [databaseId, setDatabaseId] = useState(localStorage.getItem('notion_database_id') || '');
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -40,51 +45,44 @@ const Settings = () => {
       }
     }
   }, [getIntegration]);
-
   const handleSave = async () => {
     if (!user) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to save settings.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (!notionApiKey.trim()) {
       toast({
         title: "API Key Required",
         description: "Please enter your Notion API key before saving.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsLoading(true);
     setErrorMessage('');
-    
     try {
       console.log('💾 Attempting to save integration settings...');
-      
+
       // Save API key and database ID to integrations table
       const success = await saveIntegration('notion', notionApiKey.trim(), databaseId.trim() || undefined);
-      
       if (!success) {
         throw new Error('Failed to save integration to database');
       }
-      
+
       // Save database ID to localStorage (non-sensitive)
       if (databaseId.trim()) {
         localStorage.setItem('notion_database_id', databaseId.trim());
       } else {
         localStorage.removeItem('notion_database_id');
       }
-      
       console.log('✅ Settings saved successfully');
-      
       toast({
         title: "Settings saved!",
-        description: "Your Notion integration settings have been saved securely.",
+        description: "Your Notion integration settings have been saved securely."
       });
     } catch (error) {
       console.error('❌ Error saving settings:', error);
@@ -93,133 +91,111 @@ const Settings = () => {
       toast({
         title: "Error",
         description: errorMsg,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
-
   const handleSync = async () => {
     if (!user) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to sync with Notion.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (!notionApiKey.trim()) {
       toast({
         title: "API Key Required",
         description: "Please enter and save your Notion API key before syncing.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsSyncing(true);
     setSyncStatus('idle');
     setErrorMessage('');
-
     try {
       console.log('🔄 Starting Notion sync via Edge Function...');
-      
-      const { data, error } = await supabase.functions.invoke('notion-sync');
-
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('notion-sync');
       if (error) {
         console.error('❌ Edge function error:', error);
         throw new Error(error.message || 'Failed to sync with Notion');
       }
-
       if (data?.error) {
         throw new Error(data.error);
       }
-
       console.log('✅ Notion sync success:', data);
-      
       setSyncedDatabases(data.results || []);
       setSyncStatus('success');
-      
+
       // Save synced data to localStorage
       localStorage.setItem('notion_synced_databases', JSON.stringify(data.results || []));
       localStorage.setItem('notion_last_sync', new Date().toISOString());
-
       toast({
         title: "Sync successful!",
-        description: `Found ${data.results?.length || 0} databases in your Notion workspace.`,
+        description: `Found ${data.results?.length || 0} databases in your Notion workspace.`
       });
-
     } catch (error) {
       console.error('❌ Sync error:', error);
       setSyncStatus('error');
-      
       let errorMsg = "Unknown error occurred during sync.";
       if (error instanceof Error) {
         errorMsg = error.message;
       }
-      
       setErrorMessage(errorMsg);
-      
       toast({
         title: "Sync failed",
         description: errorMsg,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSyncing(false);
     }
   };
-
   const handleClear = async () => {
     try {
       // Clear integrations data
       await deleteIntegration('notion');
-      
+
       // Clear localStorage data
       localStorage.removeItem('notion_database_id');
       localStorage.removeItem('notion_synced_databases');
       localStorage.removeItem('notion_last_sync');
-      
       setNotionApiKey('');
       setDatabaseId('');
       setSyncedDatabases([]);
       setSyncStatus('idle');
       setErrorMessage('');
-      
       toast({
         title: "Settings cleared",
-        description: "All Notion integration settings have been cleared.",
+        description: "All Notion integration settings have been cleared."
       });
     } catch (error) {
       console.error('❌ Error clearing settings:', error);
       toast({
         title: "Error",
         description: "Failed to clear settings. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   if (integrationsLoading) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+    return <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-gray-700 dark:text-gray-300 text-lg">Loading integrations...</div>
-      </div>
-    );
+      </div>;
   }
-
   if (!user) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+    return <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-gray-700 dark:text-gray-300 text-lg">Please sign in to access settings.</div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 relative">
+  return <div className="min-h-screen bg-white dark:bg-gray-900 relative">
       {/* Background Pattern - Notion inspired */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-900" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(35,131,226,0.05),transparent_50%)]" />
@@ -227,23 +203,18 @@ const Settings = () => {
       <SettingsHeader title="Settings" description="Configure your Notion integration" />
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-4xl mx-auto px-6 pb-12">
+      <div className="relative z-10 max-w-4xl mx-auto px-6 pb-12 bg-zinc-50">
         <div className="grid gap-6">
           {/* Error Alert */}
-          {errorMessage && (
-            <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200">
+          {errorMessage && <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-sm">
                 {errorMessage}
               </AlertDescription>
-            </Alert>
-          )}
+            </Alert>}
 
           {/* Notion Integration */}
-          <SubscriptionGate 
-            feature="Notion Integration" 
-            description="Connect your Notion workspace to visualize your actual database relationships. This premium feature requires an active subscription."
-          >
+          <SubscriptionGate feature="Notion Integration" description="Connect your Notion workspace to visualize your actual database relationships. This premium feature requires an active subscription.">
             <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl text-blue-600 dark:text-blue-400">
@@ -258,14 +229,7 @@ const Settings = () => {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="notion-key" className="text-gray-700 dark:text-gray-300">Notion Integration Token</Label>
-                  <Input
-                    id="notion-key"
-                    type="password"
-                    placeholder="secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    value={notionApiKey}
-                    onChange={(e) => setNotionApiKey(e.target.value)}
-                    className="bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder:text-gray-400"
-                  />
+                  <Input id="notion-key" type="password" placeholder="secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" value={notionApiKey} onChange={e => setNotionApiKey(e.target.value)} className="bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder:text-gray-400" />
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     Your API key is stored securely in your personal account
                   </p>
@@ -273,77 +237,49 @@ const Settings = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="database-id" className="text-gray-700 dark:text-gray-300">Database ID (Optional)</Label>
-                  <Input
-                    id="database-id"
-                    placeholder="32 character database ID"
-                    value={databaseId}
-                    onChange={(e) => setDatabaseId(e.target.value)}
-                    className="bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder:text-gray-400"
-                  />
+                  <Input id="database-id" placeholder="32 character database ID" value={databaseId} onChange={e => setDatabaseId(e.target.value)} className="bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder:text-gray-400" />
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     Specific database ID to focus on (leave empty to discover all accessible databases)
                   </p>
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button 
-                    onClick={handleSave}
-                    disabled={isLoading || !notionApiKey.trim()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
-                  >
+                  <Button onClick={handleSave} disabled={isLoading || !notionApiKey.trim()} className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50">
                     <Save className="w-4 h-4 mr-2" />
                     {isLoading ? "Saving..." : "Save Settings"}
                   </Button>
 
-                  <Button 
-                    onClick={handleSync}
-                    disabled={isSyncing || !notionApiKey.trim()}
-                    className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-                  >
-                    {isSyncing ? (
-                      <>
+                  <Button onClick={handleSync} disabled={isSyncing || !notionApiKey.trim()} className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50">
+                    {isSyncing ? <>
                         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                         Syncing...
-                      </>
-                    ) : (
-                      <>
+                      </> : <>
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Sync Databases
-                      </>
-                    )}
+                      </>}
                   </Button>
                   
-                  <Button 
-                    variant="outline"
-                    onClick={handleClear}
-                    className="bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
-                  >
+                  <Button variant="outline" onClick={handleClear} className="bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600">
                     Clear All
                   </Button>
                 </div>
 
                 {/* Sync Status */}
-                {syncStatus === 'success' && (
-                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
+                {syncStatus === 'success' && <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
                     <CheckCircle className="w-4 h-4" />
                     Successfully synced {syncedDatabases.length} databases
-                  </div>
-                )}
+                  </div>}
 
                 {/* Synced Databases Preview */}
-                {syncedDatabases.length > 0 && (
-                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                {syncedDatabases.length > 0 && <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <h4 className="text-gray-700 dark:text-gray-300 font-medium mb-2">Synced Databases:</h4>
                     <div className="space-y-1 max-h-40 overflow-y-auto">
-                      {syncedDatabases.map((db, index) => (
-                        <div key={index} className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                      {syncedDatabases.map((db, index) => <div key={index} className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
                           <Database className="w-3 h-3" />
                           {db.title?.[0]?.plain_text || 'Untitled Database'}
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </SubscriptionGate>
@@ -395,8 +331,6 @@ const Settings = () => {
           </Card>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Settings;
