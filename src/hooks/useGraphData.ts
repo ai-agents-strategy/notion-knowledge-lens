@@ -34,7 +34,6 @@ const sampleConnections: DatabaseConnection[] = [
   { source: "7", target: "8", type: "reference", strength: 0.5, label: "mobile metrics" },
 ];
 
-
 export const useGraphData = () => {
   const { user } = useUser();
   const [showConnectionLabels, setShowConnectionLabels] = useState(true);
@@ -238,17 +237,23 @@ export const useGraphData = () => {
     [usingRealData, realConnections]
   );
 
+  // Debug: Log the connections to see what's happening
+  console.log('🔍 Debug - Current connections:', currentConnections);
+  console.log('🔍 Debug - Connection strength filter:', connectionStrengthFilter);
+
   const filteredNodes = currentNodes;
 
   const eligibleConnections = useMemo(() => {
-    // Create a Set of filtered node IDs for efficient lookup.
     const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
     
-    return currentConnections
+    const filtered = currentConnections
       .filter(conn => conn.strength >= connectionStrengthFilter)
       .filter(conn => 
         filteredNodeIds.has(conn.source) && filteredNodeIds.has(conn.target)
       );
+
+    console.log('🔍 Debug - Eligible connections after filtering:', filtered.length);
+    return filtered;
   }, [currentConnections, connectionStrengthFilter, filteredNodes]);
 
   const finalFilteredConnections = eligibleConnections;
@@ -260,6 +265,13 @@ export const useGraphData = () => {
     ]);
     return filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
   }, [filteredNodes, eligibleConnections]);
+
+  console.log('🔍 Debug - Final stats:', {
+    nodeCount: filteredNodes.length,
+    connectionCount: eligibleConnections.length,
+    isolatedNodeCount,
+    usingRealData
+  });
   
   return {
     showConnectionLabels, setShowConnectionLabels,
