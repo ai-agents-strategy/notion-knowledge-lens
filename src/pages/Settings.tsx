@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Key, Database, Save, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
+import { Key, Database, Save, RefreshCw, CheckCircle, AlertCircle, Eye, EyeOff, Bot } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@clerk/clerk-react";
 import { SettingsSidebar } from "@/components/SettingsSidebar";
@@ -19,6 +19,12 @@ const Settings = () => {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [syncedDatabases, setSyncedDatabases] = useState<any[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
+
+  // Chat API Keys state
+  const [openaiKey, setOpenaiKey] = useState('');
+  const [mem0Key, setMem0Key] = useState('');
+  const [showOpenaiKey, setShowOpenaiKey] = useState(false);
+  const [showMem0Key, setShowMem0Key] = useState(false);
 
   // Load data from localStorage only
   useEffect(() => {
@@ -41,6 +47,13 @@ const Settings = () => {
         console.error('Error parsing synced databases:', error);
       }
     }
+
+    // Load chat API keys from localStorage
+    const storedOpenaiKey = localStorage.getItem('openai_api_key');
+    const storedMem0Key = localStorage.getItem('mem0_api_key');
+    
+    if (storedOpenaiKey) setOpenaiKey(storedOpenaiKey);
+    if (storedMem0Key) setMem0Key(storedMem0Key);
   }, []);
 
   const handleSave = async () => {
@@ -189,6 +202,45 @@ const Settings = () => {
     }
   };
 
+  const handleSaveChatSettings = () => {
+    try {
+      if (openaiKey.trim()) {
+        localStorage.setItem('openai_api_key', openaiKey.trim());
+      } else {
+        localStorage.removeItem('openai_api_key');
+      }
+
+      if (mem0Key.trim()) {
+        localStorage.setItem('mem0_api_key', mem0Key.trim());
+      } else {
+        localStorage.removeItem('mem0_api_key');
+      }
+
+      toast({
+        title: "Chat settings saved!",
+        description: "Your AI chat API keys have been saved securely in your browser."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save chat settings. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleClearChatSettings = () => {
+    localStorage.removeItem('openai_api_key');
+    localStorage.removeItem('mem0_api_key');
+    setOpenaiKey('');
+    setMem0Key('');
+    
+    toast({
+      title: "Chat settings cleared",
+      description: "All AI chat API keys have been removed."
+    });
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -208,7 +260,7 @@ const Settings = () => {
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Integrations</h2>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Configure your Notion integration to visualize your actual database relationships
+              Configure your integrations and API settings
             </p>
           </div>
 
@@ -220,6 +272,99 @@ const Settings = () => {
                 <AlertDescription>{errorMessage}</AlertDescription>
               </Alert>
             )}
+
+            {/* Chat API Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="w-5 h-5" />
+                  Chat API Settings
+                </CardTitle>
+                <CardDescription>
+                  Configure your AI chat experience with enhanced models and memory features.
+                  Your API keys are stored securely in your browser's localStorage.
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="openai-key">OpenAI API Key</Label>
+                  <div className="relative">
+                    <Input
+                      id="openai-key"
+                      type={showOpenaiKey ? "text" : "password"}
+                      placeholder="sk-..."
+                      value={openaiKey}
+                      onChange={(e) => setOpenaiKey(e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowOpenaiKey(!showOpenaiKey)}
+                    >
+                      {showOpenaiKey ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Required for enhanced AI with memory features
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mem0-key">Mem0 API Key</Label>
+                  <div className="relative">
+                    <Input
+                      id="mem0-key"
+                      type={showMem0Key ? "text" : "password"}
+                      placeholder="m0-..."
+                      value={mem0Key}
+                      onChange={(e) => setMem0Key(e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowMem0Key(!showMem0Key)}
+                    >
+                      {showMem0Key ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Required for memory-enhanced conversations
+                  </p>
+                </div>
+
+                <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg">
+                  <p className="font-medium mb-1">Note:</p>
+                  <p>• Keys are stored securely in your browser</p>
+                  <p>• Both keys are required for memory features</p>
+                  <p>• Without keys, you'll use the free model</p>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button onClick={handleSaveChatSettings}>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Chat Settings
+                  </Button>
+                  <Button variant="outline" onClick={handleClearChatSettings}>
+                    Clear Chat Settings
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Notion Integration */}
             <Card>
