@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { RefreshCw, Settings } from "lucide-react";
-import { useUser, OrganizationSwitcher } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useNavigate } from "react-router-dom";
 
@@ -137,17 +137,5 @@ export const ControlPanel = ({
           </div>
         </CardContent>
       </Card>
-      
-      {/* Organization Switcher at bottom */}
-      {isSignedIn && !authIsLoading && <div className="mt-auto pt-4 border-t border-slate-200">
-          <div className="flex justify-center">
-            <OrganizationSwitcher appearance={{
-          elements: {
-            organizationSwitcherTrigger: "w-full justify-start text-sm",
-            organizationSwitcherPopoverCard: "w-64"
-          }
-        }} />
-          </div>
-        </div>}
     </div>;
 };
