@@ -4,20 +4,20 @@ import { useNavigate } from 'react-router-dom';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 import { PricingCard } from '@/components/PricingCard';
-import { usePlans } from '@/hooks/usePlans';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { Loader2 } from 'lucide-react';
 
 const Pricing = () => {
   const navigate = useNavigate();
-  const { plans, loading: plansLoading, formatPrice } = usePlans();
   const { subscription, createCheckoutSession, openCustomerPortal } = useSubscriptions();
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<'monthly' | 'yearly' | null>(null);
 
-  const handleSubscribe = async (planId: string) => {
-    setCheckoutLoading(planId);
+  const handleSubscribe = async (planType: 'monthly' | 'yearly') => {
+    setCheckoutLoading(planType);
     try {
-      const url = await createCheckoutSession(planId);
+      // This would normally use the actual plan ID from your database
+      const mockPlanId = planType === 'monthly' ? 'monthly-plan-id' : 'yearly-plan-id';
+      const url = await createCheckoutSession(mockPlanId);
       if (url) {
         window.open(url, '_blank');
       }
@@ -26,13 +26,23 @@ const Pricing = () => {
     }
   };
 
-  if (plansLoading) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-notion-blue" />
-      </div>
-    );
-  }
+  const monthlyFeatures = [
+    "Knowledge Graph Visualization",
+    "Basic Notion Integration",
+    "Up to 1,000 nodes",
+    "Email Support",
+    "Export to PNG/SVG"
+  ];
+
+  const yearlyFeatures = [
+    "Everything in Monthly",
+    "Advanced Notion Integration",
+    "Unlimited nodes",
+    "Priority Support",
+    "Advanced Analytics",
+    "Custom Integrations",
+    "Team Collaboration"
+  ];
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -49,17 +59,33 @@ const Pricing = () => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => (
-            <PricingCard
-              key={plan.id}
-              plan={plan}
-              formatPrice={formatPrice}
-              onSubscribe={handleSubscribe}
-              isLoading={checkoutLoading === plan.id}
-              isCurrentPlan={subscription?.plan_id === plan.id}
-            />
-          ))}
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <PricingCard
+            title="Monthly Plan"
+            price="$29"
+            period="month"
+            description="Perfect for individuals and small teams"
+            features={monthlyFeatures}
+            onSubscribe={() => handleSubscribe('monthly')}
+            isLoading={checkoutLoading === 'monthly'}
+          />
+          
+          <PricingCard
+            title="Yearly Plan"
+            price="$290"
+            period="year"
+            description="Best value for growing teams and businesses"
+            features={yearlyFeatures}
+            isPopular={true}
+            onSubscribe={() => handleSubscribe('yearly')}
+            isLoading={checkoutLoading === 'yearly'}
+          />
+        </div>
+
+        <div className="text-center mt-6">
+          <p className="text-green-600 font-semibold">
+            Save $58 per year with the yearly plan!
+          </p>
         </div>
 
         <div className="text-center mt-12">
