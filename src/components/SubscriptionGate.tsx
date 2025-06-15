@@ -30,10 +30,10 @@ export const SubscriptionGate = ({
   if (!hasSubscription) {
     return <Card className="backdrop-blur-sm border-slate-700/50 text-white bg-slate-50">
         <CardHeader className="text-center bg-slate-50">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mb-4">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mb-4 bg-gray-900">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+          <CardTitle className="text-xl bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-gray-950">
             Premium Feature: {feature}
           </CardTitle>
           <CardDescription className="text-slate-300">
