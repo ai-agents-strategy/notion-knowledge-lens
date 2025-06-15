@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -117,7 +116,9 @@ const Settings = () => {
       const {
         data,
         error
-      } = await supabase.functions.invoke('notion-sync');
+      } = await supabase.functions.invoke('notion-sync', {
+        body: { apiKey: notionApiKey.trim() }
+      });
       if (error) {
         console.error('❌ Edge function error:', error);
         throw new Error(error.message || 'Failed to sync with Notion');

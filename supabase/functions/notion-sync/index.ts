@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -73,6 +74,9 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json().catch(() => ({}))
+    const apiKeyFromRequest = body?.apiKey
+
     // Create a Supabase client with the Auth context of the user that made the request.
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -91,23 +95,25 @@ serve(async (req) => {
     }
 
     // Get the user's Notion integration from the integrations table
-    const { data: integration, error: integrationError } = await supabaseClient
+    const { data: integration } = await supabaseClient
       .from('integrations')
       .select('api_key, database_id')
       .eq('user_id', user.id)
       .eq('integration_type', 'notion')
       .single()
 
-    if (integrationError || !integration?.api_key) {
+    const notionApiKey = apiKeyFromRequest || integration?.api_key
+
+    if (!notionApiKey) {
       return new Response(
-        JSON.stringify({ error: 'Notion API key not found. Please configure it in Settings.' }),
+        JSON.stringify({ error: 'Notion API key not found. Please provide one or configure it in Settings.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    const notionApiKey = integration.api_key
     
     console.log('Starting Notion sync for user:', user.id)
+    if (apiKeyFromRequest) console.log('Using API key provided in request.')
+    else console.log('Using saved API key.')
 
     // First, get all databases the integration has access to
     const databasesResponse = await fetch('https://api.notion.com/v1/search', {
