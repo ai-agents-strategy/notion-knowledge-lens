@@ -1,405 +1,428 @@
-import { useState, useMemo, useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { DatabaseNode, DatabaseConnection } from "@/types/graph";
-import { categoryColors as defaultCategoryColors, connectionColors as defaultConnectionColors } from "@/components/KnowledgeGraph/graphConfig";
+import { useState, useEffect, useCallback } from 'react';
+import { useUser } from '@clerk/clerk-react';
+import { useSearchParams } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 
-// Sample SEO Knowledge Graph data (moved here)
-const sampleNodes: DatabaseNode[] = [
-  { id: "1", name: "Keyword Research", type: "page", category: "seo", description: "Main keyword research page", size: 25 },
-  { id: "2", name: "Content Strategy", type: "page", category: "content", description: "Content planning and strategy", size: 30 },
-  { id: "3", name: "Technical SEO", type: "page", category: "technical", description: "Technical optimization guide", size: 28 },
-  { id: "4", name: "Link Building", type: "page", category: "offpage", description: "Link acquisition strategies", size: 22 },
-  { id: "5", name: "Local SEO", type: "page", category: "local", description: "Local search optimization", size: 20 },
-  { id: "6", name: "E-commerce SEO", type: "page", category: "ecommerce", description: "Online store optimization", size: 26 },
-  { id: "7", name: "Mobile SEO", type: "page", category: "mobile", description: "Mobile search optimization", size: 18 },
-  { id: "8", name: "Analytics Setup", type: "page", category: "analytics", description: "Tracking and measurement", size: 16 },
-  { id: "9", name: "Competitor Analysis", type: "page", category: "research", description: "Competitive intelligence", size: 24 },
-  { id: "10", name: "Content Calendar", type: "page", category: "content", description: "Editorial planning", size: 14 },
-];
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/types/supabase';
+import { toast } from '@/components/ui/use-toast';
+import { sampleNodes, sampleConnections } from '@/data/sample-data';
+import { useIntegrations } from './useIntegrations';
 
-const sampleConnections: DatabaseConnection[] = [
-  { source: "1", target: "2", type: "relation", strength: 0.9, label: "informs strategy" },
-  { source: "2", target: "10", type: "dependency", strength: 0.8, label: "requires planning" },
-  { source: "1", target: "9", type: "relation", strength: 0.7, label: "competitive analysis" },
-  { source: "3", target: "7", type: "relation", strength: 0.85, label: "mobile optimization" },
-  { source: "4", target: "5", type: "relation", strength: 0.6, label: "local citations" },
-  { source: "6", target: "3", type: "dependency", strength: 0.75, label: "technical foundation" },
-  { source: "2", target: "4", type: "reference", strength: 0.65, label: "content for links" },
-  { source: "8", target: "1", type: "reference", strength: 0.55, label: "keyword tracking" },
-  { source: "9", target: "4", type: "relation", strength: 0.7, label: "competitor links" },
-  { source: "5", target: "8", type: "dependency", strength: 0.6, label: "local tracking" },
-  { source: "6", target: "1", type: "relation", strength: 0.8, label: "product keywords" },
-  { source: "7", target: "8", type: "reference", strength: 0.5, label: "mobile metrics" },
-];
+// Define node and connection types
+export interface GraphNode {
+  id: string;
+  name: string;
+  category: string;
+  description?: string;
+  metadata?: any;
+  color?: string;
+  x?: number;
+  y?: number;
+}
 
-// Helper function to calculate node sizes based on connections
-const calculateNodeSizes = (nodes: DatabaseNode[], connections: DatabaseConnection[]): DatabaseNode[] => {
-  // Count connections for each node
-  const connectionCounts = new Map<string, number>();
-  
-  nodes.forEach(node => connectionCounts.set(node.id, 0));
-  
-  connections.forEach(conn => {
-    const sourceId = typeof conn.source === 'string' ? conn.source : (conn.source as any).id;
-    const targetId = typeof conn.target === 'string' ? conn.target : (conn.target as any).id;
-    
-    connectionCounts.set(sourceId, (connectionCounts.get(sourceId) || 0) + 1);
-    connectionCounts.set(targetId, (connectionCounts.get(targetId) || 0) + 1);
-  });
+export interface GraphConnection {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+  strength?: number;
+  metadata?: any;
+  color?: string;
+}
 
-  // Calculate sizes with minimum and maximum bounds
-  const maxConnections = Math.max(...Array.from(connectionCounts.values()));
-  const minConnections = Math.min(...Array.from(connectionCounts.values()));
-  
-  return nodes.map(node => {
-    const connectionCount = connectionCounts.get(node.id) || 0;
-    let baseSize: number;
-    
-    // Set base sizes by node type
-    if (node.type === 'database') {
-      baseSize = 30;
-    } else if (node.type === 'page') {
-      baseSize = 20;
-    } else { // property
-      baseSize = 12;
-    }
-    
-    // Scale size based on connection count
-    if (maxConnections > minConnections) {
-      const normalizedCount = (connectionCount - minConnections) / (maxConnections - minConnections);
-      const sizeMultiplier = 1 + (normalizedCount * 0.8); // Increase size by up to 80%
-      baseSize = Math.round(baseSize * sizeMultiplier);
-    }
-    
-    // Apply bounds
-    const minSize = node.type === 'property' ? 8 : (node.type === 'page' ? 15 : 25);
-    const maxSize = node.type === 'property' ? 20 : (node.type === 'page' ? 40 : 50);
-    
-    return {
-      ...node,
-      size: Math.min(Math.max(baseSize, minSize), maxSize)
-    };
-  });
-};
+// Type for the public_graphs table
+export type PublicGraph = Database['public']['Tables']['public_graphs']['Row'];
 
+// Hook definition
 export const useGraphData = () => {
   const { user } = useUser();
-  const [showConnectionLabels, setShowConnectionLabels] = useState(true);
-  const [connectionStrengthFilter, setConnectionStrengthFilter] = useState(0);
-  const [realNodes, setRealNodes] = useState<DatabaseNode[]>([]);
-  const [realConnections, setRealConnections] = useState<DatabaseConnection[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [nodes, setNodes] = useState<GraphNode[]>([]);
+  const [connections, setConnections] = useState<GraphConnection[]>([]);
+  const [realNodes, setRealNodes] = useState<GraphNode[]>([]);
+  const [realConnections, setRealConnections] = useState<GraphConnection[]>([]);
+  const [filteredNodes, setFilteredNodes] = useState<GraphNode[]>([]);
+  const [finalFilteredConnections, setFinalFilteredConnections] = useState<GraphConnection[]>([]);
+  const [isolatedNodeCount, setIsolatedNodeCount] = useState<number>(0);
+  const [showConnectionLabels, setShowConnectionLabels] = useState<boolean>(false);
+  const [connectionStrengthFilter, setConnectionStrengthFilter] = useState<number>(0);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [usingRealData, setUsingRealData] = useState<boolean>(false);
   const [publicId, setPublicId] = useState<string | null>(null);
+	const [categoryColors, setCategoryColors] = useState<{ [category: string]: string }>({});
+  const [connectionColors, setConnectionColors] = useState<{ [connectionId: string]: string }>({});
 
-  // Check if Notion API key exists in localStorage
-  const hasNotionApiKey = Boolean(localStorage.getItem('notion_api_key'));
-  
-  // Automatically determine if we should use real data based on API key presence and availability
-  const isRealData = hasNotionApiKey && realNodes.length > 0;
+  const { integrations, loading: integrationsLoading, getIntegration } = useIntegrations();
 
-  const [categoryColors, setCategoryColors] = useState(() => {
-    try {
-      const saved = localStorage.getItem('categoryColors');
-      if (saved) {
-        return { ...defaultCategoryColors, ...JSON.parse(saved) };
-      }
-    } catch (error) {
-      console.error("Error reading category colors from localStorage:", error);
-    }
-    return defaultCategoryColors;
-  });
+  const hasNotionApiKey = !!getIntegration('notion')?.api_key;
 
-  const [connectionColors, setConnectionColors] = useState(() => {
-    try {
-      const saved = localStorage.getItem('connectionColors');
-      if (saved) {
-        return { ...defaultConnectionColors, ...JSON.parse(saved) };
-      }
-    } catch (error) {
-      console.error("Error reading connection colors from localStorage:", error);
-    }
-    return defaultConnectionColors;
-  });
-
+  // Load graph data from local storage on mount
   useEffect(() => {
-    // Try to load from localStorage first
-    try {
-      const storedNodes = localStorage.getItem('notion_graph_nodes');
-      const storedConnections = localStorage.getItem('notion_graph_connections');
-
-      if (storedNodes && storedConnections) {
-        setRealNodes(JSON.parse(storedNodes));
-        setRealConnections(JSON.parse(storedConnections));
-        setIsLoading(false);
-        return; // Data loaded from localStorage, don't proceed to DB load
-      }
-    } catch (e) {
-      console.error("Failed to load graph from localStorage", e);
+    const storedNodes = localStorage.getItem('graphNodes');
+    const storedConnections = localStorage.getItem('graphConnections');
+    if (storedNodes && storedConnections) {
+      setNodes(JSON.parse(storedNodes));
+      setConnections(JSON.parse(storedConnections));
     }
+  }, []);
 
-    const loadGraphFromDB = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('graphs')
-          .select('nodes, connections, public_id')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (error && error.code !== 'PGRST116') throw error; // Allow "no rows" error
-
-        if (data) {
-          if (data.nodes && data.connections) {
-            setRealNodes(data.nodes as unknown as DatabaseNode[]);
-            setRealConnections(data.connections as unknown as DatabaseConnection[]);
-            setPublicId(data.public_id);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading graph from DB:", error);
-        toast({ title: "Could not load your saved graph", variant: "destructive" });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadGraphFromDB();
-  }, [user]);
-
-  // Save color settings to localStorage when they change
+  // Save graph data to local storage whenever it changes
   useEffect(() => {
-    try {
-      localStorage.setItem('categoryColors', JSON.stringify(categoryColors));
-      localStorage.setItem('connectionColors', JSON.stringify(connectionColors));
-    } catch (error) {
-      console.error("Error saving color settings to localStorage:", error);
-    }
-  }, [categoryColors, connectionColors]);
+    localStorage.setItem('graphNodes', JSON.stringify(nodes));
+    localStorage.setItem('graphConnections', JSON.stringify(connections));
+  }, [nodes, connections]);
 
-  const getPageTitle = (page: any) => {
-    if (page.properties) {
-      for (const [, prop] of Object.entries(page.properties)) {
-        const propData = prop as any;
-        if (propData.type === 'title' && propData.title?.length > 0) {
-          return propData.title[0]?.plain_text || 'Untitled';
-        }
-      }
-      for (const [, prop] of Object.entries(page.properties)) {
-        const propData = prop as any;
-        if (propData.type === 'rich_text' && propData.rich_text?.length > 0) {
-          return propData.rich_text[0]?.plain_text || 'Untitled';
-        }
-      }
-    }
-    return `Page ${page.id.slice(0, 8)}`;
-  };
-
-  const transformNotionDataToSEOGraph = (pages: any[], _databases: any[]) => {
-    const nodes: DatabaseNode[] = [];
-    const connections: DatabaseConnection[] = [];
-
-    pages.forEach((page: any) => {
-      const pageTitle = page.extracted_title || getPageTitle(page);
-      const categoryFromDb = page.database_name?.toLowerCase().replace(/\s+/g, '_') || 'content';
-      
-      const pageNode: DatabaseNode = {
-        id: page.id,
-        name: pageTitle,
-        type: "page",
-        category: categoryFromDb,
-        description: `${pageTitle} from ${page.database_name}`,
-        size: Math.min(Math.max(15, pageTitle.length), 35)
-      };
-      nodes.push(pageNode);
-    });
-
-    pages.forEach((page: any) => {
-      if (page.properties) {
-        Object.entries(page.properties).forEach(([propName, propData]: [string, any]) => {
-          if (propData.type === 'relation' && propData.relation?.length > 0) {
-            propData.relation.forEach((relatedPage: any) => {
-              const targetPage = pages.find(p => p.id === relatedPage.id);
-              if (targetPage) {
-                connections.push({
-                  source: page.id,
-                  target: relatedPage.id,
-                  type: "relation",
-                  strength: 0.8,
-                  label: propName.toLowerCase().replace(/_/g, ' ')
-                });
-              }
-            });
-          }
-        });
-      }
-    });
-    return { nodes, connections };
-  };
-
-  const handleSync = async () => {
-    const apiKey = localStorage.getItem('notion_api_key');
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please configure your Notion API key in settings before syncing.",
-        variant: "destructive"
-      });
+  // Sync data from Supabase
+  const handleSync = useCallback(async () => {
+    if (!user) {
+      console.error('❌ Cannot sync: no user');
       return;
     }
 
     setIsSyncing(true);
+    console.log('🚀 Syncing data for user:', user.id);
+
     try {
-      console.log('Starting SEO Knowledge Graph sync via Edge Function...');
-      const { data, error } = await supabase.functions.invoke('notion-sync', {
-        body: { apiKey }
-      });
-      if (error) throw new Error(error.message || 'Failed to sync with Notion');
-      if (data.error) throw new Error(data.error);
+      const notionIntegration = getIntegration('notion');
 
-      const { nodes, connections } = data;
-      if (!nodes || !connections) {
-        throw new Error('Sync function did not return valid graph data.');
+      if (!notionIntegration?.api_key || !notionIntegration?.database_id) {
+        toast({
+          title: "Error",
+          description: "Notion API key or database ID not configured",
+          variant: "destructive",
+        });
+        return;
       }
-      
-      setRealNodes(nodes);
-      setRealConnections(connections);
 
-      // Save to localStorage
-      localStorage.setItem('notion_graph_nodes', JSON.stringify(nodes));
-      localStorage.setItem('notion_graph_connections', JSON.stringify(connections));
+      // Function to fetch data from the Supabase function
+      const res = await fetch(`/api/sync-notion?notion_api_key=${notionIntegration.api_key}&database_id=${notionIntegration.database_id}`);
+      if (!res.ok) {
+        console.error('❌ Error syncing data:', res.statusText);
+        toast({
+          title: "Sync Error",
+          description: `Failed to sync data: ${res.statusText}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { nodes: fetchedNodes, connections: fetchedConnections } = await res.json() as { nodes: GraphNode[], connections: GraphConnection[] };
+
+      if (!fetchedNodes || !fetchedConnections) {
+        console.error('❌ Invalid data received from sync');
+        toast({
+          title: "Sync Error",
+          description: "Invalid data received from sync",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Add a unique ID to each node if it doesn't have one
+      const nodesWithIds = fetchedNodes.map(node => ({
+        ...node,
+        id: node.id || uuidv4(),
+      }));
+
+      setRealNodes(nodesWithIds);
+      setRealConnections(fetchedConnections);
+      setNodes(nodesWithIds);
+      setConnections(fetchedConnections);
+      setUsingRealData(true);
 
       toast({
-        title: "Sync successful!",
-        description: `Loaded ${nodes.length} pages and ${connections.length} relationships.`,
+        title: "Success",
+        description: "Graph synced successfully",
       });
     } catch (error) {
-      console.error('Sync error:', error);
-      let errorMsg = "Unknown error occurred during sync.";
-      if (error instanceof Error) errorMsg = error.message;
-      toast({ title: "Sync failed", description: errorMsg, variant: "destructive" });
+      console.error('❌ Unexpected error during sync:', error);
+      toast({
+        title: "Unexpected Error",
+        description: "An unexpected error occurred during sync",
+        variant: "destructive",
+      });
     } finally {
       setIsSyncing(false);
     }
+  }, [user, getIntegration]);
+
+  // Fetch data on mount and when user changes
+  useEffect(() => {
+    if (!user) {
+      console.log('ℹ️ No user, using sample data');
+      setNodes(sampleNodes);
+      setConnections(sampleConnections);
+      setRealNodes(sampleNodes);
+      setRealConnections(sampleConnections);
+      setIsLoading(false);
+      return;
+    }
+
+    if (integrationsLoading) {
+      console.log('ℹ️ Integrations loading, skipping data fetch');
+      return;
+    }
+
+    const publicIdParam = searchParams.get('publicId');
+    if (publicIdParam) {
+      console.log('ℹ️ Public ID found in URL, fetching public graph');
+      fetchPublicGraph(publicIdParam);
+    } else {
+      console.log('🔌 User logged in, fetching graph data');
+      fetchGraphData();
+    }
+  }, [user, integrationsLoading]);
+
+  const fetchGraphData = async () => {
+    setIsLoading(true);
+    if (realNodes.length > 0 && realConnections.length > 0) {
+      console.log('✅ Using cached real data');
+      setNodes(realNodes);
+      setConnections(realConnections);
+      setIsLoading(false);
+      return;
+    }
+
+    setNodes(sampleNodes);
+    setConnections(sampleConnections);
+    setIsLoading(false);
   };
 
-  const generatePublicLink = async (): Promise<string | null> => {
-    if (!user) return null;
+  const fetchPublicGraph = async (publicId: string) => {
+    setIsLoading(true);
+    console.log('🔗 Fetching public graph with ID:', publicId);
+
     try {
-      if (publicId) {
-        return `${window.location.origin}/public/graph/${publicId}`;
+      const { data: publicGraph, error } = await supabase
+        .from('public_graphs')
+        .select('*')
+        .eq('public_id', publicId)
+        .single();
+
+      if (error) {
+        console.error('❌ Error fetching public graph:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch public graph",
+          variant: "destructive",
+        });
+        return;
       }
 
-      const newPublicId = crypto.randomUUID();
-      const { error: updateError } = await supabase
-        .from('graphs')
-        .update({ public_id: newPublicId })
-        .eq('user_id', user.id)
-        .select()
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      setPublicId(newPublicId);
-      toast({ title: "Public link generated!", description: "Anyone with the link can now view your graph." });
-      return `${window.location.origin}/public/graph/${newPublicId}`;
+      if (!publicGraph) {
+        console.error('❌ Public graph not found');
+        toast({
+          title: "Error",
+          description: "Public graph not found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setNodes(publicGraph.graph_data.nodes);
+      setConnections(publicGraph.graph_data.connections);
+      setUsingRealData(false);
+      setPublicId(publicId);
     } catch (error) {
-      console.error("Error generating public link:", error);
-      toast({ title: "Could not generate public link", variant: "destructive" });
+      console.error('❌ Unexpected error fetching public graph:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Toggle between real and sample data
+  const toggleDataSource = () => {
+    if (!user) {
+      console.error('❌ Cannot toggle data source: no user');
+      return;
+    }
+
+    if (usingRealData) {
+      console.log('🩻 Switching to sample data');
+      setNodes(sampleNodes);
+      setConnections(sampleConnections);
+      setUsingRealData(false);
+    } else {
+      console.log('✅ Switching to real data');
+      setNodes(realNodes);
+      setConnections(realConnections);
+      setUsingRealData(true);
+    }
+  };
+
+  // Filter nodes based on connection strength
+  useEffect(() => {
+    const filteredConnections = connections.filter(
+      (connection) => (connection.strength || 0) >= connectionStrengthFilter
+    );
+
+    // Get IDs of nodes that are part of the filtered connections
+    const connectedNodeIds = new Set(
+      filteredConnections.flatMap((conn) => [conn.source, conn.target])
+    );
+
+    // Filter nodes to include only those that are part of the filtered connections
+    const filteredNodes = nodes.filter((node) => connectedNodeIds.has(node.id));
+    setFilteredNodes(filteredNodes);
+
+    // Update final filtered connections based on the filtered nodes
+    const finalFilteredConnections = filteredConnections.filter(conn => {
+      return filteredNodes.some(node => node.id === conn.source) &&
+             filteredNodes.some(node => node.id === conn.target);
+    });
+    setFinalFilteredConnections(finalFilteredConnections);
+
+    // Calculate isolated node count
+    const isolatedNodes = nodes.length - filteredNodes.length;
+    setIsolatedNodeCount(isolatedNodes);
+  }, [nodes, connections, connectionStrengthFilter]);
+
+  const isRealData = nodes !== sampleNodes;
+
+  const generatePublicLink = async (): Promise<string | null> => {
+    if (!user) {
+      console.error('❌ Cannot generate public link: no user');
+      return null;
+    }
+
+    try {
+      console.log('🔗 Generating public link for user:', user.id);
+      
+      // First check if a public graph already exists
+      const { data: existingGraph, error: checkError } = await supabase
+        .from('public_graphs')
+        .select('public_id')
+        .eq('user_id', user.id)
+        .maybeSingle(); // Use maybeSingle() instead of single() to handle no rows gracefully
+
+      if (checkError) {
+        console.error('❌ Error checking existing public graph:', checkError);
+        toast({
+          title: "Error",
+          description: "Failed to check existing public link",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      if (existingGraph) {
+        // Return existing public link
+        const link = `${window.location.origin}/public/graph/${existingGraph.public_id}`;
+        console.log('✅ Using existing public link:', link);
+        setPublicId(existingGraph.public_id);
+        return link;
+      }
+
+      // Generate new public ID
+      const newPublicId = crypto.randomUUID();
+      
+      // Create new public graph entry
+      const { data, error } = await supabase
+        .from('public_graphs')
+        .insert([{
+          user_id: user.id,
+          public_id: newPublicId,
+          graph_data: {
+            nodes: usingRealData ? realNodes : sampleNodes,
+            connections: usingRealData ? realConnections : sampleConnections
+          }
+        }])
+        .select('public_id')
+        .single();
+
+      if (error) {
+        console.error('❌ Error creating public graph:', error);
+        toast({
+          title: "Error",
+          description: "Failed to generate public link",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      const link = `${window.location.origin}/public/graph/${data.public_id}`;
+      console.log('✅ Generated new public link:', link);
+      setPublicId(data.public_id);
+      
+      toast({
+        title: "Success",
+        description: "Public link generated successfully",
+      });
+      
+      return link;
+    } catch (error) {
+      console.error('❌ Unexpected error generating public link:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
       return null;
     }
   };
 
   const revokePublicLink = async (): Promise<void> => {
-    if (!user) return;
+    if (!user) {
+      console.error('❌ Cannot revoke public link: no user');
+      return;
+    }
+
+    if (!publicId) {
+      console.warn('⚠️ No public ID to revoke');
+      return;
+    }
+
     try {
+      console.log('🔥 Revoking public link for user:', user.id, 'and public ID:', publicId);
+
       const { error } = await supabase
-        .from('graphs')
-        .update({ public_id: null })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
+        .from('public_graphs')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('public_id', publicId);
 
+      if (error) {
+        console.error('❌ Error revoking public graph:', error);
+        toast({
+          title: "Error",
+          description: "Failed to revoke public link",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Public link revoked successfully');
       setPublicId(null);
-      toast({ title: "Public access revoked", description: "Your graph is no longer shared publicly." });
+      
+      toast({
+        title: "Success",
+        description: "Public link revoked successfully",
+      });
     } catch (error) {
-      console.error("Error revoking public link:", error);
-      toast({ title: "Could not revoke public link", variant: "destructive" });
-    }
-  };
-
-  const toggleDataSource = () => {
-    // This function is kept for backward compatibility but no longer actively toggles
-    // The data source is now automatically determined based on API key presence
-    if (!hasNotionApiKey) {
+      console.error('❌ Unexpected error revoking public link:', error);
       toast({
-        title: "No API key configured",
-        description: "Please configure your Notion API key in settings to view real data.",
-        variant: "destructive"
-      });
-    } else if (realNodes.length === 0) {
-      toast({
-        title: "No real data available",
-        description: "Please sync your Notion data first.",
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Using real data",
-        description: "Currently showing your Notion database relationships.",
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
       });
     }
   };
 
-  const usingRealData = isRealData;
-  
-  const currentNodes = useMemo(() => 
-    usingRealData ? realNodes : sampleNodes,
-    [usingRealData, realNodes]
-  );
-
-  const currentConnections = useMemo(() =>
-    usingRealData ? realConnections : sampleConnections,
-    [usingRealData, realConnections]
-  );
-
-  // Apply smart sizing based on connections
-  const filteredNodes = useMemo(() => 
-    calculateNodeSizes(currentNodes, currentConnections),
-    [currentNodes, currentConnections]
-  );
-
-  const finalFilteredConnections = useMemo(() => {
-    const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-    
-    return currentConnections
-      .filter(conn => conn.strength >= connectionStrengthFilter)
-      .filter(conn => {
-        const sourceId = typeof conn.source === 'string' ? conn.source : (conn.source as any).id;
-        const targetId = typeof conn.target === 'string' ? conn.target : (conn.target as any).id;
-        return filteredNodeIds.has(sourceId) && filteredNodeIds.has(targetId);
-      });
-  }, [currentConnections, connectionStrengthFilter, filteredNodes]);
-
-  const isolatedNodeCount = useMemo(() => {
-    const connectedNodeIds = new Set([
-      ...finalFilteredConnections.map(conn => typeof conn.source === 'string' ? conn.source : (conn.source as any).id),
-      ...finalFilteredConnections.map(conn => typeof conn.target === 'string' ? conn.target : (conn.target as any).id)
-    ]);
-    return filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
-  }, [filteredNodes, finalFilteredConnections]);
-  
   return {
-    showConnectionLabels, setShowConnectionLabels,
-    connectionStrengthFilter, setConnectionStrengthFilter,
+    showConnectionLabels,
+    setShowConnectionLabels,
+    connectionStrengthFilter,
+    setConnectionStrengthFilter,
     isRealData,
-    realNodes, realConnections,
+    realNodes,
+    realConnections,
     isSyncing,
     isLoading,
     handleSync,
@@ -411,10 +434,10 @@ export const useGraphData = () => {
     filteredNodes,
     finalFilteredConnections,
     isolatedNodeCount,
-    categoryColors,
-    setCategoryColors,
+		categoryColors,
+		setCategoryColors,
     connectionColors,
     setConnectionColors,
-    hasNotionApiKey, // Export this for components to use
+    hasNotionApiKey,
   };
 };
