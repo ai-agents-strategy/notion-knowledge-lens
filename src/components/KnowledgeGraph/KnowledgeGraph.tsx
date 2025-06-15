@@ -3,7 +3,6 @@ import * as d3 from 'd3';
 import { DatabaseNode, DatabaseConnection } from '@/types/graph';
 import { GraphControls } from './GraphControls';
 import { HoveredNodeDetails } from './HoveredNodeDetails';
-import { useFullscreen } from 'usehooks-ts';
 
 // Define extended types for D3 simulation
 interface GraphNode extends DatabaseNode {
@@ -15,9 +14,12 @@ interface GraphNode extends DatabaseNode {
   fy?: number | null;
 }
 
-interface GraphConnection extends DatabaseConnection {
+interface GraphConnection {
   source: string | GraphNode;
   target: string | GraphNode;
+  type: "relation" | "reference" | "dependency" | "contains";
+  strength: number;
+  label?: string;
 }
 
 interface KnowledgeGraphProps {
@@ -32,7 +34,29 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>(nodes);
   const [graphConnections, setGraphConnections] = useState<GraphConnection[]>(connections);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
-  const { isFullscreen, toggleFullscreen } = useFullscreen(document.documentElement);
+  
+  const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
 
   // Define color scales for node categories and connection types
   const categoryColors: Record<string, string> = {
@@ -55,6 +79,7 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
     relation: 'rgba(107, 114, 128, 0.7)',
     dependency: 'rgba(255, 159, 67, 0.7)',
     reference: 'rgba(2, 132, 199, 0.7)',
+    contains: 'rgba(75, 192, 192, 0.7)',
   };
 
   // Update graph data when nodes or connections change
