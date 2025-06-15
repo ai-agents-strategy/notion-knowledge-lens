@@ -1,7 +1,9 @@
+
 import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/clerk-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { ShareGraph } from './ShareGraph';
+
 interface GraphHeaderProps {
   usingRealData: boolean;
   realDataExists: boolean;
@@ -11,6 +13,7 @@ interface GraphHeaderProps {
   onGenerateLink: () => Promise<string | null>;
   onRevokeLink: () => Promise<void>;
 }
+
 export const GraphHeader = ({
   usingRealData,
   realDataExists,
@@ -31,5 +34,14 @@ export const GraphHeader = ({
 
   // Allow access for any subscription (including free trial)
   const hasAccess = subscription && subscription.plan;
-  return;
+  
+  return (
+    <div className="flex items-center justify-between p-4">
+      <ShareGraph
+        publicId={publicId}
+        onGenerateLink={onGenerateLink}
+        onRevokeLink={onRevokeLink}
+      />
+    </div>
+  );
 };
