@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Calendar, CreditCard, ExternalLink, Key } from "lucide-react";
+import { Crown, Calendar, CreditCard, ExternalLink, Key, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { PricingCard } from "@/components/PricingCard";
@@ -65,6 +65,14 @@ const Plan = () => {
         <Sidebar side="left" className="border-r">
           <SidebarContent className="p-6 bg-slate-50">
             <div className="space-y-4">
+              {/* Back to Graph Button */}
+              <Link to="/">
+                <Button variant="outline" size="sm" className="w-full justify-start bg-white border-gray-300 text-black hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Graph
+                </Button>
+              </Link>
+              
               <h2 className="text-lg font-semibold text-slate-700">Settings Navigation</h2>
               <div className="space-y-2">
                 <Link to="/settings" className="block">
