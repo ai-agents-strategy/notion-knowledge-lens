@@ -25,9 +25,6 @@ const Index = () => {
     categoryColors,
     setCategoryColors,
     connectionColors,
-    visibleCategories,
-    handleCategoryToggle,
-    availableCategories,
   } = useGraphData();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -92,9 +89,6 @@ const Index = () => {
         categoryColors={categoryColors}
         onCategoryColorsChange={setCategoryColors}
         connectionColors={connectionColors}
-        visibleCategories={visibleCategories}
-        onCategoryToggle={handleCategoryToggle}
-        availableCategories={availableCategories}
       />
     </div>
   );

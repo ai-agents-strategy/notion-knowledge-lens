@@ -45,7 +45,6 @@ export const useGraphData = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [publicId, setPublicId] = useState<string | null>(null);
-  const [visibleCategories, setVisibleCategories] = useState<Set<string>>(new Set());
 
   const [categoryColors, setCategoryColors] = useState(() => {
     try {
@@ -70,7 +69,6 @@ export const useGraphData = () => {
     }
     return defaultConnectionColors;
   });
-
 
   useEffect(() => {
     // Try to load from localStorage first
@@ -132,23 +130,6 @@ export const useGraphData = () => {
       console.error("Error saving color settings to localStorage:", error);
     }
   }, [categoryColors, connectionColors]);
-
-  // Initialize visible categories when nodes change
-  useEffect(() => {
-    const currentNodes = usingRealData ? realNodes : sampleNodes;
-    const allCategories = new Set<string>();
-    const allTypes = new Set<string>();
-    
-    currentNodes.forEach(node => {
-      allCategories.add(node.category);
-      allTypes.add(node.type);
-    });
-    
-    // If no categories are selected, select all by default
-    if (visibleCategories.size === 0) {
-      setVisibleCategories(new Set([...allCategories, ...allTypes]));
-    }
-  }, [realNodes, isRealData, visibleCategories]);
 
   const getPageTitle = (page: any) => {
     if (page.properties) {
@@ -309,14 +290,9 @@ export const useGraphData = () => {
     [usingRealData, realConnections]
   );
 
-  const filteredNodes = useMemo(() => {
-    return currentNodes.filter(node => 
-      visibleCategories.has(node.category) && visibleCategories.has(node.type)
-    );
-  }, [currentNodes, visibleCategories]);
+  const filteredNodes = currentNodes;
 
   const finalFilteredConnections = useMemo(() => {
-    // Create a Set of filtered node IDs for efficient lookup.
     const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
     
     return currentConnections
@@ -333,22 +309,6 @@ export const useGraphData = () => {
     ]);
     return filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
   }, [filteredNodes, finalFilteredConnections]);
-
-  const availableCategories = useMemo(() => {
-    const categories = new Set<string>();
-    currentNodes.forEach(node => categories.add(node.category));
-    return Array.from(categories).sort();
-  }, [currentNodes]);
-
-  const handleCategoryToggle = (category: string) => {
-    const newVisible = new Set(visibleCategories);
-    if (newVisible.has(category)) {
-      newVisible.delete(category);
-    } else {
-      newVisible.add(category);
-    }
-    setVisibleCategories(newVisible);
-  };
   
   return {
     showConnectionLabels, setShowConnectionLabels,
@@ -370,8 +330,5 @@ export const useGraphData = () => {
     setCategoryColors,
     connectionColors,
     setConnectionColors,
-    visibleCategories,
-    handleCategoryToggle,
-    availableCategories,
   };
 };
