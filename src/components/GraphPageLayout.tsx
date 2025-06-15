@@ -6,6 +6,7 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarInset 
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { GraphFilterControls } from "./GraphFilterControls";
+import { DetailedNodeView } from "./DetailedNodeView";
 
 interface GraphPageLayoutProps {
   showConnectionLabels: boolean;
@@ -25,6 +26,9 @@ interface GraphPageLayoutProps {
   // Search Props
   searchTerm: string;
   onSearchTermChange: (term: string) => void;
+  // Selected Node Props
+  selectedNodeId: string | null;
+  onNodeSelect: (nodeId: string | null) => void;
 }
 
 export const GraphPageLayout = ({
@@ -43,6 +47,8 @@ export const GraphPageLayout = ({
   usingRealData,
   searchTerm,
   onSearchTermChange,
+  selectedNodeId,
+  onNodeSelect,
 }: GraphPageLayoutProps) => {
   const { isSignedIn, isLoaded } = useUser();
   const navigate = useNavigate();
@@ -90,9 +96,17 @@ export const GraphPageLayout = ({
               nodes={graphNodes} 
               connections={graphConnections} 
               showConnectionLabels={graphShowConnectionLabels} 
+              onNodeClick={onNodeSelect}
             />
           </div>
         </SidebarInset>
+
+        <DetailedNodeView
+          nodeId={selectedNodeId}
+          nodes={graphNodes}
+          connections={graphConnections}
+          onClose={() => onNodeSelect(null)}
+        />
       </div>
     </SidebarProvider>
   );

@@ -26,6 +26,7 @@ const Index = () => {
   } = useGraphData();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const searchedNodes = searchTerm
     ? filteredNodes.filter(node => 
@@ -81,6 +82,8 @@ const Index = () => {
         usingRealData={usingRealData}
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
+        selectedNodeId={selectedNodeId}
+        onNodeSelect={setSelectedNodeId}
       />
     </div>
   );

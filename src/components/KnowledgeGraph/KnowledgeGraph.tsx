@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 import { GraphLegend } from "./GraphLegend";
@@ -11,9 +10,10 @@ interface KnowledgeGraphProps {
   nodes: DatabaseNode[];
   connections: DatabaseConnection[];
   showConnectionLabels: boolean;
+  onNodeClick?: (nodeId: string) => void;
 }
 
-export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: KnowledgeGraphProps) => {
+export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels, onNodeClick }: KnowledgeGraphProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -22,7 +22,8 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
     svgRef,
     nodes,
     connections,
-    showConnectionLabels
+    showConnectionLabels,
+    onNodeClick,
   });
 
   const toggleFullscreen = () => {

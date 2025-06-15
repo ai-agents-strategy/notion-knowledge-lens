@@ -9,9 +9,10 @@ interface UseKnowledgeGraphProps {
   nodes: DatabaseNode[];
   connections: DatabaseConnection[];
   showConnectionLabels: boolean;
+  onNodeClick?: (nodeId: string) => void;
 }
 
-export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLabels }: UseKnowledgeGraphProps) => {
+export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLabels, onNodeClick }: UseKnowledgeGraphProps) => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
   useEffect(() => {
@@ -114,7 +115,12 @@ export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLa
       .data(nodes)
       .enter()
       .append("g")
-      .style("cursor", "grab")
+      .style("cursor", "pointer")
+      .on("click", (event, d) => {
+        if (onNodeClick) {
+          onNodeClick(d.id);
+        }
+      })
       .call(d3.drag<SVGGElement, DatabaseNode & d3.SimulationNodeDatum>()
         .on("start", (event, d) => {
           if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -283,7 +289,7 @@ export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLa
     return () => {
       simulation.stop();
     };
-  }, [nodes, connections, showConnectionLabels, svgRef]);
+  }, [nodes, connections, showConnectionLabels, svgRef, onNodeClick]);
 
   return { hoveredNode };
 };
