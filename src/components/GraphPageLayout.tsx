@@ -1,6 +1,8 @@
+
 import { ControlPanel } from "@/components/ControlPanel";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
+import { transformGraphData } from "@/utils/graphTransforms";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
@@ -47,6 +49,9 @@ export const GraphPageLayout = ({
     navigate('/auth/sign-in');
   };
 
+  // Transform the data to match the KnowledgeGraph component's expected types
+  const { graphNodes: transformedNodes, graphLinks: transformedLinks } = transformGraphData(graphNodes, graphConnections);
+
   return (
     <SidebarProvider>
       <div className="relative z-10 flex h-[calc(100vh-120px)] w-full">
@@ -79,9 +84,8 @@ export const GraphPageLayout = ({
           </div>
           <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 h-[calc(100%-3rem)] mx-2 mb-2 overflow-hidden shadow-sm">
             <KnowledgeGraph 
-              nodes={graphNodes} 
-              connections={graphConnections} 
-              showConnectionLabels={graphShowConnectionLabels} 
+              nodes={transformedNodes}
+              links={transformedLinks}
             />
           </div>
         </SidebarInset>
