@@ -42,8 +42,8 @@ const calculateNodeSizes = (nodes: DatabaseNode[], connections: DatabaseConnecti
   nodes.forEach(node => connectionCounts.set(node.id, 0));
   
   connections.forEach(conn => {
-    const sourceId = typeof conn.source === 'string' ? conn.source : conn.source.id;
-    const targetId = typeof conn.target === 'string' ? conn.target : conn.target.id;
+    const sourceId = typeof conn.source === 'string' ? conn.source : (conn.source as any).id;
+    const targetId = typeof conn.target === 'string' ? conn.target : (conn.target as any).id;
     
     connectionCounts.set(sourceId, (connectionCounts.get(sourceId) || 0) + 1);
     connectionCounts.set(targetId, (connectionCounts.get(targetId) || 0) + 1);
@@ -351,16 +351,16 @@ export const useGraphData = () => {
     return currentConnections
       .filter(conn => conn.strength >= connectionStrengthFilter)
       .filter(conn => {
-        const sourceId = typeof conn.source === 'string' ? conn.source : conn.source.id;
-        const targetId = typeof conn.target === 'string' ? conn.target : conn.target.id;
+        const sourceId = typeof conn.source === 'string' ? conn.source : (conn.source as any).id;
+        const targetId = typeof conn.target === 'string' ? conn.target : (conn.target as any).id;
         return filteredNodeIds.has(sourceId) && filteredNodeIds.has(targetId);
       });
   }, [currentConnections, connectionStrengthFilter, filteredNodes]);
 
   const isolatedNodeCount = useMemo(() => {
     const connectedNodeIds = new Set([
-      ...finalFilteredConnections.map(conn => typeof conn.source === 'string' ? conn.source : conn.source.id),
-      ...finalFilteredConnections.map(conn => typeof conn.target === 'string' ? conn.target : conn.target.id)
+      ...finalFilteredConnections.map(conn => typeof conn.source === 'string' ? conn.source : (conn.source as any).id),
+      ...finalFilteredConnections.map(conn => typeof conn.target === 'string' ? conn.target : (conn.target as any).id)
     ]);
     return filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
   }, [filteredNodes, finalFilteredConnections]);
