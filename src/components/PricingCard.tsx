@@ -13,6 +13,7 @@ interface SimplePricingCardProps {
   isPopular?: boolean;
   onSubscribe: () => void;
   isLoading: boolean;
+  promotionalMessage?: string;
 }
 
 export const PricingCard = ({ 
@@ -23,7 +24,8 @@ export const PricingCard = ({
   features,
   isPopular = false,
   onSubscribe,
-  isLoading
+  isLoading,
+  promotionalMessage
 }: SimplePricingCardProps) => {
   return (
     <Card className={`relative ${isPopular ? 'border-blue-500 border-2' : ''}`}>
@@ -41,6 +43,13 @@ export const PricingCard = ({
             /{period}
           </span>
         </div>
+        {promotionalMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
+            <p className="text-green-700 font-bold text-center">
+              {promotionalMessage}
+            </p>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <ul className="space-y-2">

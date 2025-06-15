@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -157,13 +156,8 @@ const Plan = () => {
                       isPopular={true}
                       onSubscribe={() => handleSubscribe('yearly')}
                       isLoading={checkoutLoading === 'yearly'}
+                      promotionalMessage="Save 40% with the yearly plan!"
                     />
-                  </div>
-                  
-                  <div className="text-center mt-6">
-                    <p className="text-green-600 font-bold text-lg">
-                      Save 40% with the yearly plan!
-                    </p>
                   </div>
                 </div>
               </div>
