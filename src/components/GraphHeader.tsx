@@ -1,10 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Database, Settings, Eye, EyeOff, Share2, Link2 } from "lucide-react";
+import { Database, Settings, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ShareGraph } from "./ShareGraph";
-import { useState } from "react";
 
 interface GraphHeaderProps {
   usingRealData: boolean;
@@ -97,11 +95,6 @@ export const GraphHeader = ({
               )}
             </Button>
           )}
-          
-          <ShareGraph
-            publicId={publicId}
-            onRevokeLink={onRevokeLink}
-          />
 
           <Button
             variant="outline"

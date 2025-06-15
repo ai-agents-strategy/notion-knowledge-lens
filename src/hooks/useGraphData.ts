@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useSearchParams } from 'react-router-dom';
@@ -46,8 +47,7 @@ export const useGraphData = () => {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [usingRealData, setUsingRealData] = useState<boolean>(false);
-  const [publicId, setPublicId] = useState<string | null>(null);
-	const [categoryColors, setCategoryColors] = useState<{ [category: string]: string }>({});
+  const [categoryColors, setCategoryColors] = useState<{ [category: string]: string }>({});
   const [connectionColors, setConnectionColors] = useState<{ [connectionId: string]: string }>({});
 
   const { integrations, loading: integrationsLoading, getIntegration } = useIntegrations();
@@ -228,7 +228,6 @@ export const useGraphData = () => {
       setNodes(graphNodes);
       setConnections(graphConnections);
       setUsingRealData(false);
-      setPublicId(publicId);
     } catch (error) {
       console.error('❌ Unexpected error fetching public graph:', error);
       toast({
@@ -290,51 +289,9 @@ export const useGraphData = () => {
 
   const isRealData = nodes !== sampleNodes;
 
+  // Placeholder function for revokePublicLink (no-op)
   const revokePublicLink = async (): Promise<void> => {
-    if (!user) {
-      console.error('❌ Cannot revoke public link: no user');
-      return;
-    }
-
-    if (!publicId) {
-      console.warn('⚠️ No public ID to revoke');
-      return;
-    }
-
-    try {
-      console.log('🔥 Revoking public link for user:', user.id, 'and public ID:', publicId);
-
-      const { error } = await supabase
-        .from('graphs')
-        .update({ public_id: null })
-        .eq('user_id', user.id)
-        .eq('public_id', publicId);
-
-      if (error) {
-        console.error('❌ Error revoking public graph:', error);
-        toast({
-          title: "Error",
-          description: "Failed to revoke public link",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('✅ Public link revoked successfully');
-      setPublicId(null);
-      
-      toast({
-        title: "Success",
-        description: "Public link revoked successfully",
-      });
-    } catch (error) {
-      console.error('❌ Unexpected error revoking public link:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    }
+    console.log('Public link functionality disabled');
   };
 
   return {
@@ -350,13 +307,13 @@ export const useGraphData = () => {
     handleSync,
     toggleDataSource,
     usingRealData,
-    publicId,
+    publicId: null, // Always null since feature is disabled
     revokePublicLink,
     filteredNodes,
     finalFilteredConnections,
     isolatedNodeCount,
-		categoryColors,
-		setCategoryColors,
+    categoryColors,
+    setCategoryColors,
     connectionColors,
     setConnectionColors,
     hasNotionApiKey,
