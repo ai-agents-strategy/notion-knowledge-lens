@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -139,7 +140,7 @@ const Plan = () => {
                   <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                     <PricingCard
                       title="Monthly Plan"
-                      price="$29"
+                      price="$5"
                       period="month"
                       description="Perfect for individuals and small teams"
                       features={monthlyFeatures}
@@ -149,8 +150,8 @@ const Plan = () => {
                     
                     <PricingCard
                       title="Yearly Plan"
-                      price="$290"
-                      period="year"
+                      price="$3"
+                      period="month"
                       description="Best value for growing teams and businesses"
                       features={yearlyFeatures}
                       isPopular={true}
@@ -160,8 +161,8 @@ const Plan = () => {
                   </div>
                   
                   <div className="text-center mt-6">
-                    <p className="text-green-600 font-semibold">
-                      Save $58 per year with the yearly plan!
+                    <p className="text-green-600 font-bold text-lg">
+                      Save 40% with the yearly plan!
                     </p>
                   </div>
                 </div>
