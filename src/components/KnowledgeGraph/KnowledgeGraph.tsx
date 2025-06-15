@@ -330,12 +330,12 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       <GraphLegend 
         categoryColors={categoryColors}
         connectionColors={connectionColors}
-      />
-      
-      <GraphControls 
-        isFullscreen={isFullscreen}
-        onToggleFullscreen={toggleFullscreen}
-      />
+      >
+        <GraphControls 
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
+        />
+      </GraphLegend>
     </div>
   );
 };

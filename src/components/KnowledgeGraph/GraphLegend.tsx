@@ -4,11 +4,14 @@ import React from 'react';
 interface GraphLegendProps {
   categoryColors: Record<string, string>;
   connectionColors: Record<string, string>;
+  children: React.ReactNode;
 }
 
-export const GraphLegend: React.FC<GraphLegendProps> = ({ categoryColors, connectionColors }) => {
+export const GraphLegend: React.FC<GraphLegendProps> = ({ categoryColors, connectionColors, children }) => {
   return (
-    <div className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-border z-20">
+    <div className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-border z-20 flex flex-col gap-3">
+      {children}
+      <div className="w-full h-[1px] bg-border" />
       <div className="text-card-foreground text-xs space-y-2">
         <div className="font-semibold mb-1">Node Types:</div>
         <div className="flex items-center gap-2">
