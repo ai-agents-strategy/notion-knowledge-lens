@@ -65,6 +65,10 @@ export const GraphPageLayout = ({
               isSyncing={isSyncing}
               onSync={onSync}
               usingRealData={usingRealData}
+              // Pass auth props to ControlPanel
+              isSignedIn={isSignedIn}
+              authIsLoading={authIsLoading}
+              onAuthAction={handleAuthAction}
             />
           </SidebarContent>
         </Sidebar>
@@ -73,21 +77,6 @@ export const GraphPageLayout = ({
         <SidebarInset className="flex-1 p-6">
           <div className="mb-4 flex items-center justify-between">
             <SidebarTrigger />
-            {authIsLoading ? (
-              <div className="w-24 h-8 bg-muted rounded animate-pulse" />
-            ) : isSignedIn ? (
-              <UserButton afterSignOutUrl="/" />
-            ) : (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="border-primary text-primary hover:bg-primary/10" 
-                onClick={handleAuthAction}
-              >
-                <LogIn className="w-4 h-4 mr-2" />
-                Login / Sign Up
-              </Button>
-            )}
           </div>
           <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 h-full overflow-hidden shadow-sm">
             <KnowledgeGraph 
