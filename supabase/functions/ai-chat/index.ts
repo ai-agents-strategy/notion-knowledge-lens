@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const togetherApiKey = Deno.env.get('TOGETHER_API_KEY');
+const togetherApiKey = 'tgp_v1_xcgrv9gHvmyQSsyv7ona7jCmyarh8AIL1KEORdiF584';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,7 +39,7 @@ The user has a knowledge graph representing their Notion workspace with pages an
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo',
+        model: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free',
         messages: [
           {
             role: 'system',
