@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Database, Settings, Eye, EyeOff, Share2, Link2 } from "lucide-react";
@@ -75,7 +76,7 @@ export const GraphHeader = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 ml-auto">
           {/* Only show toggle button if API key is configured */}
           {hasNotionApiKey && (
             <Button

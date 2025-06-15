@@ -218,8 +218,8 @@ export const useGraphData = () => {
         return;
       }
 
-      setNodes(graph.nodes as GraphNode[] || []);
-      setConnections(graph.connections as GraphConnection[] || []);
+      setNodes(Array.isArray(graph.nodes) ? graph.nodes as GraphNode[] : []);
+      setConnections(Array.isArray(graph.connections) ? graph.connections as GraphConnection[] : []);
       setUsingRealData(false);
       setPublicId(publicId);
     } catch (error) {
