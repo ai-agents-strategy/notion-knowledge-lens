@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -44,14 +45,6 @@ export const ControlPanel = ({
   } = useSubscriptions();
   const navigate = useNavigate();
   const hasAccess = subscription && subscription.plan;
-
-  const handleCategoryColorChange = (category: string, color: string) => {
-    onCategoryColorsChange({ ...categoryColors, [category]: color });
-  };
-
-  const handleConnectionColorChange = (type: string, color: string) => {
-    onConnectionColorsChange({ ...connectionColors, [type]: color });
-  };
 
   return <div className="flex flex-col h-full">
       <Card className="border-0 shadow-none bg-transparent flex-1">
