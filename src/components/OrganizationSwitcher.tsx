@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 export const OrganizationSwitcher = () => {
   const { organization } = useOrganization();
   const { 
-    organizationList, 
+    userMemberships, 
     setActive, 
     createOrganization 
   } = useOrganizationList({
@@ -37,7 +37,7 @@ export const OrganizationSwitcher = () => {
       return;
     }
 
-    const targetOrg = organizationList?.find(
+    const targetOrg = userMemberships?.data?.find(
       ({ organization: org }) => org.id === orgId
     );
 
@@ -91,7 +91,7 @@ export const OrganizationSwitcher = () => {
           </SelectItem>
 
           {/* Organization List */}
-          {organizationList?.map(({ organization: org }) => (
+          {userMemberships?.data?.map(({ organization: org }) => (
             <SelectItem key={org.id} value={org.id} className="cursor-pointer">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center text-xs font-medium text-blue-600">
