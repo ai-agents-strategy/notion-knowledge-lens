@@ -12,7 +12,6 @@ interface GraphHeaderProps {
   onToggleDataSource: () => void;
   isRealData: boolean;
   publicId: string | null;
-  onGenerateLink: () => Promise<string | null>;
   onRevokeLink: () => Promise<void>;
   hasNotionApiKey?: boolean;
 }
@@ -23,7 +22,6 @@ export const GraphHeader = ({
   onToggleDataSource, 
   isRealData, 
   publicId, 
-  onGenerateLink, 
   onRevokeLink,
   hasNotionApiKey = false
 }: GraphHeaderProps) => {
@@ -102,7 +100,6 @@ export const GraphHeader = ({
           
           <ShareGraph
             publicId={publicId}
-            onGenerateLink={onGenerateLink}
             onRevokeLink={onRevokeLink}
           />
 

@@ -8,44 +8,30 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ShareGraphProps {
   publicId: string | null;
-  onGenerateLink: () => Promise<string | null>;
   onRevokeLink: () => Promise<void>;
 }
 
-export const ShareGraph = ({ publicId, onGenerateLink, onRevokeLink }: ShareGraphProps) => {
+export const ShareGraph = ({ publicId, onRevokeLink }: ShareGraphProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [publicLink, setPublicLink] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
   const { toast } = useToast();
-
-  const handleGenerate = async () => {
-    setIsLoading(true);
-    const link = await onGenerateLink();
-    if (link) {
-      setPublicLink(link);
-    }
-    setIsLoading(false);
-  };
 
   const handleRevoke = async () => {
     setIsLoading(true);
     await onRevokeLink();
-    setPublicLink(null);
     setIsOpen(false);
     setIsLoading(false);
   };
   
   const handleCopyToClipboard = () => {
-    const linkToCopy = publicLink || (publicId ? `${window.location.origin}/public/graph/${publicId}` : '');
+    const linkToCopy = publicId ? `${window.location.origin}/public/graph/${publicId}` : '';
     if (!linkToCopy) return;
     navigator.clipboard.writeText(linkToCopy);
     setHasCopied(true);
     toast({ title: "Link copied to clipboard!" });
     setTimeout(() => setHasCopied(false), 2000);
   };
-  
-  const effectivePublicId = publicId || (publicLink ? new URL(publicLink).pathname.split('/').pop() : null);
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -64,14 +50,14 @@ export const ShareGraph = ({ publicId, onGenerateLink, onRevokeLink }: ShareGrap
           <div className="space-y-1">
             <h4 className="font-medium text-lg">Share Knowledge Graph</h4>
             <p className="text-sm text-slate-400">
-              {effectivePublicId ? 'Share this link with others to view your graph.' : 'Generate a public link to share your graph.'}
+              {publicId ? 'Your graph has a public link that can be shared.' : 'Public sharing is not currently available.'}
             </p>
           </div>
           
-          {effectivePublicId ? (
+          {publicId ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Input readOnly value={publicLink || `${window.location.origin}/public/graph/${effectivePublicId}`} className="bg-slate-700 border-slate-600" />
+                <Input readOnly value={`${window.location.origin}/public/graph/${publicId}`} className="bg-slate-700 border-slate-600" />
                 <Button size="icon" variant="ghost" onClick={handleCopyToClipboard}>
                   {hasCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                 </Button>
@@ -85,10 +71,7 @@ export const ShareGraph = ({ publicId, onGenerateLink, onRevokeLink }: ShareGrap
           ) : (
             <div className="space-y-2">
               <p className="text-xs text-yellow-400 flex items-center gap-1"><GlobeLock className="w-3 h-3" /> Your graph is currently private.</p>
-              <Button onClick={handleGenerate} className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
-                {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Share2 className="w-4 h-4 mr-2" />}
-                {isLoading ? 'Generating...' : 'Generate Public Link'}
-              </Button>
+              <p className="text-sm text-slate-400">Public link generation is not available.</p>
             </div>
           )}
         </div>

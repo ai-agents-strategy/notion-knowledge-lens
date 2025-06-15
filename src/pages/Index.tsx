@@ -18,7 +18,6 @@ const Index = () => {
     toggleDataSource,
     usingRealData,
     publicId,
-    generatePublicLink,
     revokePublicLink,
     filteredNodes,
     finalFilteredConnections,
@@ -70,7 +69,6 @@ const Index = () => {
         onToggleDataSource={toggleDataSource}
         isRealData={isRealData}
         publicId={publicId}
-        onGenerateLink={generatePublicLink}
         onRevokeLink={revokePublicLink}
         hasNotionApiKey={hasNotionApiKey}
       />

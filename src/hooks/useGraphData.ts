@@ -290,89 +290,6 @@ export const useGraphData = () => {
 
   const isRealData = nodes !== sampleNodes;
 
-  const generatePublicLink = async (): Promise<string | null> => {
-    if (!user) {
-      console.error('❌ Cannot generate public link: no user');
-      return null;
-    }
-
-    try {
-      console.log('🔗 Generating public link for user:', user.id);
-      
-      // First check if a public graph already exists
-      const { data: existingGraph, error: checkError } = await supabase
-        .from('graphs')
-        .select('public_id')
-        .eq('user_id', user.id)
-        .not('public_id', 'is', null)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('❌ Error checking existing public graph:', checkError);
-        toast({
-          title: "Error",
-          description: "Failed to check existing public link",
-          variant: "destructive",
-        });
-        return null;
-      }
-
-      if (existingGraph?.public_id) {
-        // Return existing public link
-        const link = `${window.location.origin}/public/graph/${existingGraph.public_id}`;
-        console.log('✅ Using existing public link:', link);
-        setPublicId(existingGraph.public_id);
-        return link;
-      }
-
-      // Generate new public ID
-      const newPublicId = crypto.randomUUID();
-      
-      // Create or update graph entry with public ID
-      const { data, error } = await supabase
-        .from('graphs')
-        .upsert({
-          user_id: user.id,
-          public_id: newPublicId,
-          nodes: usingRealData ? realNodes : sampleNodes,
-          connections: usingRealData ? realConnections : sampleConnections
-        }, {
-          onConflict: 'user_id'
-        })
-        .select('public_id')
-        .single();
-
-      if (error) {
-        console.error('❌ Error creating public graph:', error);
-        toast({
-          title: "Error",
-          description: "Failed to generate public link",
-          variant: "destructive",
-        });
-        return null;
-      }
-
-      const link = `${window.location.origin}/public/graph/${data.public_id}`;
-      console.log('✅ Generated new public link:', link);
-      setPublicId(data.public_id);
-      
-      toast({
-        title: "Success",
-        description: "Public link generated successfully",
-      });
-      
-      return link;
-    } catch (error) {
-      console.error('❌ Unexpected error generating public link:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
-
   const revokePublicLink = async (): Promise<void> => {
     if (!user) {
       console.error('❌ Cannot revoke public link: no user');
@@ -434,7 +351,6 @@ export const useGraphData = () => {
     toggleDataSource,
     usingRealData,
     publicId,
-    generatePublicLink,
     revokePublicLink,
     filteredNodes,
     finalFilteredConnections,
