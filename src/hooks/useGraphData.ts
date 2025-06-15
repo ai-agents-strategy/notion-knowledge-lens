@@ -34,6 +34,55 @@ const sampleConnections: DatabaseConnection[] = [
   { source: "7", target: "8", type: "reference", strength: 0.5, label: "mobile metrics" },
 ];
 
+// Helper function to calculate node sizes based on connections
+const calculateNodeSizes = (nodes: DatabaseNode[], connections: DatabaseConnection[]): DatabaseNode[] => {
+  // Count connections for each node
+  const connectionCounts = new Map<string, number>();
+  
+  nodes.forEach(node => connectionCounts.set(node.id, 0));
+  
+  connections.forEach(conn => {
+    const sourceId = typeof conn.source === 'string' ? conn.source : conn.source.id;
+    const targetId = typeof conn.target === 'string' ? conn.target : conn.target.id;
+    
+    connectionCounts.set(sourceId, (connectionCounts.get(sourceId) || 0) + 1);
+    connectionCounts.set(targetId, (connectionCounts.get(targetId) || 0) + 1);
+  });
+
+  // Calculate sizes with minimum and maximum bounds
+  const maxConnections = Math.max(...Array.from(connectionCounts.values()));
+  const minConnections = Math.min(...Array.from(connectionCounts.values()));
+  
+  return nodes.map(node => {
+    const connectionCount = connectionCounts.get(node.id) || 0;
+    let baseSize: number;
+    
+    // Set base sizes by node type
+    if (node.type === 'database') {
+      baseSize = 30;
+    } else if (node.type === 'page') {
+      baseSize = 20;
+    } else { // property
+      baseSize = 12;
+    }
+    
+    // Scale size based on connection count
+    if (maxConnections > minConnections) {
+      const normalizedCount = (connectionCount - minConnections) / (maxConnections - minConnections);
+      const sizeMultiplier = 1 + (normalizedCount * 0.8); // Increase size by up to 80%
+      baseSize = Math.round(baseSize * sizeMultiplier);
+    }
+    
+    // Apply bounds
+    const minSize = node.type === 'property' ? 8 : (node.type === 'page' ? 15 : 25);
+    const maxSize = node.type === 'property' ? 20 : (node.type === 'page' ? 40 : 50);
+    
+    return {
+      ...node,
+      size: Math.min(Math.max(baseSize, minSize), maxSize)
+    };
+  });
+};
 
 export const useGraphData = () => {
   const { user } = useUser();
@@ -290,22 +339,28 @@ export const useGraphData = () => {
     [usingRealData, realConnections]
   );
 
-  const filteredNodes = currentNodes;
+  // Apply smart sizing based on connections
+  const filteredNodes = useMemo(() => 
+    calculateNodeSizes(currentNodes, currentConnections),
+    [currentNodes, currentConnections]
+  );
 
   const finalFilteredConnections = useMemo(() => {
     const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
     
     return currentConnections
       .filter(conn => conn.strength >= connectionStrengthFilter)
-      .filter(conn => 
-        filteredNodeIds.has(conn.source) && filteredNodeIds.has(conn.target)
-      );
+      .filter(conn => {
+        const sourceId = typeof conn.source === 'string' ? conn.source : conn.source.id;
+        const targetId = typeof conn.target === 'string' ? conn.target : conn.target.id;
+        return filteredNodeIds.has(sourceId) && filteredNodeIds.has(targetId);
+      });
   }, [currentConnections, connectionStrengthFilter, filteredNodes]);
 
   const isolatedNodeCount = useMemo(() => {
     const connectedNodeIds = new Set([
-      ...finalFilteredConnections.map(conn => conn.source),
-      ...finalFilteredConnections.map(conn => conn.target)
+      ...finalFilteredConnections.map(conn => typeof conn.source === 'string' ? conn.source : conn.source.id),
+      ...finalFilteredConnections.map(conn => typeof conn.target === 'string' ? conn.target : conn.target.id)
     ]);
     return filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
   }, [filteredNodes, finalFilteredConnections]);
