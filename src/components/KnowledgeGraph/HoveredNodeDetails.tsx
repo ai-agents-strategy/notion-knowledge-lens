@@ -3,11 +3,17 @@ import React from 'react';
 import { DatabaseNode } from '@/types/graph';
 
 interface HoveredNodeDetailsProps {
-  node: DatabaseNode;
+  nodeId: string | null;
+  nodes: DatabaseNode[];
   categoryColors: Record<string, string>;
 }
 
-export const HoveredNodeDetails: React.FC<HoveredNodeDetailsProps> = ({ node, categoryColors }) => {
+export const HoveredNodeDetails: React.FC<HoveredNodeDetailsProps> = ({ nodeId, nodes, categoryColors }) => {
+  if (!nodeId) return null;
+
+  const node = nodes.find(n => n.id === nodeId);
+  if (!node) return null;
+
   return (
     <div className="absolute top-4 left-4 bg-slate-800/90 backdrop-blur-sm rounded-lg p-4 border border-slate-600/50 max-w-sm z-20">
       <div>

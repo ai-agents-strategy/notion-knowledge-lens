@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,7 @@ const sampleConnections: DatabaseConnection[] = [
   { source: "6", target: "1", type: "relation", strength: 0.8, label: "product keywords" },
   { source: "7", target: "8", type: "reference", strength: 0.5, label: "mobile metrics" },
 ];
+
 
 export const useGraphData = () => {
   const { user } = useUser();
@@ -238,33 +240,26 @@ export const useGraphData = () => {
 
   const filteredNodes = currentNodes;
 
-  const finalFilteredConnections = useMemo(() => {
+  const eligibleConnections = useMemo(() => {
+    // Create a Set of filtered node IDs for efficient lookup.
     const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
     
-    const filtered = currentConnections
+    return currentConnections
       .filter(conn => conn.strength >= connectionStrengthFilter)
       .filter(conn => 
         filteredNodeIds.has(conn.source) && filteredNodeIds.has(conn.target)
       );
-
-    console.log('🔍 Debug - Final filtered connections:', filtered.length);
-    return filtered;
   }, [currentConnections, connectionStrengthFilter, filteredNodes]);
+
+  const finalFilteredConnections = eligibleConnections;
 
   const isolatedNodeCount = useMemo(() => {
     const connectedNodeIds = new Set([
-      ...finalFilteredConnections.map(conn => conn.source),
-      ...finalFilteredConnections.map(conn => conn.target)
+      ...eligibleConnections.map(conn => conn.source),
+      ...eligibleConnections.map(conn => conn.target)
     ]);
     return filteredNodes.filter(node => !connectedNodeIds.has(node.id)).length;
-  }, [filteredNodes, finalFilteredConnections]);
-
-  console.log('🔍 Debug - Final stats:', {
-    nodeCount: filteredNodes.length,
-    connectionCount: finalFilteredConnections.length,
-    isolatedNodeCount,
-    usingRealData
-  });
+  }, [filteredNodes, eligibleConnections]);
   
   return {
     showConnectionLabels, setShowConnectionLabels,
@@ -282,5 +277,6 @@ export const useGraphData = () => {
     filteredNodes,
     finalFilteredConnections,
     isolatedNodeCount,
+    eligibleConnections, // Keep this for connectionCount in Index
   };
 };

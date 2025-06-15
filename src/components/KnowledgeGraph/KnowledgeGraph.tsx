@@ -1,26 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import * as d3 from 'd3';
-import { DatabaseNode, DatabaseConnection } from '@/types/graph';
-import { GraphControls } from './GraphControls';
-import { HoveredNodeDetails } from './HoveredNodeDetails';
-
-// Define extended types for D3 simulation
-interface GraphNode extends DatabaseNode {
-  x?: number;
-  y?: number;
-  vx?: number;
-  vy?: number;
-  fx?: number | null;
-  fy?: number | null;
-}
-
-interface GraphConnection {
-  source: string | GraphNode;
-  target: string | GraphNode;
-  type: "relation" | "reference" | "dependency" | "contains";
-  strength: number;
-  label?: string;
-}
+import { useEffect, useRef, useState } from "react";
+import * as d3 from "d3";
+import { DatabaseNode, DatabaseConnection } from "@/types/graph";
+import { GraphLegend } from "./GraphLegend";
+import { HoveredNodeDetails } from "./HoveredNodeDetails";
+import { GraphControls } from "./GraphControls";
 
 interface KnowledgeGraphProps {
   nodes: DatabaseNode[];
@@ -28,18 +11,63 @@ interface KnowledgeGraphProps {
   showConnectionLabels: boolean;
 }
 
-export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connections, showConnectionLabels }) => {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [simulation, setSimulation] = useState<d3.Simulation<GraphNode, undefined> | null>(null);
-  const [graphNodes, setGraphNodes] = useState<GraphNode[]>(nodes);
-  const [graphConnections, setGraphConnections] = useState<GraphConnection[]>(connections);
-  const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
-  
-  const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
+// Notion-inspired color palette
+const categoryColors: Record<string, string> = {
+  database: "#2383e2", // Notion blue
+  text: "#0f7b6c", // Notion teal
+  number: "#dfab01", // Notion yellow
+  select: "#9b51e0", // Notion purple
+  multi_select: "#dd0081", // Notion pink
+  date: "#eb5757", // Notion red
+  person: "#17a5a5", // Notion teal variant
+  file: "#0d8b7b", // Notion green
+  checkbox: "#d9730d", // Notion orange
+  url: "#2383e2", // Notion blue
+  email: "#0f7b6c", // Notion teal
+  phone_number: "#9b51e0", // Notion purple
+  formula: "#dfab01", // Notion yellow
+  relation: "#eb5757", // Notion red
+  rollup: "#9b51e0", // Notion purple
+  created_time: "#0d8b7b", // Notion green
+  created_by: "#17a5a5", // Notion teal
+  last_edited_time: "#8b4513", // Brown
+  last_edited_by: "#8b4513", // Brown
+  // Categories
+  seo: "#2383e2",
+  content: "#0d8b7b",
+  technical: "#9b51e0",
+  offpage: "#dfab01",
+  local: "#eb5757",
+  ecommerce: "#dd0081",
+  mobile: "#17a5a5",
+  analytics: "#d9730d",
+  research: "#6366f1",
+  work: "#2383e2",
+  contacts: "#0d8b7b",
+  knowledge: "#9b51e0",
+  planning: "#dfab01",
+  finance: "#eb5757",
+  creativity: "#dd0081",
+};
 
-  const toggleFullscreen = useCallback(() => {
+const connectionColors: Record<DatabaseConnection['type'], string> = {
+  relation: "#eb5757", // Notion red
+  reference: "#0d8b7b", // Notion green
+  dependency: "#dfab01", // Notion yellow
+  contains: "#2383e2", // Notion blue
+};
+
+export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: KnowledgeGraphProps) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const graphContainerRef = useRef<HTMLDivElement>(null);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = () => {
+    if (!graphContainerRef.current) return;
+
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
+      graphContainerRef.current.requestFullscreen().catch((err) => {
         console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
       });
     } else {
@@ -47,224 +75,267 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ nodes, connectio
         document.exitFullscreen();
       }
     }
-  }, []);
+  };
 
   useEffect(() => {
-    const onFullscreenChange = () => {
+    const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    document.addEventListener('fullscreenchange', onFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
-  }, []);
 
-
-  // Define color scales for node categories and connection types
-  const categoryColors: Record<string, string> = {
-    content: 'hsl(var(--chart-1))',
-    seo: 'hsl(var(--chart-2))',
-    technical: 'hsl(var(--chart-3))',
-    offpage: 'hsl(var(--chart-4))',
-    local: 'hsl(var(--chart-5))',
-    ecommerce: 'hsl(var(--chart-1))',
-    mobile: 'hsl(var(--chart-2))',
-    analytics: 'hsl(var(--chart-3))',
-    research: 'hsl(var(--chart-4))',
-    page: 'hsl(var(--chart-1))',
-    database: 'hsl(var(--chart-2))',
-    property: 'hsl(var(--chart-3))',
-    text: 'hsl(var(--chart-4))',
-  };
-
-  const connectionColors: Record<string, string> = {
-    relation: 'rgba(107, 114, 128, 0.7)',
-    dependency: 'rgba(255, 159, 67, 0.7)',
-    reference: 'rgba(2, 132, 199, 0.7)',
-    contains: 'rgba(75, 192, 192, 0.7)',
-  };
-
-  // Update graph data when nodes or connections change
-  useEffect(() => {
-    setGraphNodes(nodes);
-    setGraphConnections(connections);
-  }, [nodes, connections]);
-
-  // Initialize the force simulation
-  useEffect(() => {
-    if (!svgRef.current) return;
-
-    const width = svgRef.current.clientWidth;
-    const height = svgRef.current.clientHeight;
-
-    const forceSimulation = d3.forceSimulation<GraphNode, undefined>()
-      .force("link", d3.forceLink<GraphNode, GraphConnection>().id(d => d.id).distance(120))
-      .force("charge", d3.forceManyBody().strength(-200))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collide", d3.forceCollide().radius(d => (d.size || 10) + 10).iterations(2))
-      .force("x", d3.forceX(width / 2).strength(0.05))
-      .force("y", d3.forceY(height / 2).strength(0.05));
-
-    setSimulation(forceSimulation);
-
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
-      forceSimulation.stop();
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
 
-  // Update simulation when graph nodes or connections change
   useEffect(() => {
-    if (!simulation) return;
+    if (!svgRef.current || nodes.length === 0) {
+        if (svgRef.current) {
+            d3.select(svgRef.current).selectAll("*").remove();
+        }
+        return;
+    }
 
-    simulation.nodes(graphNodes);
-    simulation.force<d3.ForceLink<GraphNode, GraphConnection>>("link")
-      ?.links(graphConnections);
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove();
 
-    simulation.alpha(1).restart();
+    const container = svgRef.current.parentElement;
+    if (!container) return;
 
-  }, [graphNodes, graphConnections, simulation]);
+    const width = container.clientWidth;
+    const height = container.clientHeight;
 
-  // Dragging functionality
-  const drag = useCallback(() => {
-    if (!simulation) return {};
+    svg.attr("width", width).attr("height", height);
 
-    const dragstarted = (event: d3.D3DragEvent<SVGCircleElement, GraphNode, any>, d: GraphNode) => {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    };
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+      });
 
-    const dragged = (event: d3.D3DragEvent<SVGCircleElement, GraphNode, any>, d: GraphNode) => {
-      d.fx = event.x;
-      d.fy = event.y;
-    };
+    svg.call(zoom);
+    const g = svg.append("g");
 
-    const dragended = (event: d3.D3DragEvent<SVGCircleElement, GraphNode, any>, d: GraphNode) => {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    };
+    const simulation = d3.forceSimulation(nodes as d3.SimulationNodeDatum[])
+      .force("link", d3.forceLink<d3.SimulationNodeDatum, DatabaseConnection>(connections).id((d: any) => d.id)
+        .distance((d: any) => {
+          if (d.type === 'contains') return 60;
+          if (d.type === 'relation') return 150;
+          return 100;
+        })
+      )
+      .force("charge", d3.forceManyBody()
+        .strength((d: any) => {
+          if (d.type === 'database') return -400;
+          if (d.type === 'property') return -150;
+          return -300;
+        })
+      )
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide()
+        .radius((d: any) => {
+          if (d.type === 'database') return d.size + 10;
+          if (d.type === 'property') return d.size + 5;
+          return d.size + 5;
+        })
+      );
 
-    return { dragstarted, dragged, dragended };
-  }, [simulation]);
+    const defs = g.append("defs");
+    connections.forEach((conn, i) => {
+      const gradient = defs.append("linearGradient")
+        .attr("id", `gradient-${i}`)
+        .attr("gradientUnits", "userSpaceOnUse");
+      
+      gradient.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", connectionColors[conn.type] || "#a8a6a1")
+        .attr("stop-opacity", 0.8);
+      
+      gradient.append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", connectionColors[conn.type] || "#a8a6a1")
+        .attr("stop-opacity", 0.2);
+    });
 
-  useEffect(() => {
-    if (!svgRef.current || !simulation) return;
+    const links = g.append("g")
+      .selectAll("line")
+      .data(connections)
+      .enter()
+      .append("line")
+      .attr("stroke", (d, i) => `url(#gradient-${i})`)
+      .attr("stroke-width", d => {
+        if (d.type === 'contains') return 2;
+        if (d.type === 'relation') return Math.max(2, d.strength * 5);
+        return Math.max(1, d.strength * 4);
+      })
+      .attr("stroke-opacity", d => d.type === 'contains' ? 0.8 : 0.6)
+      .attr("stroke-dasharray", d => d.type === 'reference' ? "5,5" : null);
 
-    const { dragstarted, dragged, dragended } = drag();
+    const linkLabels = g.append("g")
+      .selectAll("text")
+      .data(connections)
+      .enter()
+      .append("text")
+      .attr("font-size", "9px")
+      .attr("fill", "#000000")
+      .attr("text-anchor", "middle")
+      .attr("dy", -5)
+      .style("opacity", showConnectionLabels ? 0.7 : 0)
+      .text(d => d.label || "");
+
+    const nodeGroups = g.append("g")
+      .selectAll<SVGGElement, DatabaseNode>("g")
+      .data(nodes)
+      .enter()
+      .append("g")
+      .style("cursor", "grab")
+      .call(d3.drag<SVGGElement, DatabaseNode & d3.SimulationNodeDatum>()
+        .on("start", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on("drag", (event, d) => {
+          d.fx = event.x;
+          d.fy = event.y;
+        })
+        .on("end", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        }));
     
-    const getLinkKey = (d: GraphConnection) => {
-        const sourceId = typeof d.source === 'string' ? d.source : d.source.id;
-        const targetId = typeof d.target === 'string' ? d.target : d.target.id;
-        return `${sourceId}-${targetId}`;
-    };
+    const filter = defs.append("filter")
+      .attr("id", "glow");
+    filter.append("feGaussianBlur")
+      .attr("stdDeviation", "3")
+      .attr("result", "coloredBlur");
+    const feMerge = filter.append("feMerge");
+    feMerge.append("feMergeNode").attr("in", "coloredBlur");
+    feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 
-    const nodeElements = d3.select(svgRef.current)
-      .selectAll<SVGCircleElement, GraphNode>(".node")
-      .data(graphNodes, (d: GraphNode) => d.id)
-      .join(
-        enter => enter.append("circle")
-          .attr("class", "node")
-          .attr("r", d => d.size || 10)
-          .style("fill", d => categoryColors[d.category] || "#ccc")
-          .call(d3.drag<SVGCircleElement, GraphNode>()
-            .on("start", dragstarted)
-            .on("drag", dragged)
-            .on("end", dragended))
-          .on("mouseover", (event, d) => {
-            setHoveredNode(d);
-          })
-          .on("mouseout", () => {
-            setHoveredNode(null);
-          }),
-        update => update,
-        exit => exit.remove()
-      );
+    nodeGroups.each(function(d) {
+      const group = d3.select(this);
+      const color = categoryColors[d.category.toLowerCase()] || categoryColors[d.type] || "#6b7280";
+      
+      if (d.type === 'database' || d.type === 'page') {
+        group.append("circle")
+          .attr("r", d.size)
+          .attr("fill", color)
+          .attr("stroke", "#1e293b")
+          .attr("stroke-width", 3)
+          .style("filter", "url(#glow)")
+          .style("opacity", 0.9);
+      } else if (d.type === 'property') {
+        group.append("rect")
+          .attr("width", d.size * 2)
+          .attr("height", d.size)
+          .attr("x", -d.size)
+          .attr("y", -d.size / 2)
+          .attr("rx", 4)
+          .attr("fill", color)
+          .attr("stroke", "#1e293b")
+          .attr("stroke-width", 1)
+          .style("opacity", 0.8);
+      }
+    });
 
-    const linkElements = d3.select(svgRef.current)
-      .selectAll<SVGLineElement, GraphConnection>(".link")
-      .data(graphConnections, getLinkKey)
-      .join(
-        enter => enter.append("line")
-          .attr("class", "link")
-          .style("stroke", d => connectionColors[d.type] || "#999")
-          .style("stroke-opacity", 0.6)
-          .style("stroke-width", 2),
-        update => update,
-        exit => exit.remove()
-      );
+    nodeGroups.append("text")
+      .attr("text-anchor", "middle")
+      .attr("dy", d => (d.type === 'database' || d.type === 'page') ? 5 : 3)
+      .attr("font-size", d => (d.type === 'database' || d.type === 'page') ? "12px" : "9px")
+      .attr("font-weight", d => (d.type === 'database' || d.type === 'page') ? "bold" : "normal")
+      .attr("fill", "#000000")
+      .text(d => {
+        if (d.type === 'property' && d.name.length > 12) {
+          return d.name.substring(0, 12) + '...';
+        }
+        return d.name;
+      });
 
-    const labelElements = d3.select(svgRef.current)
-      .selectAll<SVGTextElement, GraphConnection>(".link-label")
-      .data(graphConnections, getLinkKey)
-      .join(
-        enter => enter.append("text")
-          .attr("class", "link-label")
-          .attr("text-anchor", "middle")
-          .style("font-size", "0.7em")
-          .style("fill", "#555")
-          .text(d => showConnectionLabels ? d.label : ''),
-        update => update
-          .text(d => showConnectionLabels ? d.label : ''),
-        exit => exit.remove()
-      );
+    nodeGroups
+      .on("mouseenter", (event, d) => {
+        setHoveredNode(d.id);
+        const element = d3.select(event.currentTarget);
+        
+        if (d.type === 'database' || d.type === 'page') {
+          element.select("circle")
+            .transition()
+            .duration(200)
+            .attr("r", d.size + 5)
+            .style("opacity", 1);
+        } else { // property
+          element.select("rect")
+            .transition()
+            .duration(200)
+            .attr("width", d.size * 2 + 4)
+            .attr("height", d.size + 2)
+            .attr("x", -d.size - 2)
+            .attr("y", -d.size / 2 - 1)
+            .style("opacity", 1);
+        }
+      })
+      .on("mouseleave", (event, d) => {
+        setHoveredNode(null);
+        const element = d3.select(event.currentTarget);
+        
+        if (d.type === 'database' || d.type === 'page') {
+          element.select("circle")
+            .transition()
+            .duration(200)
+            .attr("r", d.size)
+            .style("opacity", 0.9);
+        } else { // property
+          element.select("rect")
+            .transition()
+            .duration(200)
+            .attr("width", d.size * 2)
+            .attr("height", d.size)
+            .attr("x", -d.size)
+            .attr("y", -d.size / 2)
+            .style("opacity", 0.8);
+        }
+      });
 
     simulation.on("tick", () => {
-      nodeElements
-        .attr("cx", d => d.x || 0)
-        .attr("cy", d => d.y || 0);
+      links
+        .attr("x1", (d: any) => d.source.x)
+        .attr("y1", (d: any) => d.source.y)
+        .attr("x2", (d: any) => d.target.x)
+        .attr("y2", (d: any) => d.target.y);
 
-      linkElements
-        .attr("x1", d => (d.source as GraphNode).x || 0)
-        .attr("y1", d => (d.source as GraphNode).y || 0)
-        .attr("x2", d => (d.target as GraphNode).x || 0)
-        .attr("y2", d => (d.target as GraphNode).y || 0);
+      linkLabels
+        .attr("x", (d: any) => (d.source.x + d.target.x) / 2)
+        .attr("y", (d: any) => (d.source.y + d.target.y) / 2);
 
-      labelElements
-        .attr("x", d => (((d.source as GraphNode).x || 0) + ((d.target as GraphNode).x || 0)) / 2)
-        .attr("y", d => (((d.source as GraphNode).y || 0) + ((d.target as GraphNode).y || 0)) / 2);
+      nodeGroups
+        .attr("transform", (d: any) => `translate(${d.x},${d.y})`);
     });
 
     return () => {
-      simulation.on("tick", null);
+      simulation.stop();
     };
-  }, [graphNodes, graphConnections, simulation, drag, showConnectionLabels, categoryColors, connectionColors]);
-
-  const handleMouseMove = useCallback(() => {
-    setHoveredNode(null);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setHoveredNode(null);
-  }, []);
+  }, [nodes, connections, showConnectionLabels]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      <svg
-        ref={svgRef}
-        className="w-full h-full bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 cursor-move"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-      </svg>
-
-      <GraphControls 
-        isFullscreen={isFullscreen}
-        onToggleFullscreen={toggleFullscreen}
+    <div ref={graphContainerRef} className="relative w-full h-full bg-white dark:bg-gray-900">
+      <svg ref={svgRef} className="w-full h-full" />
+      
+      <HoveredNodeDetails 
+        nodeId={hoveredNode}
+        nodes={nodes}
+        categoryColors={categoryColors}
+      />
+      
+      <GraphLegend 
         categoryColors={categoryColors}
         connectionColors={connectionColors}
       />
-
-      {hoveredNode && (
-        <HoveredNodeDetails node={hoveredNode} categoryColors={categoryColors} />
-      )}
+      
+      <GraphControls 
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
+      />
     </div>
   );
 };

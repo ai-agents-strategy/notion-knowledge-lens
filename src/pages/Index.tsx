@@ -19,6 +19,7 @@ const Index = () => {
     generatePublicLink,
     revokePublicLink,
     filteredNodes,
+    eligibleConnections,
     finalFilteredConnections,
     isolatedNodeCount,
   } = useGraphData();
@@ -53,7 +54,7 @@ const Index = () => {
         connectionStrengthFilter={connectionStrengthFilter}
         onConnectionStrengthChange={setConnectionStrengthFilter}
         nodeCount={filteredNodes.length}
-        connectionCount={finalFilteredConnections.length}
+        connectionCount={eligibleConnections.length}
         isolatedNodeCount={isolatedNodeCount}
         isSyncing={isSyncing}
         onSync={handleSync}
