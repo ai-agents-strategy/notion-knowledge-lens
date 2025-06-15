@@ -177,10 +177,10 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       .enter()
       .append("text")
       .attr("font-size", "9px")
-      .attr("fill", "#cbd5e1")
+      .attr("fill", "#ffffff")
       .attr("text-anchor", "middle")
       .attr("dy", -5)
-      .style("opacity", showConnectionLabels ? 0.7 : 0)
+      .style("opacity", showConnectionLabels ? 0.9 : 0)
       .text(d => d.label || "");
 
     const nodeGroups = g.append("g")
@@ -245,7 +245,10 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       .attr("dy", d => (d.type === 'database' || d.type === 'page') ? 5 : 3)
       .attr("font-size", d => (d.type === 'database' || d.type === 'page') ? "12px" : "9px")
       .attr("font-weight", d => (d.type === 'database' || d.type === 'page') ? "bold" : "normal")
-      .attr("fill", "white")
+      .attr("fill", "#ffffff")
+      .attr("stroke", "#000000")
+      .attr("stroke-width", "0.5")
+      .style("paint-order", "stroke fill")
       .text(d => {
         if (d.type === 'property' && d.name.length > 12) {
           return d.name.substring(0, 12) + '...';
@@ -311,21 +314,6 @@ export const KnowledgeGraph = ({ nodes, connections, showConnectionLabels }: Kno
       nodeGroups
         .attr("transform", (d: any) => `translate(${d.x},${d.y})`);
     });
-
-    // Add initial zoom transform to center the graph if desired
-    // For example, to center and fit (this is a basic example, might need adjustment)
-    // const bounds = g.node()?.getBBox();
-    // if (bounds && bounds.width > 0 && bounds.height > 0) {
-    //   const fullWidth = width;
-    //   const fullHeight = height;
-    //   const midX = bounds.x + bounds.width / 2;
-    //   const midY = bounds.y + bounds.height / 2;
-    //   const scale = Math.min(1, 0.9 / Math.max(bounds.width / fullWidth, bounds.height / fullHeight));
-      
-    //   svg.call(zoom.transform, d3.zoomIdentity
-    //     .translate(fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY)
-    //     .scale(scale));
-    // }
 
     return () => {
       simulation.stop();
