@@ -1,4 +1,3 @@
-
 import { ControlPanel } from "@/components/ControlPanel";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
@@ -33,7 +32,6 @@ interface GraphPageLayoutProps {
   categoryColors: Record<string, string>;
   onCategoryColorsChange: (colors: Record<string, string>) => void;
   connectionColors: Record<string, string>;
-  onConnectionColorsChange: (colors: Record<string, string>) => void;
 }
 
 export const GraphPageLayout = ({
@@ -57,7 +55,6 @@ export const GraphPageLayout = ({
   categoryColors,
   onCategoryColorsChange,
   connectionColors,
-  onConnectionColorsChange,
 }: GraphPageLayoutProps) => {
   const { isSignedIn, isLoaded } = useUser();
   const navigate = useNavigate();
@@ -88,11 +85,6 @@ export const GraphPageLayout = ({
               isSignedIn={isSignedIn}
               authIsLoading={authIsLoading}
               onAuthAction={handleAuthAction}
-              // Pass appearance props
-              categoryColors={categoryColors}
-              onCategoryColorsChange={onCategoryColorsChange}
-              connectionColors={connectionColors}
-              onConnectionColorsChange={onConnectionColorsChange}
             />
           </SidebarContent>
         </Sidebar>
@@ -122,6 +114,8 @@ export const GraphPageLayout = ({
           nodes={graphNodes}
           connections={graphConnections}
           onClose={() => onNodeSelect(null)}
+          categoryColors={categoryColors}
+          onCategoryColorsChange={onCategoryColorsChange}
         />
       </div>
     </SidebarProvider>

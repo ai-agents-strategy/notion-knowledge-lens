@@ -7,20 +7,23 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
-import { categoryColors } from "@/components/KnowledgeGraph/graphConfig";
+import { categoryColors as defaultCategoryColors } from "@/components/KnowledgeGraph/graphConfig";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Link as LinkIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface DetailedNodeViewProps {
   nodeId: string | null;
   nodes: DatabaseNode[];
   connections: DatabaseConnection[];
   onClose: () => void;
+  categoryColors: Record<string, string>;
+  onCategoryColorsChange: (colors: Record<string, string>) => void;
 }
 
 const findNodeName = (id: string, nodes: DatabaseNode[]) => nodes.find(n => n.id === id)?.name || "Unknown Node";
 
-export const DetailedNodeView = ({ nodeId, nodes, connections, onClose }: DetailedNodeViewProps) => {
+export const DetailedNodeView = ({ nodeId, nodes, connections, onClose, categoryColors, onCategoryColorsChange }: DetailedNodeViewProps) => {
   const selectedNode = nodeId ? nodes.find(n => n.id === nodeId) : null;
 
   if (!selectedNode) {
@@ -30,7 +33,11 @@ export const DetailedNodeView = ({ nodeId, nodes, connections, onClose }: Detail
   const outgoingConnections = connections.filter(c => c.source === nodeId);
   const incomingConnections = connections.filter(c => c.target === nodeId);
 
-  const nodeColor = categoryColors[selectedNode.category.toLowerCase()] || categoryColors[selectedNode.type] || "#6b7280";
+  const nodeColor = categoryColors[selectedNode.category.toLowerCase()] || defaultCategoryColors[selectedNode.category.toLowerCase()] || defaultCategoryColors[selectedNode.type] || "#6b7280";
+
+  const handleCategoryColorChange = (category: string, color: string) => {
+    onCategoryColorsChange({ ...categoryColors, [category.toLowerCase()]: color });
+  };
 
   return (
     <Sheet open={!!nodeId} onOpenChange={(open) => !open && onClose()}>
@@ -49,8 +56,14 @@ export const DetailedNodeView = ({ nodeId, nodes, connections, onClose }: Detail
             <h3 className="font-semibold text-lg mb-4">Details</h3>
             <div className="grid grid-cols-[120px_1fr] gap-x-4 gap-y-2 text-sm">
               <div className="text-muted-foreground">Category</div>
-              <div className="flex justify-start">
+              <div className="flex justify-start items-center gap-2">
                 <Badge style={{ backgroundColor: nodeColor, color: 'white' }}>{selectedNode.category}</Badge>
+                <Input
+                  type="color"
+                  value={categoryColors[selectedNode.category.toLowerCase()] || '#ffffff'}
+                  onChange={(e) => handleCategoryColorChange(selectedNode.category, e.target.value)}
+                  className="p-1 h-6 w-8 rounded cursor-pointer"
+                />
               </div>
               <div className="text-muted-foreground">Type</div>
               <div>{selectedNode.type}</div>

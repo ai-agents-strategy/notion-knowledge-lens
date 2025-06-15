@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useGraphData } from "@/hooks/useGraphData";
 import { GraphHeader } from "@/components/GraphHeader";
@@ -90,7 +89,6 @@ const Index = () => {
         categoryColors={categoryColors}
         onCategoryColorsChange={setCategoryColors}
         connectionColors={connectionColors}
-        onConnectionColorsChange={setConnectionColors}
       />
     </div>
   );
