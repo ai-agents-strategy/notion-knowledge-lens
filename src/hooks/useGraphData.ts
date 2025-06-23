@@ -11,6 +11,7 @@ import { sampleNodes, sampleConnections } from '@/data/sample-data';
 export interface GraphNode {
   id: string;
   name: string;
+  label?: string;
   category: string;
   description?: string;
   metadata?: any;
