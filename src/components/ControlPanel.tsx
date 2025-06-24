@@ -119,6 +119,49 @@ export const ControlPanel = ({
           </div>
         </CardContent>
       </Card>
+      
+      {/* SAAS CTA */}
+      <div className="mt-auto p-4 border-t border-slate-200">
+        <a 
+          href="https://idb2b.com" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex flex-col items-center gap-2 p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-all duration-200 group text-center"
+        >
+          {/* Logo Row */}
+          <div className="flex justify-center">
+            <img 
+              src="/Icon.png" 
+              alt="IDB2B Logo" 
+              className="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-200"
+              onError={(e) => {
+                // Fallback to a simple colored circle if logo doesn't exist
+                const img = e.currentTarget as HTMLImageElement;
+                const fallback = img.nextElementSibling as HTMLElement;
+                img.style.display = 'none';
+                if (fallback) {
+                  fallback.style.display = 'flex';
+                }
+              }}
+            />
+            <div 
+              className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full items-center justify-center text-white text-sm font-bold hidden"
+            >
+              IDB2B
+            </div>
+          </div>
+          
+          {/* Title Row */}
+          <p className="text-sm font-medium text-slate-700 group-hover:text-slate-900">
+            WhatsApp for B2B?
+          </p>
+          
+          {/* Subtitle Row */}
+          <p className="text-xs text-slate-500 group-hover:text-slate-600">
+            Discover IDB2B solutions
+          </p>
+        </a>
+      </div>
     </div>
   );
 };
