@@ -1,5 +1,4 @@
 ## What technologies are used for this project?
-
 This project is built with:
 
 - Vite
@@ -7,4 +6,3 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
-
