@@ -3,8 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { RefreshCw, Settings, LogIn } from "lucide-react";
-import { useUser, UserButton } from "@clerk/clerk-react";
+import { RefreshCw, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ControlPanelProps {
@@ -21,7 +20,6 @@ interface ControlPanelProps {
   // Auth props
   isSignedIn: boolean;
   authIsLoading: boolean;
-  onAuthAction: () => void;
 }
 
 export const ControlPanel = ({
@@ -37,7 +35,6 @@ export const ControlPanel = ({
   usingRealData,
   isSignedIn,
   authIsLoading,
-  onAuthAction,
 }: ControlPanelProps) => {
   const navigate = useNavigate();
   const hasNotionApiKey = !!localStorage.getItem('notion_api_key');
@@ -122,27 +119,6 @@ export const ControlPanel = ({
           </div>
         </CardContent>
       </Card>
-      
-      {/* Auth section at bottom */}
-      <div className="mt-auto pt-4 border-t border-slate-200">
-        {authIsLoading ? (
-          <div className="w-full h-8 bg-muted rounded animate-pulse" />
-        ) : isSignedIn ? (
-          <div className="flex justify-center">
-            <UserButton />
-          </div>
-        ) : (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full border-primary text-primary hover:bg-primary/10" 
-            onClick={onAuthAction}
-          >
-            <LogIn className="w-4 h-4 mr-2" />
-            Login / Sign Up
-          </Button>
-        )}
-      </div>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -15,7 +15,7 @@ export const useUserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!user?.id) {
       setProfile(null);
       setLoading(false);
@@ -61,7 +61,7 @@ export const useUserProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   const updateProfile = async (updates: Partial<Pick<UserProfile, 'clerk_user_id'>>) => {
     if (!user?.id || !profile) return false;
@@ -91,7 +91,7 @@ export const useUserProfile = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, [user?.id]);
+  }, [user?.id, fetchProfile]);
 
   return {
     profile,

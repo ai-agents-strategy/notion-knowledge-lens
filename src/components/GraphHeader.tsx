@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Database, Settings, Eye, EyeOff } from "lucide-react";
+import { Database, Settings, Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
+
 interface GraphHeaderProps {
   usingRealData: boolean;
   realDataExists: boolean;
@@ -62,6 +64,21 @@ export const GraphHeader = ({
             <Settings className="w-4 h-4" />
             Settings
           </Button>
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+          <SignedOut>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate('/sign-in')} className="flex items-center gap-2">
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </Button>
+              <Button variant="default" size="sm" onClick={() => navigate('/sign-up')} className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                Sign Up
+              </Button>
+            </div>
+          </SignedOut>
         </div>
       </div>
     </div>;

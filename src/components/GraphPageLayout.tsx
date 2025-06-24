@@ -62,10 +62,6 @@ export const GraphPageLayout = ({
   const navigate = useNavigate();
   const authIsLoading = !isLoaded;
 
-  const handleAuthAction = () => {
-    navigate('/auth/sign-in');
-  };
-
   return (
     <SidebarProvider>
       <div className="relative z-10 flex h-[calc(100vh-120px)] w-full">
@@ -85,7 +81,6 @@ export const GraphPageLayout = ({
               usingRealData={usingRealData}
               isSignedIn={isSignedIn}
               authIsLoading={authIsLoading}
-              onAuthAction={handleAuthAction}
             />
           </SidebarContent>
         </Sidebar>

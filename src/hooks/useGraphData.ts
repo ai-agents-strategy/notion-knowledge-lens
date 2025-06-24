@@ -198,7 +198,7 @@ export const useGraphData = () => {
       }
       setIsLoading(false);
     }
-  }, [user, dataInitialized]);
+  }, [user, dataInitialized, nodes.length, realNodes.length, searchParams]);
 
   const fetchPublicGraph = async (publicId: string) => {
     setIsLoading(true);

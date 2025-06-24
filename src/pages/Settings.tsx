@@ -17,7 +17,7 @@ const Settings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [syncedDatabases, setSyncedDatabases] = useState<any[]>([]);
+  const [syncedDatabases, setSyncedDatabases] = useState<Array<{ title?: Array<{ plain_text: string }> }>>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Chat API Keys state
@@ -240,14 +240,6 @@ const Settings = () => {
       description: "All AI chat API keys have been removed."
     });
   };
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-700 dark:text-gray-300 text-lg">Please sign in to access settings.</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">

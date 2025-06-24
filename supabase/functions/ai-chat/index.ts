@@ -28,8 +28,8 @@ serve(async (req) => {
 Knowledge Graph Context:
 - Total nodes: ${graphData.nodes?.length || 0}
 - Total connections: ${graphData.connections?.length || 0}
-- Node categories: ${graphData.nodes ? [...new Set(graphData.nodes.map((n: any) => n.category))].join(', ') : 'None'}
-- Sample nodes: ${graphData.nodes?.slice(0, 5).map((n: any) => n.name).join(', ') || 'None'}
+- Node categories: ${graphData.nodes ? [...new Set(graphData.nodes.map((n: { category: string }) => n.category))].join(', ') : 'None'}
+- Sample nodes: ${graphData.nodes?.slice(0, 5).map((n: { name: string }) => n.name).join(', ') || 'None'}
 
 The user has a knowledge graph representing their Notion workspace with pages and their relationships.
 `;
@@ -84,8 +84,8 @@ The user has a knowledge graph representing their Notion workspace with pages an
 Knowledge Graph Context:
 - Total nodes: ${graphData.nodes?.length || 0}
 - Total connections: ${graphData.connections?.length || 0}
-- Node categories: ${graphData.nodes ? [...new Set(graphData.nodes.map((n: any) => n.category))].join(', ') : 'None'}
-- Sample nodes: ${graphData.nodes?.slice(0, 5).map((n: any) => n.name).join(', ') || 'None'}
+- Node categories: ${graphData.nodes ? [...new Set(graphData.nodes.map((n: { category: string }) => n.category))].join(', ') : 'None'}
+- Sample nodes: ${graphData.nodes?.slice(0, 5).map((n: { name: string }) => n.name).join(', ') || 'None'}
 
 The user has a knowledge graph representing their Notion workspace with pages and their relationships.
 `;
