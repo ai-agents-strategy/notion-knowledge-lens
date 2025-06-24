@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
-import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Organization from "./pages/Organization";
 import PublicGraph from "./pages/PublicGraph";
@@ -55,7 +54,6 @@ const App = () => (
             </div>
           }
         />
-        <Route path="/pricing" element={<Pricing />} />
         <Route
           path="/settings"
           element={

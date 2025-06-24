@@ -14,7 +14,7 @@ export interface GraphNode {
   label?: string;
   category: string;
   description?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   color?: string;
   x?: number;
   y?: number;
@@ -26,7 +26,7 @@ export interface GraphConnection {
   target: string;
   label?: string;
   strength?: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   color?: string;
 }
 
@@ -119,7 +119,7 @@ export const useGraphData = () => {
       console.log('✅ Notion sync success:', data);
       
       // Transform the data to our GraphNode format
-      const fetchedNodes: GraphNode[] = (data.nodes || []).map((node: any) => ({
+      const fetchedNodes: GraphNode[] = (data.nodes || []).map((node: { id?: string; name?: string; category?: string; description?: string; metadata?: Record<string, unknown> }) => ({
         id: node.id || uuidv4(),
         name: node.name || 'Untitled',
         category: node.category || 'content',
@@ -127,7 +127,7 @@ export const useGraphData = () => {
         metadata: node.metadata || {}
       }));
 
-      const fetchedConnections: GraphConnection[] = (data.connections || []).map((conn: any) => ({
+      const fetchedConnections: GraphConnection[] = (data.connections || []).map((conn: { id?: string; source: string; target: string; label?: string; strength?: number; metadata?: Record<string, unknown> }) => ({
         id: conn.id || uuidv4(),
         source: conn.source,
         target: conn.target,

@@ -24,7 +24,7 @@ interface DetailedNodeViewProps {
 const findNodeName = (id: string, nodes: DatabaseNode[]) => nodes.find(n => n.id === id)?.name || "Unknown Node";
 
 // Helper function to get the ID from connection source/target (handles both string IDs and D3 objects)
-const getConnectionId = (sourceOrTarget: any): string => {
+const getConnectionId = (sourceOrTarget: string | { id: string }): string => {
   if (typeof sourceOrTarget === 'string') {
     return sourceOrTarget;
   }

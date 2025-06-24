@@ -18,8 +18,8 @@ export const SupabaseAuthProvider = () => {
           console.log('🔄 Setting Supabase session with Clerk token...');
           const token = await getToken({ template: 'supabase' });
           if (token) {
-            // There seems to be a typing issue with signInWithJwt, casting to any to bypass TS error.
-            const { error } = await (supabase.auth as any).signInWithJwt(token);
+            // There seems to be a typing issue with signInWithJwt, using unknown cast to bypass TS error.
+            const { error } = await (supabase.auth as unknown as { signInWithJwt: (token: string) => Promise<{ error: Error | null }> }).signInWithJwt(token);
             if (error) {
               console.error('❌ Error signing in to Supabase with JWT:', error.message);
             } else {

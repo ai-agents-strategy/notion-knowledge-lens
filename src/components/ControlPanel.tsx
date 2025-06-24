@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { RefreshCw, Settings, LogIn } from "lucide-react";
 import { useUser, UserButton } from "@clerk/clerk-react";
-import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useNavigate } from "react-router-dom";
 
 interface ControlPanelProps {
@@ -40,9 +39,6 @@ export const ControlPanel = ({
   authIsLoading,
   onAuthAction,
 }: ControlPanelProps) => {
-  const {
-    subscription
-  } = useSubscriptions();
   const navigate = useNavigate();
   const hasNotionApiKey = !!localStorage.getItem('notion_api_key');
 
@@ -133,7 +129,7 @@ export const ControlPanel = ({
           <div className="w-full h-8 bg-muted rounded animate-pulse" />
         ) : isSignedIn ? (
           <div className="flex justify-center">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </div>
         ) : (
           <Button 

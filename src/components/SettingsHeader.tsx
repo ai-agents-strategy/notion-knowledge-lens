@@ -13,7 +13,6 @@ export const SettingsHeader = ({ title, description }: SettingsHeaderProps) => {
 
   const navigationItems = [
     { path: '/settings', label: 'Integrations' },
-    { path: '/plan', label: 'Plan' },
     { path: '/organization', label: 'Organization' },
   ];
 

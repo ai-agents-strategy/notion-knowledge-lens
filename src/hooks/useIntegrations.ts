@@ -130,11 +130,12 @@ export const useIntegrations = () => {
           )
         );
       } else {
-        // Create new integration metadata in database (without API key or database ID)
+        // Create new integration metadata in database (with empty API key since we store it in localStorage)
         const insertData = {
           user_id: user.id,
-          integration_type: type
-        } as any;
+          integration_type: type,
+          api_key: '' // Empty string since we store the actual key in localStorage
+        };
 
         const { data, error } = await supabase
           .from('integrations')

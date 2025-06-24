@@ -6,34 +6,69 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface NotionProperty {
+  type: string;
+  title?: Array<{ plain_text?: string }>;
+  rich_text?: Array<{ plain_text?: string }>;
+  relation?: Array<{ id: string }>;
+}
+
+interface NotionPage {
+  id: string;
+  properties: Record<string, NotionProperty>;
+  database_id?: string;
+  database_name?: string;
+  extracted_title?: string;
+}
+
+interface NotionDatabase {
+  id: string;
+  title?: Array<{ plain_text?: string }>;
+}
+
+interface GraphNode {
+  id: string;
+  name: string;
+  type: string;
+  category: string;
+  description: string;
+  size: number;
+}
+
+interface GraphConnection {
+  source: string;
+  target: string;
+  type: string;
+  strength: number;
+  label: string;
+}
+
 // Helper functions moved from client-side to be used here
-function extractPageTitle(page: any): string {
+function extractPageTitle(page: NotionPage): string {
   if (page.properties) {
     for (const [, prop] of Object.entries(page.properties)) {
-      const propData = prop as any;
-      if (propData.type === 'title' && propData.title?.length > 0) {
-        return propData.title[0]?.plain_text || 'Untitled';
+      if (prop.type === 'title' && prop.title?.length && prop.title.length > 0) {
+        return prop.title[0]?.plain_text || 'Untitled';
       }
     }
     for (const [, prop] of Object.entries(page.properties)) {
-      const propData = prop as any;
-      if (propData.type === 'rich_text' && propData.rich_text?.length > 0) {
-        return propData.rich_text[0]?.plain_text || 'Untitled';
+      if (prop.type === 'rich_text' && prop.rich_text?.length && prop.rich_text.length > 0) {
+        return prop.rich_text[0]?.plain_text || 'Untitled';
       }
     }
   }
   return `Page ${page.id.slice(0, 8)}`;
 }
 
-function transformNotionDataToSEOGraph(pages: any[], _databases: any[]) {
-    const nodes: any[] = [];
-    const connections: any[] = [];
+function transformNotionDataToSEOGraph(pages: NotionPage[], _databases: NotionDatabase[]) {
+    const nodes: GraphNode[] = [];
+    const connections: GraphConnection[] = [];
 
-    pages.forEach((page: any) => {
+    pages.forEach((page: NotionPage) => {
       const pageTitle = page.extracted_title || extractPageTitle(page);
       const categoryFromDb = page.database_name?.toLowerCase().replace(/\s+/g, '_') || 'content';
       
-      const pageNode = {
+      const pageNode: GraphNode = {
         id: page.id,
         name: pageTitle,
         type: "page",
@@ -44,11 +79,11 @@ function transformNotionDataToSEOGraph(pages: any[], _databases: any[]) {
       nodes.push(pageNode);
     });
 
-    pages.forEach((page: any) => {
+    pages.forEach((page: NotionPage) => {
       if (page.properties) {
-        Object.entries(page.properties).forEach(([propName, propData]: [string, any]) => {
-          if (propData.type === 'relation' && propData.relation?.length > 0) {
-            propData.relation.forEach((relatedPage: any) => {
+        Object.entries(page.properties).forEach(([propName, propData]: [string, NotionProperty]) => {
+          if (propData.type === 'relation' && propData.relation?.length && propData.relation.length > 0) {
+            propData.relation.forEach((relatedPage: { id: string }) => {
               const targetPage = pages.find(p => p.id === relatedPage.id);
               if (targetPage) {
                 connections.push({
@@ -113,8 +148,8 @@ serve(async (req) => {
     const databasesData = await databasesResponse.json()
     console.log(`Found ${databasesData.results?.length || 0} databases`)
 
-    const allPages: any[] = []
-    const pagePromises: Promise<any>[] = []
+    const allPages: NotionPage[] = []
+    const pagePromises: Promise<NotionPage[]>[] = []
 
     // For each database, get its pages
     for (const database of databasesData.results || []) {
@@ -131,7 +166,7 @@ serve(async (req) => {
           const pagesData = await pagesResponse.json()
           console.log(`Database ${database.id}: Found ${pagesData.results?.length || 0} pages`)
           
-          return (pagesData.results || []).map((page: any) => ({
+          return (pagesData.results || []).map((page: NotionPage) => ({
             ...page,
             database_id: database.id,
             database_name: database.title?.[0]?.plain_text || 'Untitled Database',

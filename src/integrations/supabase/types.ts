@@ -69,51 +69,6 @@ export type Database = {
         }
         Relationships: []
       }
-      plans: {
-        Row: {
-          created_at: string
-          currency: string
-          description: string | null
-          features: Json | null
-          id: string
-          interval: string
-          is_active: boolean
-          name: string
-          price_cents: number
-          stripe_price_id: string | null
-          stripe_product_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          currency?: string
-          description?: string | null
-          features?: Json | null
-          id?: string
-          interval: string
-          is_active?: boolean
-          name: string
-          price_cents: number
-          stripe_price_id?: string | null
-          stripe_product_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          currency?: string
-          description?: string | null
-          features?: Json | null
-          id?: string
-          interval?: string
-          is_active?: boolean
-          name?: string
-          price_cents?: number
-          stripe_price_id?: string | null
-          stripe_product_id?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           clerk_user_id: string
@@ -131,53 +86,6 @@ export type Database = {
           id?: string
         }
         Relationships: []
-      }
-      user_subscriptions: {
-        Row: {
-          created_at: string
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
-          plan_id: string | null
-          status: string
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          plan_id?: string | null
-          status: string
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          plan_id?: string | null
-          status?: string
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_subscriptions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {

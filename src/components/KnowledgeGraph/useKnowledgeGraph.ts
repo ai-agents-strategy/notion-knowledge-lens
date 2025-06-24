@@ -45,26 +45,28 @@ export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLa
     const g = svg.append("g");
 
     const simulation = d3.forceSimulation(nodes as d3.SimulationNodeDatum[])
-      .force("link", d3.forceLink<d3.SimulationNodeDatum, DatabaseConnection>(connections).id((d: any) => d.id)
-        .distance((d: any) => {
+      .force("link", d3.forceLink<d3.SimulationNodeDatum, DatabaseConnection>(connections).id((d: d3.SimulationNodeDatum) => (d as DatabaseNode).id)
+        .distance((d: DatabaseConnection) => {
           if (d.type === 'contains') return 60;
           if (d.type === 'relation') return 150;
           return 100;
         })
       )
       .force("charge", d3.forceManyBody()
-        .strength((d: any) => {
-          if (d.type === 'database') return -400;
-          if (d.type === 'property') return -150;
+        .strength((d: d3.SimulationNodeDatum) => {
+          const node = d as DatabaseNode;
+          if (node.type === 'database') return -400;
+          if (node.type === 'property') return -150;
           return -300;
         })
       )
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide()
-        .radius((d: any) => {
-          if (d.type === 'database') return d.size + 10;
-          if (d.type === 'property') return d.size + 5;
-          return d.size + 5;
+        .radius((d: d3.SimulationNodeDatum) => {
+          const node = d as DatabaseNode;
+          if (node.type === 'database') return node.size + 10;
+          if (node.type === 'property') return node.size + 5;
+          return node.size + 5;
         })
       );
 
@@ -194,7 +196,7 @@ export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLa
         const connectedNodeIds = new Set<string>();
         connectedNodeIds.add(d.id);
 
-        links.data().forEach((conn: any) => {
+        links.data().forEach((conn: DatabaseConnection & { source: DatabaseNode & d3.SimulationNodeDatum, target: DatabaseNode & d3.SimulationNodeDatum }) => {
             if (conn.source.id === d.id) {
                 connectedNodeIds.add(conn.target.id);
             }
@@ -218,12 +220,12 @@ export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLa
             .style("opacity", 1);
 
         links
-            .filter((link: any) => link.source.id === d.id || link.target.id === d.id)
-            .attr("stroke-opacity", (link: any) => link.type === 'contains' ? 0.8 : 0.6);
+            .filter((link: DatabaseConnection & { source: DatabaseNode & d3.SimulationNodeDatum, target: DatabaseNode & d3.SimulationNodeDatum }) => link.source.id === d.id || link.target.id === d.id)
+            .attr("stroke-opacity", (link: DatabaseConnection) => link.type === 'contains' ? 0.8 : 0.6);
 
         if (showConnectionLabels) {
             linkLabels
-                .filter((link: any) => link.source.id === d.id || link.target.id === d.id)
+                .filter((link: DatabaseConnection & { source: DatabaseNode & d3.SimulationNodeDatum, target: DatabaseNode & d3.SimulationNodeDatum }) => link.source.id === d.id || link.target.id === d.id)
                 .style("opacity", 0.7);
         }
         
@@ -250,7 +252,7 @@ export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLa
         setHoveredNode(null);
 
         nodeGroups.style("opacity", 1);
-        links.attr("stroke-opacity", (link: any) => link.type === 'contains' ? 0.8 : 0.6);
+        links.attr("stroke-opacity", (link: DatabaseConnection) => link.type === 'contains' ? 0.8 : 0.6);
         linkLabels.style("opacity", showConnectionLabels ? 0.7 : 0);
         
         const element = d3.select(event.currentTarget);
@@ -275,17 +277,17 @@ export const useKnowledgeGraph = ({ svgRef, nodes, connections, showConnectionLa
 
     simulation.on("tick", () => {
       links
-        .attr("x1", (d: any) => d.source.x)
-        .attr("y1", (d: any) => d.source.y)
-        .attr("x2", (d: any) => d.target.x)
-        .attr("y2", (d: any) => d.target.y);
+        .attr("x1", (d: DatabaseConnection & { source: DatabaseNode & d3.SimulationNodeDatum, target: DatabaseNode & d3.SimulationNodeDatum }) => d.source.x)
+        .attr("y1", (d: DatabaseConnection & { source: DatabaseNode & d3.SimulationNodeDatum, target: DatabaseNode & d3.SimulationNodeDatum }) => d.source.y)
+        .attr("x2", (d: DatabaseConnection & { source: DatabaseNode & d3.SimulationNodeDatum, target: DatabaseNode & d3.SimulationNodeDatum }) => d.target.x)
+        .attr("y2", (d: DatabaseConnection & { source: DatabaseNode & d3.SimulationNodeDatum, target: DatabaseNode & d3.SimulationNodeDatum }) => d.target.y);
 
       linkLabels
-        .attr("x", (d: any) => (d.source.x + d.target.x) / 2)
-        .attr("y", (d: any) => (d.source.y + d.target.y) / 2);
+        .attr("x", (d: DatabaseConnection & { source: DatabaseNode & d3.SimulationNodeDatum, target: DatabaseNode & d3.SimulationNodeDatum }) => (d.source.x + d.target.x) / 2)
+        .attr("y", (d: DatabaseConnection & { source: DatabaseNode & d3.SimulationNodeDatum, target: DatabaseNode & d3.SimulationNodeDatum }) => (d.source.y + d.target.y) / 2);
 
       nodeGroups
-        .attr("transform", (d: any) => `translate(${d.x},${d.y})`);
+        .attr("transform", (d: DatabaseNode & d3.SimulationNodeDatum) => `translate(${d.x},${d.y})`);
     });
 
     return () => {
