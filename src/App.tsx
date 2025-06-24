@@ -33,7 +33,7 @@ const AppContent = () => {
       <Route path="/" element={<Index />} />
       <Route path="/public/graph/:publicId" element={<PublicGraph />} />
       <Route path="/sign-in" element={<SignInPage />} />
-      <Route path="/sign-up" element={<SignUpPage />} />
+      <Route path="/sign-up/*" element={<SignUpPage />} />
       <Route
         path="/settings"
         element={

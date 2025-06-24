@@ -9,6 +9,7 @@ const SignUpPage = () => {
         signInUrl="/sign-in" 
         afterSignInUrl="/"
         afterSignUpUrl="/"
+        redirectUrl="/"
       />
     </div>
   );
