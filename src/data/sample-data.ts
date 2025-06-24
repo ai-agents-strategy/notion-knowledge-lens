@@ -7,7 +7,7 @@ export const sampleNodes: GraphNode[] = [
     name: 'Keyword Research',
     label: 'Keywords',
     category: 'SEO Strategy',
-    description: 'Identifying valuable keywords to target',
+    description: 'Identifying valuable keywords to primary/secondary target',
     color: '#3b82f6',
     x: 100,
     y: 200
