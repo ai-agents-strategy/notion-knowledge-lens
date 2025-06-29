@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -19,9 +18,9 @@ serve(async (req) => {
 
     let aiResponse;
 
-    if (useEnhancedModel && apiKeys?.openai && apiKeys?.mem0) {
-      // Use enhanced model with mem0 and OpenAI
-      console.log('Using enhanced model with mem0 and OpenAI');
+    if (useEnhancedModel && apiKeys?.openai) {
+      // Use enhanced model with OpenAI
+      console.log('Using enhanced model with OpenAI');
       
       // Prepare context about the knowledge graph
       const graphContext = `
@@ -45,11 +44,11 @@ The user has a knowledge graph representing their Notion workspace with pages an
           messages: [
             {
               role: 'system',
-              content: `You are an advanced AI assistant with memory capabilities that helps users understand and analyze their knowledge graph. ${graphContext} 
+              content: `You are an advanced AI assistant that helps users understand and analyze their knowledge graph. ${graphContext} 
               
-              You have access to the user's conversation history and can remember previous interactions. Provide helpful insights about their knowledge graph structure, suggest connections they might be missing, help them understand patterns in their data, and answer questions about their Notion workspace organization.
+              Provide helpful insights about their knowledge graph structure, suggest connections they might be missing, help them understand patterns in their data, and answer questions about their Notion workspace organization.
               
-              Be concise but informative. If they ask about specific nodes or connections, refer to the actual data when possible. Use your memory of previous conversations to provide more personalized and contextual responses.`
+              Be concise but informative. If they ask about specific nodes or connections, refer to the actual data when possible. Provide actionable insights and suggestions for improving their knowledge organization.`
             },
             {
               role: 'user',
@@ -67,9 +66,6 @@ The user has a knowledge graph representing their Notion workspace with pages an
 
       const data = await response.json();
       aiResponse = data.choices[0].message.content;
-
-      // TODO: Integrate mem0 for memory storage
-      // This would require additional implementation to store and retrieve memories
       
     } else {
       // Use free Together AI model

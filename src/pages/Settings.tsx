@@ -21,11 +21,11 @@ const Settings = () => {
   const [syncedDatabases, setSyncedDatabases] = useState<Array<{ title?: Array<{ plain_text: string }> }>>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  // Chat API Keys state
+  // OpenAI API Key state
   const [openaiKey, setOpenaiKey] = useState('');
-  const [mem0Key, setMem0Key] = useState('');
+  const [chatIsLoading, setChatIsLoading] = useState(false);
 
-  // Load data from database and localStorage
+  // Load data from database
   useEffect(() => {
     if (!integrationsLoading) {
       // Load Notion integration from database
@@ -33,6 +33,12 @@ const Settings = () => {
       if (notionIntegration) {
         setNotionApiKey(notionIntegration.api_key || '');
         setDatabaseId(notionIntegration.database_id || '');
+      }
+
+      // Load OpenAI integration from database
+      const openaiIntegration = getIntegration('openai');
+      if (openaiIntegration) {
+        setOpenaiKey(openaiIntegration.api_key || '');
       }
 
       // Load synced databases from localStorage (this is temporary data)
@@ -44,13 +50,6 @@ const Settings = () => {
           console.error('Error parsing synced databases:', error);
         }
       }
-
-      // Load chat API keys from localStorage (keeping these in localStorage for security)
-      const storedOpenaiKey = localStorage.getItem('openai_api_key');
-      const storedMem0Key = localStorage.getItem('mem0_api_key');
-      
-      if (storedOpenaiKey) setOpenaiKey(storedOpenaiKey);
-      if (storedMem0Key) setMem0Key(storedMem0Key);
     }
   }, [integrationsLoading, getIntegration]);
 
@@ -198,43 +197,64 @@ const Settings = () => {
     }
   };
 
-  const handleSaveChatSettings = () => {
+  const handleSaveChatSettings = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to save settings.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setChatIsLoading(true);
     try {
       if (openaiKey.trim()) {
-        localStorage.setItem('openai_api_key', openaiKey.trim());
+        const success = await saveIntegration('openai', openaiKey.trim());
+        if (success) {
+          toast({
+            title: "Chat settings saved!",
+            description: "Your OpenAI API key has been saved securely to the database."
+          });
+        }
       } else {
-        localStorage.removeItem('openai_api_key');
+        // If empty, delete the integration
+        await deleteIntegration('openai');
+        toast({
+          title: "Chat settings cleared",
+          description: "OpenAI API key has been removed from the database."
+        });
       }
-
-      if (mem0Key.trim()) {
-        localStorage.setItem('mem0_api_key', mem0Key.trim());
-      } else {
-        localStorage.removeItem('mem0_api_key');
-      }
-
-      toast({
-        title: "Chat settings saved!",
-        description: "Your AI chat API keys have been saved securely in your browser."
-      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to save chat settings. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setChatIsLoading(false);
     }
   };
 
-  const handleClearChatSettings = () => {
-    localStorage.removeItem('openai_api_key');
-    localStorage.removeItem('mem0_api_key');
-    setOpenaiKey('');
-    setMem0Key('');
-    
-    toast({
-      title: "Chat settings cleared",
-      description: "All AI chat API keys have been removed."
-    });
+  const handleClearChatSettings = async () => {
+    setChatIsLoading(true);
+    try {
+      await deleteIntegration('openai');
+      setOpenaiKey('');
+      
+      toast({
+        title: "Chat settings cleared",
+        description: "OpenAI API key has been removed from the database."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to clear chat settings. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setChatIsLoading(false);
+    }
   };
 
   return (
@@ -264,10 +284,9 @@ const Settings = () => {
             <ChatApiSettings
               openaiKey={openaiKey}
               setOpenaiKey={setOpenaiKey}
-              mem0Key={mem0Key}
-              setMem0Key={setMem0Key}
               handleSaveChatSettings={handleSaveChatSettings}
               handleClearChatSettings={handleClearChatSettings}
+              isLoading={chatIsLoading}
             />
 
             <NotionIntegrationSettings

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 import { convertMarkdownToHtml } from "@/utils/markdownToHtml";
+import { useIntegrations } from "@/hooks/useIntegrations";
 
 interface Message {
   id: string;
@@ -23,12 +23,8 @@ interface FloatingGraphChatProps {
   connections: DatabaseConnection[];
 }
 
-interface ChatSettings {
-  hasOpenAI: boolean;
-  hasMem0: boolean;
-}
-
 export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps) => {
+  const { getIntegration } = useIntegrations();
   const [isOpen, setIsOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -41,20 +37,13 @@ export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [chatSettings, setChatSettings] = useState<ChatSettings>({ hasOpenAI: false, hasMem0: false });
+  const [hasOpenAI, setHasOpenAI] = useState(false);
 
   useEffect(() => {
-    // Check for stored API keys
-    const storedOpenaiKey = localStorage.getItem('openai_api_key');
-    const storedMem0Key = localStorage.getItem('mem0_api_key');
-    
-    setChatSettings({
-      hasOpenAI: !!storedOpenaiKey,
-      hasMem0: !!storedMem0Key
-    });
-  }, [isOpen]); // Check when chat opens
-
-  const canUseEnhancedModel = chatSettings.hasOpenAI && chatSettings.hasMem0;
+    // Check for OpenAI API key in database
+    const openaiIntegration = getIntegration('openai');
+    setHasOpenAI(!!openaiIntegration?.api_key);
+  }, [isOpen, getIntegration]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -71,14 +60,15 @@ export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps
     setIsLoading(true);
 
     try {
+      const openaiIntegration = getIntegration('openai');
+      
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: {
           message: inputMessage,
           graphData: { nodes, connections },
-          useEnhancedModel: canUseEnhancedModel,
-          apiKeys: canUseEnhancedModel ? {
-            openai: localStorage.getItem('openai_api_key'),
-            mem0: localStorage.getItem('mem0_api_key')
+          useEnhancedModel: hasOpenAI,
+          apiKeys: hasOpenAI ? {
+            openai: openaiIntegration?.api_key
           } : undefined
         }
       });
@@ -122,7 +112,7 @@ export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps
           size="icon"
         >
           <MessageCircle className="w-6 h-6" />
-          {canUseEnhancedModel && (
+          {hasOpenAI && (
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
           )}
         </Button>
@@ -144,9 +134,9 @@ export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps
             <div className="flex flex-col gap-1">
               <CardTitle className="text-lg">Graph Insights Chat</CardTitle>
               <div className="flex items-center gap-2">
-                <Badge variant={canUseEnhancedModel ? "default" : "secondary"} className="text-xs">
+                <Badge variant={hasOpenAI ? "default" : "secondary"} className="text-xs">
                   <Bot className="w-3 h-3 mr-1" />
-                  {canUseEnhancedModel ? "Enhanced AI" : "Free Model"}
+                  {hasOpenAI ? "Enhanced AI" : "Free Model"}
                 </Badge>
               </div>
             </div>
