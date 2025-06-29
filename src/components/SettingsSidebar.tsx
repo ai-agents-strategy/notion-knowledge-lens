@@ -1,16 +1,8 @@
-
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Key, Building2 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const SettingsSidebar = () => {
-  const location = useLocation();
-
-  const navigationItems = [
-    { path: '/settings', label: 'Integrations', icon: Key },
-    { path: '/organization', label: 'Organization', icon: Building2 },
-  ];
-
   return (
     <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-screen p-6">
       {/* Back to Graph Button */}
@@ -30,31 +22,6 @@ export const SettingsSidebar = () => {
           Manage your account and preferences
         </p>
       </div>
-
-      {/* Navigation Menu */}
-      <nav className="space-y-2">
-        {navigationItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname.startsWith(item.path);
-          
-          return (
-            <Link key={item.path} to={item.path}>
-              <Button
-                variant={isActive ? "default" : "ghost"}
-                size="sm"
-                className={`w-full justify-start ${
-                  isActive 
-                    ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
-              >
-                <Icon className="w-4 h-4 mr-3" />
-                {item.label}
-              </Button>
-            </Link>
-          );
-        })}
-      </nav>
     </div>
   );
 };
