@@ -2,8 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { RefreshCw, Settings } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
 
 interface ControlPanelProps {
   showConnectionLabels: boolean;
@@ -35,7 +34,6 @@ export const ControlPanel = ({
   isSignedIn,
   authIsLoading,
 }: ControlPanelProps) => {
-  const navigate = useNavigate();
   const hasNotionApiKey = !!localStorage.getItem('notion_api_key');
 
   return (
@@ -79,16 +77,6 @@ export const ControlPanel = ({
               {usingRealData ? "Real Notion Pages" : "Sample SEO Data"}
             </span>
             <div className={`w-2 h-2 rounded-full ${usingRealData ? "bg-green-500" : "bg-primary"}`} />
-          </div>
-
-          <Separator />
-
-          {/* Settings Button */}
-          <div className="space-y-3">
-            <Button variant="outline" size="sm" onClick={() => navigate('/settings')} disabled={!isSignedIn || authIsLoading} className="w-full">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
           </div>
 
           <Separator />
