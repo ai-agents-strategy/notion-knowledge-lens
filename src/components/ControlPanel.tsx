@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -60,13 +59,17 @@ export const ControlPanel = ({
               className="w-full border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 disabled:opacity-50" 
               title={!hasNotionApiKey ? "Configure your Notion API key in Settings first" : ""}
             >
-              {isSyncing ? <>
+              {isSyncing ? (
+                <>
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   Syncing...
-                </> : <>
+                </>
+              ) : (
+                <>
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Sync Notion
-                </>}
+                </>
+              )}
             </Button>
           </div>
 

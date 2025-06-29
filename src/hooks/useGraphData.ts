@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -32,7 +32,7 @@ export interface GraphConnection {
 
 // Hook definition
 export const useGraphData = () => {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [connections, setConnections] = useState<GraphConnection[]>([]);

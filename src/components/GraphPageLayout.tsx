@@ -1,9 +1,8 @@
-
 import { ControlPanel } from "@/components/ControlPanel";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { GraphFilterControls } from "./GraphFilterControls";
 import { DetailedNodeView } from "./DetailedNodeView";
@@ -58,7 +57,7 @@ export const GraphPageLayout = ({
   onCategoryColorsChange,
   connectionColors,
 }: GraphPageLayoutProps) => {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useAuth();
   const navigate = useNavigate();
   const authIsLoading = !isLoaded;
 
