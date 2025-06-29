@@ -6,6 +6,7 @@ import { Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
+import Gallery from "./pages/Gallery";
 import NotFound from "./pages/NotFound";
 import Organization from "./pages/Organization";
 import PublicGraph from "./pages/PublicGraph";
@@ -24,6 +25,7 @@ const App = () => (
         <Sonner />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/gallery" element={<Gallery />} />
           <Route path="/public/graph/:publicId" element={<PublicGraph />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />

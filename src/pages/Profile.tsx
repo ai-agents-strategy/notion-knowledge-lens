@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -20,7 +21,9 @@ import {
   Settings,
   Trash2,
   Download,
-  Upload
+  Save,
+  ExternalLink,
+  Globe
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -33,6 +36,15 @@ interface UserStats {
   totalConnections: number;
 }
 
+interface UserProfile {
+  user_name: string;
+  user_bio: string;
+  user_website: string;
+  user_twitter: string;
+  user_linkedin: string;
+  user_github: string;
+}
+
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { integrations } = useIntegrations();
@@ -43,20 +55,49 @@ const Profile = () => {
     totalNodes: 0,
     totalConnections: 0
   });
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    user_name: '',
+    user_bio: '',
+    user_website: '',
+    user_twitter: '',
+    user_linkedin: '',
+    user_github: ''
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   useEffect(() => {
     if (user) {
-      loadUserStats();
+      loadUserData();
     }
   }, [user]);
 
-  const loadUserStats = async () => {
+  const loadUserData = async () => {
     if (!user) return;
 
     try {
       setIsLoading(true);
+
+      // Load profile data
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('clerk_user_id', user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error loading profile:', profileError);
+      } else if (profile) {
+        setUserProfile({
+          user_name: profile.user_name || '',
+          user_bio: profile.user_bio || '',
+          user_website: profile.user_website || '',
+          user_twitter: profile.user_twitter || '',
+          user_linkedin: profile.user_linkedin || '',
+          user_github: profile.user_github || ''
+        });
+      }
 
       // Get graph statistics
       const { data: graphs, error: graphError } = await supabase
@@ -106,14 +147,44 @@ const Profile = () => {
         totalConnections
       });
     } catch (error) {
-      console.error('Error loading user stats:', error);
+      console.error('Error loading user data:', error);
       toast({
         title: "Error",
-        description: "Failed to load profile statistics.",
+        description: "Failed to load profile data.",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
+
+    setIsSavingProfile(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          clerk_user_id: user.id,
+          ...userProfile
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -125,6 +196,7 @@ const Profile = () => {
           email: user?.email,
           created_at: user?.created_at
         },
+        profile: userProfile,
         integrations: integrations,
         graphs: userStats,
         exportedAt: new Date().toISOString()
@@ -200,8 +272,13 @@ const Profile = () => {
   };
 
   const getUserInitials = () => {
-    if (!user?.email) return 'U';
-    return user.email.charAt(0).toUpperCase();
+    if (userProfile.user_name) {
+      return userProfile.user_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
   };
 
   const getAccountAge = () => {
@@ -232,7 +309,7 @@ const Profile = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <SettingsHeader 
         title="Profile" 
-        description="Manage your account settings and view your activity" 
+        description="Manage your account settings, personal branding, and social links" 
       />
 
       <div className="max-w-4xl mx-auto px-6 pb-8">
@@ -289,6 +366,99 @@ const Profile = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Personal Branding */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                Personal Branding & Social Links
+              </CardTitle>
+              <CardDescription>
+                Customize your public profile for gallery showcase and personal branding
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="user_name">Display Name</Label>
+                  <Input
+                    id="user_name"
+                    placeholder="Your full name"
+                    value={userProfile.user_name}
+                    onChange={(e) => setUserProfile(prev => ({ ...prev, user_name: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="user_website">Website</Label>
+                  <Input
+                    id="user_website"
+                    placeholder="https://yourwebsite.com"
+                    value={userProfile.user_website}
+                    onChange={(e) => setUserProfile(prev => ({ ...prev, user_website: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="user_bio">Bio</Label>
+                <Textarea
+                  id="user_bio"
+                  placeholder="Tell people about yourself and your work..."
+                  value={userProfile.user_bio}
+                  onChange={(e) => setUserProfile(prev => ({ ...prev, user_bio: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="user_twitter">Twitter Username</Label>
+                  <Input
+                    id="user_twitter"
+                    placeholder="username"
+                    value={userProfile.user_twitter}
+                    onChange={(e) => setUserProfile(prev => ({ ...prev, user_twitter: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="user_linkedin">LinkedIn Username</Label>
+                  <Input
+                    id="user_linkedin"
+                    placeholder="username"
+                    value={userProfile.user_linkedin}
+                    onChange={(e) => setUserProfile(prev => ({ ...prev, user_linkedin: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="user_github">GitHub Username</Label>
+                  <Input
+                    id="user_github"
+                    placeholder="username"
+                    value={userProfile.user_github}
+                    onChange={(e) => setUserProfile(prev => ({ ...prev, user_github: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <Button onClick={saveProfile} disabled={isSavingProfile}>
+                  <Save className="w-4 h-4 mr-2" />
+                  {isSavingProfile ? 'Saving...' : 'Save Profile'}
+                </Button>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <Globe className="w-4 h-4 inline mr-1" />
+                  This information will be displayed when your graphs are featured in the public gallery.
+                </p>
               </div>
             </CardContent>
           </Card>
