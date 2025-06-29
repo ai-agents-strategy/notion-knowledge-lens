@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -13,6 +12,7 @@ export const SettingsHeader = ({ title, description }: SettingsHeaderProps) => {
 
   const navigationItems = [
     { path: '/settings', label: 'Integrations' },
+    { path: '/profile', label: 'Profile' },
     { path: '/organization', label: 'Organization' },
   ];
 

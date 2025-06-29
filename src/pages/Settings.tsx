@@ -5,7 +5,7 @@ import { AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIntegrations } from "@/hooks/useIntegrations";
-import { SettingsSidebar } from "@/components/SettingsSidebar";
+import { SettingsHeader } from "@/components/SettingsHeader";
 import { ChatApiSettings } from "@/components/settings/ChatApiSettings";
 import { NotionIntegrationSettings } from "@/components/settings/NotionIntegrationSettings";
 import { NotionSetupInstructions } from "@/components/settings/NotionSetupInstructions";
@@ -258,53 +258,45 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
-      {/* Global Sidebar */}
-      <SettingsSidebar />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <SettingsHeader 
+        title="Integrations" 
+        description="Configure your integrations and API settings" 
+      />
 
-      {/* Main Content */}
-      <div className="flex-1 p-8">
-        <div className="max-w-4xl">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Integrations</h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Configure your integrations and API settings
-            </p>
-          </div>
+      <div className="max-w-4xl mx-auto px-6 pb-8">
+        <div className="space-y-6">
+          {/* Error Alert */}
+          {errorMessage && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
 
-          <div className="space-y-6">
-            {/* Error Alert */}
-            {errorMessage && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{errorMessage}</AlertDescription>
-              </Alert>
-            )}
+          <ChatApiSettings
+            openaiKey={openaiKey}
+            setOpenaiKey={setOpenaiKey}
+            handleSaveChatSettings={handleSaveChatSettings}
+            handleClearChatSettings={handleClearChatSettings}
+            isLoading={chatIsLoading}
+          />
 
-            <ChatApiSettings
-              openaiKey={openaiKey}
-              setOpenaiKey={setOpenaiKey}
-              handleSaveChatSettings={handleSaveChatSettings}
-              handleClearChatSettings={handleClearChatSettings}
-              isLoading={chatIsLoading}
-            />
+          <NotionIntegrationSettings
+            notionApiKey={notionApiKey}
+            setNotionApiKey={setNotionApiKey}
+            databaseId={databaseId}
+            setDatabaseId={setDatabaseId}
+            isLoading={isLoading}
+            isSyncing={isSyncing}
+            syncStatus={syncStatus}
+            syncedDatabases={syncedDatabases}
+            handleSave={handleSave}
+            handleSync={handleSync}
+            handleClear={handleClear}
+          />
 
-            <NotionIntegrationSettings
-              notionApiKey={notionApiKey}
-              setNotionApiKey={setNotionApiKey}
-              databaseId={databaseId}
-              setDatabaseId={setDatabaseId}
-              isLoading={isLoading}
-              isSyncing={isSyncing}
-              syncStatus={syncStatus}
-              syncedDatabases={syncedDatabases}
-              handleSave={handleSave}
-              handleSync={handleSync}
-              handleClear={handleClear}
-            />
-
-            <NotionSetupInstructions />
-          </div>
+          <NotionSetupInstructions />
         </div>
       </div>
     </div>
