@@ -40,7 +40,7 @@ export const NotionIntegrationSettings = ({
         </CardTitle>
         <CardDescription>
           Connect your Notion workspace to visualize your actual database relationships.
-          Your API key is stored securely in your browser's localStorage.
+          Your API key is stored securely in our encrypted database and linked to your account.
         </CardDescription>
       </CardHeader>
       
@@ -55,7 +55,7 @@ export const NotionIntegrationSettings = ({
             onChange={(e) => setNotionApiKey(e.target.value)}
           />
           <p className="text-xs text-gray-500">
-            Your API key is stored securely in your browser's localStorage
+            Your API key is stored securely in our encrypted database and linked to your account
           </p>
         </div>
 

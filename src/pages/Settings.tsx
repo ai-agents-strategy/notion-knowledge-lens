@@ -83,7 +83,7 @@ const Settings = () => {
         console.log('✅ Settings saved successfully to database');
         toast({
           title: "Settings saved!",
-          description: "Your Notion integration settings have been saved securely."
+          description: "Your Notion integration settings have been saved securely to the database."
         });
       }
     } catch (error) {
@@ -186,7 +186,7 @@ const Settings = () => {
       setErrorMessage('');
       toast({
         title: "Settings cleared",
-        description: "All Notion integration settings have been cleared."
+        description: "All Notion integration settings have been cleared from the database."
       });
     } catch (error) {
       console.error('❌ Error clearing settings:', error);
