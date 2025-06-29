@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useIntegrations } from '@/hooks/useIntegrations';
 import { useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -33,6 +34,7 @@ export interface GraphConnection {
 // Hook definition
 export const useGraphData = () => {
   const { user } = useAuth();
+  const { getIntegration } = useIntegrations();
   const [searchParams, setSearchParams] = useSearchParams();
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [connections, setConnections] = useState<GraphConnection[]>([]);
@@ -50,7 +52,9 @@ export const useGraphData = () => {
   const [connectionColors, setConnectionColors] = useState<{ [connectionId: string]: string }>({});
   const [dataInitialized, setDataInitialized] = useState<boolean>(false);
 
-  const hasNotionApiKey = !!localStorage.getItem('notion_api_key');
+  // Get Notion API key from database
+  const notionIntegration = getIntegration('notion');
+  const hasNotionApiKey = !!notionIntegration?.api_key;
 
   // Load stored real data on mount
   useEffect(() => {
@@ -89,8 +93,7 @@ export const useGraphData = () => {
       return;
     }
 
-    const notionApiKey = localStorage.getItem('notion_api_key');
-    if (!notionApiKey?.trim()) {
+    if (!notionIntegration?.api_key?.trim()) {
       toast({
         title: "API Key Required",
         description: "Please configure your Notion API key in settings first.",
@@ -104,7 +107,7 @@ export const useGraphData = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('notion-sync', {
-        body: { apiKey: notionApiKey.trim() }
+        body: { apiKey: notionIntegration.api_key.trim() }
       });
 
       if (error) {
@@ -166,7 +169,7 @@ export const useGraphData = () => {
     } finally {
       setIsSyncing(false);
     }
-  }, [user]);
+  }, [user, notionIntegration]);
 
   // Fetch data on mount and when user changes - only if data not already initialized
   useEffect(() => {

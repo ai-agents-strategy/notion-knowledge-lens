@@ -3,6 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { RefreshCw } from "lucide-react";
+import { useIntegrations } from "@/hooks/useIntegrations";
 
 interface ControlPanelProps {
   showConnectionLabels: boolean;
@@ -34,7 +35,9 @@ export const ControlPanel = ({
   isSignedIn,
   authIsLoading,
 }: ControlPanelProps) => {
-  const hasNotionApiKey = !!localStorage.getItem('notion_api_key');
+  const { getIntegration } = useIntegrations();
+  const notionIntegration = getIntegration('notion');
+  const hasNotionApiKey = !!notionIntegration?.api_key;
 
   return (
     <div className="flex flex-col h-full">
