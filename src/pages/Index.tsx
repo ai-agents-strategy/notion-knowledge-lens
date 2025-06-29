@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useGraphData } from "@/hooks/useGraphData";
 import { GraphHeader } from "@/components/GraphHeader";
@@ -24,6 +23,12 @@ const Index = () => {
     setCategoryColors,
     connectionColors,
     hasNotionApiKey,
+    // Public sharing
+    publicId,
+    isPublic,
+    shareLoading,
+    togglePublicSharing,
+    revokePublicLink,
   } = useGraphData();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,6 +77,11 @@ const Index = () => {
         onToggleDataSource={toggleDataSource}
         isRealData={isRealData}
         hasNotionApiKey={hasNotionApiKey}
+        publicId={publicId}
+        isPublic={isPublic}
+        shareLoading={shareLoading}
+        onTogglePublicSharing={togglePublicSharing}
+        onRevokePublicLink={revokePublicLink}
       />
 
       <GraphPageLayout

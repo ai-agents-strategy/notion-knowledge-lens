@@ -4,6 +4,7 @@ import { Database, Settings, Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { UserButton } from "@/components/UserButton";
+import { ShareGraph } from "@/components/ShareGraph";
 
 interface GraphHeaderProps {
   usingRealData: boolean;
@@ -11,6 +12,12 @@ interface GraphHeaderProps {
   onToggleDataSource: () => void;
   isRealData: boolean;
   hasNotionApiKey?: boolean;
+  // Public sharing props
+  publicId: string | null;
+  isPublic: boolean;
+  shareLoading: boolean;
+  onTogglePublicSharing: (enabled: boolean) => Promise<void>;
+  onRevokePublicLink: () => Promise<void>;
 }
 
 export const GraphHeader = ({
@@ -18,7 +25,12 @@ export const GraphHeader = ({
   realDataExists,
   onToggleDataSource,
   isRealData,
-  hasNotionApiKey = false
+  hasNotionApiKey = false,
+  publicId,
+  isPublic,
+  shareLoading,
+  onTogglePublicSharing,
+  onRevokePublicLink,
 }: GraphHeaderProps) => {
   const navigate = useNavigate();
   const { isSignedIn } = useAuth();
@@ -70,6 +82,17 @@ export const GraphHeader = ({
                 </>
               )}
             </Button>
+          )}
+
+          {/* Share Graph Button - only show for signed in users */}
+          {isSignedIn && (
+            <ShareGraph
+              publicId={publicId}
+              isPublic={isPublic}
+              onTogglePublic={onTogglePublicSharing}
+              onRevokeLink={onRevokePublicLink}
+              isLoading={shareLoading}
+            />
           )}
 
           <Button variant="outline" size="sm" onClick={() => navigate('/settings')} className="flex items-center gap-2">

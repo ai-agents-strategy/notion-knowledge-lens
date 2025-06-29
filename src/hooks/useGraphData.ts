@@ -51,6 +51,11 @@ export const useGraphData = () => {
   const [categoryColors, setCategoryColors] = useState<{ [category: string]: string }>({});
   const [connectionColors, setConnectionColors] = useState<{ [connectionId: string]: string }>({});
   const [dataInitialized, setDataInitialized] = useState<boolean>(false);
+  
+  // Public sharing state
+  const [publicId, setPublicId] = useState<string | null>(null);
+  const [isPublic, setIsPublic] = useState<boolean>(false);
+  const [shareLoading, setShareLoading] = useState<boolean>(false);
 
   // Get Notion API key from database
   const notionIntegration = getIntegration('notion');
@@ -81,6 +86,105 @@ export const useGraphData = () => {
     }
     setDataInitialized(true);
   }, []);
+
+  // Load public sharing status
+  useEffect(() => {
+    if (user && dataInitialized) {
+      loadPublicSharingStatus();
+    }
+  }, [user, dataInitialized]);
+
+  const loadPublicSharingStatus = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('graphs')
+        .select('public_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading public sharing status:', error);
+        return;
+      }
+
+      if (data) {
+        setPublicId(data.public_id);
+        setIsPublic(!!data.public_id);
+      }
+    } catch (error) {
+      console.error('Error loading public sharing status:', error);
+    }
+  };
+
+  const togglePublicSharing = async (enabled: boolean): Promise<void> => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to share your graph.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setShareLoading(true);
+    try {
+      if (enabled) {
+        // Enable public sharing
+        const newPublicId = uuidv4();
+        
+        const { error } = await supabase
+          .from('graphs')
+          .upsert({
+            user_id: user.id,
+            nodes: nodes,
+            connections: connections,
+            public_id: newPublicId,
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) throw error;
+
+        setPublicId(newPublicId);
+        setIsPublic(true);
+        
+        toast({
+          title: "Graph shared!",
+          description: "Your graph is now publicly accessible.",
+        });
+      } else {
+        // Disable public sharing
+        const { error } = await supabase
+          .from('graphs')
+          .update({ public_id: null })
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        setPublicId(null);
+        setIsPublic(false);
+        
+        toast({
+          title: "Sharing disabled",
+          description: "Your graph is now private.",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling public sharing:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update sharing settings. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  const revokePublicLink = async (): Promise<void> => {
+    await togglePublicSharing(false);
+  };
 
   // Sync data from Notion via Edge Function
   const handleSync = useCallback(async () => {
@@ -150,6 +254,18 @@ export const useGraphData = () => {
       localStorage.setItem('notion_graph_connections', JSON.stringify(fetchedConnections));
       localStorage.setItem('notion_last_sync', new Date().toISOString());
 
+      // Update public graph if it's currently shared
+      if (isPublic && publicId) {
+        await supabase
+          .from('graphs')
+          .update({
+            nodes: fetchedNodes,
+            connections: fetchedConnections,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+      }
+
       toast({
         title: "Sync successful!",
         description: `Synced ${fetchedNodes.length} pages and ${fetchedConnections.length} connections from your Notion workspace.`
@@ -169,7 +285,7 @@ export const useGraphData = () => {
     } finally {
       setIsSyncing(false);
     }
-  }, [user, notionIntegration]);
+  }, [user, notionIntegration, isPublic, publicId]);
 
   // Fetch data on mount and when user changes - only if data not already initialized
   useEffect(() => {
@@ -314,11 +430,6 @@ export const useGraphData = () => {
 
   const isRealData = nodes !== sampleNodes;
 
-  // Placeholder function for revokePublicLink (no-op)
-  const revokePublicLink = async (): Promise<void> => {
-    console.log('Public link functionality disabled');
-  };
-
   return {
     showConnectionLabels,
     setShowConnectionLabels,
@@ -332,7 +443,10 @@ export const useGraphData = () => {
     handleSync,
     toggleDataSource,
     usingRealData,
-    publicId: null, // Always null since feature is disabled
+    publicId,
+    isPublic,
+    shareLoading,
+    togglePublicSharing,
     revokePublicLink,
     filteredNodes,
     finalFilteredConnections,
