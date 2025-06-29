@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Database, Settings, Eye, EyeOff, LogIn, UserPlus, Gallery } from "lucide-react";
+import { Database, Settings, Eye, EyeOff, LogIn, UserPlus, GalleryVertical as Gallery } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { UserButton } from "@/components/UserButton";
