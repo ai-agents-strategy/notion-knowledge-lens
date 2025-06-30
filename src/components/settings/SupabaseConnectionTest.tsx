@@ -12,6 +12,18 @@ export const SupabaseConnectionTest = () => {
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [testResults, setTestResults] = useState<any>(null);
 
+  const testWithTimeout = async <T,>(
+    promise: Promise<T>, 
+    timeoutMs: number, 
+    timeoutMessage: string
+  ): Promise<T> => {
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+    );
+    
+    return Promise.race([promise, timeoutPromise]);
+  };
+
   const testConnection = async () => {
     setIsTestingConnection(true);
     setConnectionStatus('idle');
@@ -44,54 +56,68 @@ export const SupabaseConnectionTest = () => {
         return;
       }
 
-      // Test 2: Auth Session
+      // Test 2: Auth Session with timeout
       console.log('🔍 Test 2: Checking auth session...');
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      results.tests.push({
-        name: 'Auth Session',
-        status: sessionError ? 'error' : 'success',
-        details: {
-          hasSession: !!sessionData.session,
-          userId: sessionData.session?.user?.id || 'none',
-          error: sessionError?.message
-        }
-      });
+      try {
+        const sessionResult = await testWithTimeout(
+          supabase.auth.getSession(),
+          5000,
+          'Auth session check timeout after 5 seconds'
+        );
+        
+        results.tests.push({
+          name: 'Auth Session',
+          status: sessionResult.error ? 'error' : 'success',
+          details: {
+            hasSession: !!sessionResult.data.session,
+            userId: sessionResult.data.session?.user?.id || 'none',
+            error: sessionResult.error?.message
+          }
+        });
+      } catch (sessionError) {
+        console.error('❌ Auth session test failed:', sessionError);
+        results.tests.push({
+          name: 'Auth Session',
+          status: 'error',
+          details: {
+            hasSession: false,
+            userId: 'none',
+            error: sessionError instanceof Error ? sessionError.message : 'Unknown auth error'
+          }
+        });
+      }
 
       // Test 3: Database Query with timeout
       console.log('🔍 Test 3: Testing database query...');
       const queryStart = Date.now();
       
       try {
-        const queryPromise = supabase
-          .from('integrations')
-          .select('count')
-          .limit(1);
-          
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Query timeout after 10 seconds')), 10000)
+        const queryResult = await testWithTimeout(
+          supabase.from('integrations').select('count').limit(1),
+          8000,
+          'Database query timeout after 8 seconds'
         );
-
-        const { error: queryError } = await Promise.race([queryPromise, timeoutPromise]) as any;
+        
         const queryTime = Date.now() - queryStart;
         
         results.tests.push({
           name: 'Database Query',
-          status: queryError ? 'error' : 'success',
+          status: queryResult.error ? 'error' : 'success',
           details: {
             responseTime: `${queryTime}ms`,
-            error: queryError?.message,
-            canQuery: !queryError
+            error: queryResult.error?.message,
+            canQuery: !queryResult.error
           }
         });
       } catch (queryError) {
         const queryTime = Date.now() - queryStart;
+        console.error('❌ Database query test failed:', queryError);
         results.tests.push({
           name: 'Database Query',
           status: 'error',
           details: {
-            responseTime: `${queryTime}ms (timeout)`,
-            error: queryError instanceof Error ? queryError.message : 'Unknown error'
+            responseTime: `${queryTime}ms (failed)`,
+            error: queryError instanceof Error ? queryError.message : 'Unknown query error'
           }
         });
       }
@@ -100,27 +126,32 @@ export const SupabaseConnectionTest = () => {
       if (user) {
         console.log('🔍 Test 4: Testing RLS policies...');
         try {
-          const { data: rlsData, error: rlsError } = await supabase
-            .from('integrations')
-            .select('*')
-            .eq('user_id', user.id)
-            .limit(1);
+          const rlsResult = await testWithTimeout(
+            supabase
+              .from('integrations')
+              .select('*')
+              .eq('user_id', user.id)
+              .limit(1),
+            5000,
+            'RLS policy test timeout after 5 seconds'
+          );
             
           results.tests.push({
             name: 'RLS Policies',
-            status: rlsError ? 'error' : 'success',
+            status: rlsResult.error ? 'error' : 'success',
             details: {
-              canAccessUserData: !rlsError,
-              error: rlsError?.message,
-              recordCount: rlsData?.length || 0
+              canAccessUserData: !rlsResult.error,
+              error: rlsResult.error?.message,
+              recordCount: rlsResult.data?.length || 0
             }
           });
         } catch (rlsError) {
+          console.error('❌ RLS test failed:', rlsError);
           results.tests.push({
             name: 'RLS Policies',
             status: 'error',
             details: {
-              error: rlsError instanceof Error ? rlsError.message : 'Unknown error'
+              error: rlsError instanceof Error ? rlsError.message : 'Unknown RLS error'
             }
           });
         }
@@ -146,18 +177,30 @@ export const SupabaseConnectionTest = () => {
             database_id: null
           };
 
-          const { data: insertData, error: insertError } = await supabase
-            .from('integrations')
-            .insert([testIntegration])
-            .select()
-            .single();
-
-          if (!insertError && insertData) {
-            // Clean up test record
-            await supabase
+          const insertResult = await testWithTimeout(
+            supabase
               .from('integrations')
-              .delete()
-              .eq('id', insertData.id);
+              .insert([testIntegration])
+              .select()
+              .single(),
+            5000,
+            'Write operation timeout after 5 seconds'
+          );
+
+          if (!insertResult.error && insertResult.data) {
+            // Clean up test record
+            try {
+              await testWithTimeout(
+                supabase
+                  .from('integrations')
+                  .delete()
+                  .eq('id', insertResult.data.id),
+                3000,
+                'Cleanup operation timeout'
+              );
+            } catch (cleanupError) {
+              console.warn('⚠️ Failed to cleanup test record:', cleanupError);
+            }
 
             results.tests.push({
               name: 'Write Operations',
@@ -173,17 +216,18 @@ export const SupabaseConnectionTest = () => {
               status: 'error',
               details: {
                 canWrite: false,
-                error: insertError?.message
+                error: insertResult.error?.message
               }
             });
           }
         } catch (writeError) {
+          console.error('❌ Write test failed:', writeError);
           results.tests.push({
             name: 'Write Operations',
             status: 'error',
             details: {
               canWrite: false,
-              error: writeError instanceof Error ? writeError.message : 'Unknown error'
+              error: writeError instanceof Error ? writeError.message : 'Unknown write error'
             }
           });
         }
@@ -279,6 +323,15 @@ export const SupabaseConnectionTest = () => {
             )}
           </Button>
         </div>
+
+        {isTestingConnection && (
+          <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
+              Running connection tests... This may take up to 30 seconds.
+            </p>
+          </div>
+        )}
 
         {testResults && (
           <div className="space-y-3">

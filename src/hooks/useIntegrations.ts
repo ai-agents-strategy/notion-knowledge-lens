@@ -26,7 +26,7 @@ export const useIntegrations = () => {
   const [loading, setLoading] = useState(true);
   const [supabaseAvailable, setSupabaseAvailable] = useState(false);
 
-  // Enhanced Supabase connection test
+  // Enhanced Supabase connection test with better timeout handling
   const testSupabaseConnection = async (): Promise<boolean> => {
     try {
       console.log('🔍 Testing Supabase connection...');
@@ -42,8 +42,14 @@ export const useIntegrations = () => {
       
       console.log('✅ Environment variables present');
 
-      // Test 2: Check auth session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      // Test 2: Check auth session with timeout
+      console.log('🔍 Testing auth session...');
+      const sessionPromise = supabase.auth.getSession();
+      const sessionTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Auth session timeout')), 5000)
+      );
+
+      const { error: sessionError } = await Promise.race([sessionPromise, sessionTimeout]) as any;
       if (sessionError) {
         console.error('❌ Supabase session test failed:', sessionError);
         return false;
@@ -58,11 +64,11 @@ export const useIntegrations = () => {
         .select('count')
         .limit(1);
 
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database query timeout')), 10000)
+      const queryTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 8000)
       );
 
-      const { error: queryError } = await Promise.race([queryPromise, timeoutPromise]) as any;
+      const { error: queryError } = await Promise.race([queryPromise, queryTimeout]) as any;
       
       if (queryError) {
         console.error('❌ Database query failed:', queryError);
@@ -100,17 +106,24 @@ export const useIntegrations = () => {
         console.log('📥 Loading integrations from Supabase database...');
         
         try {
-          const { data: dbIntegrations, error } = await supabase
+          // Add timeout to the database query
+          const dbPromise = supabase
             .from('integrations')
             .select('*')
             .eq('user_id', user.id);
+
+          const dbTimeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Database fetch timeout')), 10000)
+          );
+
+          const { data: dbIntegrations, error } = await Promise.race([dbPromise, dbTimeout]) as any;
 
           if (!error && dbIntegrations) {
             console.log('✅ Successfully loaded integrations from database:', dbIntegrations.length);
             setIntegrations(dbIntegrations);
             
             // Sync to localStorage for offline access
-            dbIntegrations.forEach(integration => {
+            dbIntegrations.forEach((integration: Integration) => {
               if (integration.integration_type === 'notion') {
                 localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY, integration.api_key);
                 if (integration.database_id) {
@@ -262,12 +275,18 @@ export const useIntegrations = () => {
         console.log('💾 Step 2: Saving to Supabase database...');
         
         try {
-          // Check if integration already exists
-          const { data: existingIntegrations, error: fetchError } = await supabase
+          // Add timeout to database operations
+          const checkPromise = supabase
             .from('integrations')
             .select('id')
             .eq('user_id', user.id)
             .eq('integration_type', type);
+
+          const checkTimeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Database check timeout')), 5000)
+          );
+
+          const { data: existingIntegrations, error: fetchError } = await Promise.race([checkPromise, checkTimeout]) as any;
 
           if (fetchError) {
             console.error('❌ Error checking existing integration:', fetchError);
@@ -278,7 +297,7 @@ export const useIntegrations = () => {
           if (existingIntegrations && existingIntegrations.length > 0) {
             // UPDATE existing integration
             console.log('🔄 Updating existing integration...');
-            result = await supabase
+            const updatePromise = supabase
               .from('integrations')
               .update({
                 api_key: apiKey,
@@ -289,10 +308,16 @@ export const useIntegrations = () => {
               .eq('integration_type', type)
               .select()
               .single();
+
+            const updateTimeout = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Database update timeout')), 5000)
+            );
+
+            result = await Promise.race([updatePromise, updateTimeout]);
           } else {
             // INSERT new integration
             console.log('➕ Creating new integration...');
-            result = await supabase
+            const insertPromise = supabase
               .from('integrations')
               .insert([{
                 user_id: user.id,
@@ -302,17 +327,23 @@ export const useIntegrations = () => {
               }])
               .select()
               .single();
+
+            const insertTimeout = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Database insert timeout')), 5000)
+            );
+
+            result = await Promise.race([insertPromise, insertTimeout]);
           }
 
-          if (result.error) {
-            console.error('❌ Supabase save error:', result.error);
-            throw result.error;
+          if ((result as any).error) {
+            console.error('❌ Supabase save error:', (result as any).error);
+            throw (result as any).error;
           }
 
           console.log('✅ Step 2 completed: Supabase save successful');
           
           // Update local state with the database integration
-          const savedIntegration = result.data;
+          const savedIntegration = (result as any).data;
           setIntegrations(prev => {
             const filtered = prev.filter(i => i.integration_type !== type);
             const updated = [...filtered, savedIntegration];
@@ -391,11 +422,17 @@ export const useIntegrations = () => {
         console.log('🗑️ Deleting from Supabase database...');
         
         try {
-          const { error } = await supabase
+          const deletePromise = supabase
             .from('integrations')
             .delete()
             .eq('user_id', user.id)
             .eq('integration_type', type);
+
+          const deleteTimeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Database delete timeout')), 5000)
+          );
+
+          const { error } = await Promise.race([deletePromise, deleteTimeout]) as any;
             
           if (error) {
             console.error('❌ Supabase delete error:', error);
