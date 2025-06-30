@@ -42,11 +42,11 @@ export const useIntegrations = () => {
       
       console.log('✅ Environment variables present');
 
-      // Test 2: Check auth session with timeout
+      // Test 2: Check auth session with increased timeout
       console.log('🔍 Testing auth session...');
       const sessionPromise = supabase.auth.getSession();
       const sessionTimeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Auth session timeout')), 5000)
+        setTimeout(() => reject(new Error('Auth session timeout')), 10000) // Increased from 5000 to 10000
       );
 
       const { error: sessionError } = await Promise.race([sessionPromise, sessionTimeout]) as any;
@@ -56,7 +56,7 @@ export const useIntegrations = () => {
       }
       console.log('✅ Supabase session test passed');
 
-      // Test 3: Simple database query with timeout
+      // Test 3: Simple database query with increased timeout
       console.log('🔍 Testing database query...');
       
       const queryPromise = supabase
@@ -65,7 +65,7 @@ export const useIntegrations = () => {
         .limit(1);
 
       const queryTimeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database query timeout')), 8000)
+        setTimeout(() => reject(new Error('Database query timeout')), 15000) // Increased from 8000 to 15000
       );
 
       const { error: queryError } = await Promise.race([queryPromise, queryTimeout]) as any;
@@ -106,14 +106,14 @@ export const useIntegrations = () => {
         console.log('📥 Loading integrations from Supabase database...');
         
         try {
-          // Add timeout to the database query
+          // Add increased timeout to the database query
           const dbPromise = supabase
             .from('integrations')
             .select('*')
             .eq('user_id', user.id);
 
           const dbTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database fetch timeout')), 10000)
+            setTimeout(() => reject(new Error('Database fetch timeout')), 15000) // Increased from 10000 to 15000
           );
 
           const { data: dbIntegrations, error } = await Promise.race([dbPromise, dbTimeout]) as any;
@@ -275,7 +275,7 @@ export const useIntegrations = () => {
         console.log('💾 Step 2: Saving to Supabase database...');
         
         try {
-          // Add timeout to database operations
+          // Add increased timeout to database operations
           const checkPromise = supabase
             .from('integrations')
             .select('id')
@@ -283,7 +283,7 @@ export const useIntegrations = () => {
             .eq('integration_type', type);
 
           const checkTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database check timeout')), 5000)
+            setTimeout(() => reject(new Error('Database check timeout')), 10000) // Increased from 5000 to 10000
           );
 
           const { data: existingIntegrations, error: fetchError } = await Promise.race([checkPromise, checkTimeout]) as any;
@@ -310,7 +310,7 @@ export const useIntegrations = () => {
               .single();
 
             const updateTimeout = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Database update timeout')), 5000)
+              setTimeout(() => reject(new Error('Database update timeout')), 10000) // Increased from 5000 to 10000
             );
 
             result = await Promise.race([updatePromise, updateTimeout]);
@@ -329,7 +329,7 @@ export const useIntegrations = () => {
               .single();
 
             const insertTimeout = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Database insert timeout')), 5000)
+              setTimeout(() => reject(new Error('Database insert timeout')), 10000) // Increased from 5000 to 10000
             );
 
             result = await Promise.race([insertPromise, insertTimeout]);
@@ -429,7 +429,7 @@ export const useIntegrations = () => {
             .eq('integration_type', type);
 
           const deleteTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database delete timeout')), 5000)
+            setTimeout(() => reject(new Error('Database delete timeout')), 10000) // Increased from 5000 to 10000
           );
 
           const { error } = await Promise.race([deletePromise, deleteTimeout]) as any;

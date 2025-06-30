@@ -56,13 +56,13 @@ export const SupabaseConnectionTest = () => {
         return;
       }
 
-      // Test 2: Auth Session with timeout
+      // Test 2: Auth Session with increased timeout
       console.log('🔍 Test 2: Checking auth session...');
       try {
         const sessionResult = await testWithTimeout(
           supabase.auth.getSession(),
-          5000,
-          'Auth session check timeout after 5 seconds'
+          10000, // Increased from 5000 to 10000
+          'Auth session check timeout after 10 seconds'
         );
         
         results.tests.push({
@@ -87,15 +87,15 @@ export const SupabaseConnectionTest = () => {
         });
       }
 
-      // Test 3: Database Query with timeout
+      // Test 3: Database Query with increased timeout
       console.log('🔍 Test 3: Testing database query...');
       const queryStart = Date.now();
       
       try {
         const queryResult = await testWithTimeout(
           supabase.from('integrations').select('count').limit(1),
-          8000,
-          'Database query timeout after 8 seconds'
+          15000, // Increased from 8000 to 15000
+          'Database query timeout after 15 seconds'
         );
         
         const queryTime = Date.now() - queryStart;
@@ -122,7 +122,7 @@ export const SupabaseConnectionTest = () => {
         });
       }
 
-      // Test 4: RLS Policies (if user is authenticated)
+      // Test 4: RLS Policies (if user is authenticated) with increased timeout
       if (user) {
         console.log('🔍 Test 4: Testing RLS policies...');
         try {
@@ -132,8 +132,8 @@ export const SupabaseConnectionTest = () => {
               .select('*')
               .eq('user_id', user.id)
               .limit(1),
-            5000,
-            'RLS policy test timeout after 5 seconds'
+            10000, // Increased from 5000 to 10000
+            'RLS policy test timeout after 10 seconds'
           );
             
           results.tests.push({
@@ -165,7 +165,7 @@ export const SupabaseConnectionTest = () => {
         });
       }
 
-      // Test 5: Write Operation Test (if user is authenticated)
+      // Test 5: Write Operation Test (if user is authenticated) with increased timeout
       if (user) {
         console.log('🔍 Test 5: Testing write operations...');
         try {
@@ -183,8 +183,8 @@ export const SupabaseConnectionTest = () => {
               .insert([testIntegration])
               .select()
               .single(),
-            5000,
-            'Write operation timeout after 5 seconds'
+            10000, // Increased from 5000 to 10000
+            'Write operation timeout after 10 seconds'
           );
 
           if (!insertResult.error && insertResult.data) {
@@ -195,7 +195,7 @@ export const SupabaseConnectionTest = () => {
                   .from('integrations')
                   .delete()
                   .eq('id', insertResult.data.id),
-                3000,
+                5000, // Increased from 3000 to 5000
                 'Cleanup operation timeout'
               );
             } catch (cleanupError) {
@@ -328,7 +328,7 @@ export const SupabaseConnectionTest = () => {
           <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-200">
               <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
-              Running connection tests... This may take up to 30 seconds.
+              Running connection tests... This may take up to 45 seconds.
             </p>
           </div>
         )}
