@@ -65,10 +65,15 @@ const SignUpPage = () => {
     setIsGoogleLoading(true);
 
     try {
+      // Get the current origin (works for both localhost and production)
+      const redirectTo = `${window.location.origin}/`;
+      
+      console.log('🔗 Google OAuth redirect URL:', redirectTo);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo,
         },
       });
 
