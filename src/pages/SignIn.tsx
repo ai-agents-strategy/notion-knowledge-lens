@@ -21,24 +21,40 @@ const SignInPage = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      console.log('🔐 Attempting email/password sign in...');
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       });
 
       if (error) {
+        console.error('❌ Sign in error:', error);
         toast({
-          title: "Error",
+          title: "Sign In Failed",
           description: error.message,
           variant: "destructive",
         });
-      } else {
-        navigate('/');
+        return;
+      }
+
+      if (data.user) {
+        console.log('✅ Sign in successful:', data.user.id);
+        toast({
+          title: "Welcome back!",
+          description: "You have been signed in successfully.",
+        });
+        
+        // Small delay to ensure auth state is updated
+        setTimeout(() => {
+          navigate('/');
+        }, 500);
       }
     } catch (error) {
+      console.error('❌ Unexpected sign in error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: "An unexpected error occurred during sign in.",
         variant: "destructive",
       });
     } finally {
@@ -50,26 +66,39 @@ const SignInPage = () => {
     setIsGoogleLoading(true);
 
     try {
+      console.log('🔐 Attempting Google OAuth sign in...');
+      
       // Get the current origin (works for both localhost and production)
       const redirectTo = `${window.location.origin}/`;
       
       console.log('🔗 Google OAuth redirect URL:', redirectTo);
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
 
       if (error) {
+        console.error('❌ Google OAuth error:', error);
         toast({
-          title: "Error",
+          title: "Google Sign In Failed",
           description: error.message,
           variant: "destructive",
         });
+        return;
       }
+
+      console.log('🔗 Google OAuth initiated successfully');
+      // The redirect will happen automatically
+      
     } catch (error) {
+      console.error('❌ Unexpected Google OAuth error:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred with Google sign-in",
@@ -96,7 +125,7 @@ const SignInPage = () => {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading}
+            disabled={isGoogleLoading || isLoading}
           >
             {isGoogleLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -145,6 +174,7 @@ const SignInPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
             <div className="space-y-2">
@@ -156,9 +186,14 @@ const SignInPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading || isGoogleLoading}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

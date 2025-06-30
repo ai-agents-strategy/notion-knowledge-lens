@@ -30,7 +30,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    debug: process.env.NODE_ENV === 'development'
   },
   db: {
     schema: 'public'
@@ -42,32 +43,59 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
   }
 });
 
-// Test connection on initialization with better error handling
-supabase.auth.getSession().then(({ data: { session }, error }) => {
-  if (error) {
-    console.error('❌ Supabase auth session error:', error);
-  } else {
-    console.log('✅ Supabase client initialized successfully', {
-      hasSession: !!session,
-      userId: session?.user?.id || 'none'
-    });
+// Enhanced connection test with better error handling and timeouts
+const testConnection = async () => {
+  try {
+    console.log('🔍 Testing Supabase connection...');
     
-    // Test a simple database query to verify full connectivity
-    supabase
-      .from('integrations')
-      .select('count')
-      .limit(1)
-      .then(({ error: queryError }) => {
-        if (queryError) {
-          console.error('❌ Supabase database test query failed:', queryError);
-        } else {
-          console.log('✅ Supabase database connection verified');
-        }
-      })
-      .catch(err => {
-        console.error('❌ Supabase database test query error:', err);
+    // Test auth session with timeout
+    const sessionPromise = supabase.auth.getSession();
+    const sessionTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Auth session timeout')), 8000)
+    );
+
+    const { data: { session }, error: sessionError } = await Promise.race([
+      sessionPromise, 
+      sessionTimeout
+    ]) as any;
+
+    if (sessionError) {
+      console.warn('⚠️ Auth session test warning:', sessionError);
+    } else {
+      console.log('✅ Auth session test passed:', {
+        hasSession: !!session,
+        userId: session?.user?.id || 'none'
       });
+    }
+
+    // Test database connectivity with timeout
+    const queryPromise = supabase
+      .from('profiles')
+      .select('count')
+      .limit(1);
+
+    const queryTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Database query timeout')), 10000)
+    );
+
+    const { error: queryError } = await Promise.race([
+      queryPromise, 
+      queryTimeout
+    ]) as any;
+
+    if (queryError) {
+      console.warn('⚠️ Database connectivity test warning:', queryError);
+    } else {
+      console.log('✅ Database connectivity verified');
+    }
+
+    console.log('✅ Supabase client initialized successfully');
+    
+  } catch (error) {
+    console.warn('⚠️ Supabase connection test completed with warnings:', error);
+    // Don't throw error, just log warning
   }
-}).catch(err => {
-  console.error('❌ Supabase initialization error:', err);
-});
+};
+
+// Test connection on initialization (non-blocking)
+testConnection();

@@ -22,8 +22,17 @@ const SignUpPage = () => {
     
     if (password !== confirmPassword) {
       toast({
-        title: "Error",
-        description: "Passwords do not match",
+        title: "Password Mismatch",
+        description: "Passwords do not match. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 6 characters long.",
         variant: "destructive",
       });
       return;
@@ -32,28 +41,52 @@ const SignUpPage = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
+      console.log('🔐 Attempting email/password sign up...');
+      
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
         password,
+        options: {
+          data: {
+            email: email.trim(),
+          }
+        }
       });
 
       if (error) {
+        console.error('❌ Sign up error:', error);
         toast({
-          title: "Error",
+          title: "Sign Up Failed",
           description: error.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Success",
-          description: "Account created successfully! Please check your email to verify your account.",
-        });
-        navigate('/sign-in');
+        return;
+      }
+
+      if (data.user) {
+        console.log('✅ Sign up successful:', data.user.id);
+        
+        if (data.user.email_confirmed_at) {
+          // Email is already confirmed (auto-confirm enabled)
+          toast({
+            title: "Account Created!",
+            description: "Your account has been created successfully. You can now sign in.",
+          });
+          navigate('/sign-in');
+        } else {
+          // Email confirmation required
+          toast({
+            title: "Check Your Email",
+            description: "Please check your email and click the confirmation link to activate your account.",
+          });
+          navigate('/sign-in');
+        }
       }
     } catch (error) {
+      console.error('❌ Unexpected sign up error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: "An unexpected error occurred during sign up.",
         variant: "destructive",
       });
     } finally {
@@ -65,26 +98,39 @@ const SignUpPage = () => {
     setIsGoogleLoading(true);
 
     try {
+      console.log('🔐 Attempting Google OAuth sign up...');
+      
       // Get the current origin (works for both localhost and production)
       const redirectTo = `${window.location.origin}/`;
       
       console.log('🔗 Google OAuth redirect URL:', redirectTo);
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
 
       if (error) {
+        console.error('❌ Google OAuth error:', error);
         toast({
-          title: "Error",
+          title: "Google Sign Up Failed",
           description: error.message,
           variant: "destructive",
         });
+        return;
       }
+
+      console.log('🔗 Google OAuth initiated successfully');
+      // The redirect will happen automatically
+      
     } catch (error) {
+      console.error('❌ Unexpected Google OAuth error:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred with Google sign-up",
@@ -111,7 +157,7 @@ const SignUpPage = () => {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignUp}
-            disabled={isGoogleLoading}
+            disabled={isGoogleLoading || isLoading}
           >
             {isGoogleLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -160,6 +206,7 @@ const SignUpPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
             <div className="space-y-2">
@@ -167,11 +214,12 @@ const SignUpPage = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder="Enter your password (min 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
             <div className="space-y-2">
@@ -184,9 +232,14 @@ const SignUpPage = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading || isGoogleLoading}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
