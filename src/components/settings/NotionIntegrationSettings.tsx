@@ -1,21 +1,24 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Key, Save, RefreshCw, CheckCircle, Database, HardDrive } from "lucide-react";
+import { Key, CheckCircle, Database, HardDrive } from "lucide-react";
+import { NotionSaveButton } from "./NotionSaveButton";
+import { NotionSyncButton } from "./NotionSyncButton";
+import { NotionClearButton } from "./NotionClearButton";
 
 interface NotionIntegrationSettingsProps {
   notionApiKey: string;
   setNotionApiKey: (key: string) => void;
   databaseId: string;
   setDatabaseId: (id: string) => void;
-  isLoading: boolean;
-  isSyncing: boolean;
   syncStatus: 'idle' | 'success' | 'error';
   syncedDatabases: Array<{ title?: Array<{ plain_text: string }> }>;
-  handleSave: () => void;
-  handleSync: () => void;
-  handleClear: () => void;
+  onSaveSuccess?: () => void;
+  onSaveError?: (error: string) => void;
+  onSyncSuccess?: (data: any) => void;
+  onSyncError?: (error: string) => void;
+  onClearSuccess?: () => void;
+  onClearError?: (error: string) => void;
 }
 
 export const NotionIntegrationSettings = ({
@@ -23,13 +26,14 @@ export const NotionIntegrationSettings = ({
   setNotionApiKey,
   databaseId,
   setDatabaseId,
-  isLoading,
-  isSyncing,
   syncStatus,
   syncedDatabases,
-  handleSave,
-  handleSync,
-  handleClear,
+  onSaveSuccess,
+  onSaveError,
+  onSyncSuccess,
+  onSyncError,
+  onClearSuccess,
+  onClearError,
 }: NotionIntegrationSettingsProps) => {
   return (
     <Card>
@@ -76,35 +80,23 @@ export const NotionIntegrationSettings = ({
         </div>
 
         <div className="flex gap-3 pt-4">
-          <Button
-            onClick={handleSave}
-            disabled={isLoading || !notionApiKey.trim()}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {isLoading ? "Saving..." : "Save Settings"}
-          </Button>
+          <NotionSaveButton
+            notionApiKey={notionApiKey}
+            databaseId={databaseId}
+            onSaveSuccess={onSaveSuccess}
+            onSaveError={onSaveError}
+          />
 
-          <Button
-            onClick={handleSync}
-            disabled={isSyncing || !notionApiKey.trim()}
-            variant="outline"
-          >
-            {isSyncing ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Syncing...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Sync Databases
-              </>
-            )}
-          </Button>
+          <NotionSyncButton
+            notionApiKey={notionApiKey}
+            onSyncSuccess={onSyncSuccess}
+            onSyncError={onSyncError}
+          />
           
-          <Button variant="outline" onClick={handleClear}>
-            Clear All
-          </Button>
+          <NotionClearButton
+            onClearSuccess={onClearSuccess}
+            onClearError={onClearError}
+          />
         </div>
 
         {/* Sync Status */}
