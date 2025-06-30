@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Bot, Save, HardDrive } from "lucide-react";
+import { Eye, EyeOff, Bot, Save, Database, HardDrive } from "lucide-react";
+import { useIntegrations } from "@/hooks/useIntegrations";
 
 interface ChatApiSettingsProps {
   openaiKey: string;
@@ -22,6 +23,7 @@ export const ChatApiSettings = ({
   isLoading,
 }: ChatApiSettingsProps) => {
   const [showOpenaiKey, setShowOpenaiKey] = useState(false);
+  const { supabaseAvailable } = useIntegrations();
 
   return (
     <Card>
@@ -33,8 +35,17 @@ export const ChatApiSettings = ({
         <CardDescription>
           Configure your AI chat experience with enhanced models.
           <span className="flex items-center gap-1 mt-1 text-blue-600">
-            <HardDrive className="w-3 h-3" />
-            Currently stored in local storage (temporary)
+            {supabaseAvailable ? (
+              <>
+                <Database className="w-3 h-3" />
+                Stored in secure database
+              </>
+            ) : (
+              <>
+                <HardDrive className="w-3 h-3" />
+                Stored in local storage (temporary)
+              </>
+            )}
           </span>
         </CardDescription>
       </CardHeader>
@@ -72,7 +83,7 @@ export const ChatApiSettings = ({
 
         <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg">
           <p className="font-medium mb-1">Note:</p>
-          <p>• API key is stored securely in your browser's local storage</p>
+          <p>• API key is stored {supabaseAvailable ? 'securely in the database' : 'in your browser\'s local storage'}</p>
           <p>• Without an API key, you'll use the free model</p>
           <p>• Enhanced features include better responses and context understanding</p>
         </div>
@@ -80,10 +91,10 @@ export const ChatApiSettings = ({
         <div className="flex gap-3 pt-4">
           <Button onClick={handleSaveChatSettings} disabled={isLoading}>
             <Save className="w-4 h-4 mr-2" />
-            {isLoading ? "Saving..." : "Save Chat Settings"}
+            {isLoading ? "Saving..." : `Save to ${supabaseAvailable ? 'Database' : 'Local Storage'}`}
           </Button>
           <Button variant="outline" onClick={handleClearChatSettings} disabled={isLoading}>
-            Clear Chat Settings
+            Clear Settings
           </Button>
         </div>
       </CardContent>

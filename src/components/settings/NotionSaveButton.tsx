@@ -19,7 +19,7 @@ export const NotionSaveButton = ({
   onSaveError 
 }: NotionSaveButtonProps) => {
   const { user } = useAuth();
-  const { saveIntegration } = useIntegrations();
+  const { saveIntegration, supabaseAvailable } = useIntegrations();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = async () => {
@@ -27,6 +27,7 @@ export const NotionSaveButton = ({
     console.log('🔵 NotionSaveButton: API Key length:', notionApiKey.trim().length);
     console.log('🔵 NotionSaveButton: Database ID:', databaseId.trim() || 'none');
     console.log('🔵 NotionSaveButton: User present:', !!user);
+    console.log('🔵 NotionSaveButton: Supabase available:', supabaseAvailable);
     
     if (!user) {
       const errorMsg = "Please sign in to save settings.";
@@ -66,10 +67,6 @@ export const NotionSaveButton = ({
       
       if (success) {
         console.log('✅ NotionSaveButton: Save successful');
-        toast({
-          title: "✅ Settings Saved!",
-          description: "Your Notion API key has been saved successfully.",
-        });
         onSaveSuccess?.();
       } else {
         throw new Error('Save operation returned false');
@@ -77,12 +74,6 @@ export const NotionSaveButton = ({
     } catch (error) {
       console.error('❌ NotionSaveButton: Save failed:', error);
       const errorMsg = error instanceof Error ? error.message : "Failed to save settings. Please try again.";
-      
-      toast({
-        title: "❌ Save Failed",
-        description: errorMsg,
-        variant: "destructive"
-      });
       onSaveError?.(errorMsg);
     } finally {
       setIsLoading(false);
@@ -96,7 +87,7 @@ export const NotionSaveButton = ({
       disabled={isLoading || !notionApiKey.trim()}
     >
       <Save className="w-4 h-4 mr-2" />
-      {isLoading ? "Saving..." : "Save Settings"}
+      {isLoading ? "Saving..." : `Save to ${supabaseAvailable ? 'Database' : 'Local Storage'}`}
     </Button>
   );
 };

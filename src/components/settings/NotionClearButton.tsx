@@ -11,7 +11,7 @@ export const NotionClearButton = ({
   onClearSuccess, 
   onClearError 
 }: NotionClearButtonProps) => {
-  const { deleteIntegration } = useIntegrations();
+  const { deleteIntegration, supabaseAvailable } = useIntegrations();
 
   const handleClear = async () => {
     console.log('🔴 NotionClearButton: Clear operation started');
@@ -28,12 +28,6 @@ export const NotionClearButton = ({
         localStorage.removeItem('notion_graph_connections');
         
         console.log('✅ NotionClearButton: Clear successful');
-        
-        toast({
-          title: "🧹 Settings Cleared",
-          description: "All Notion integration settings have been cleared."
-        });
-        
         onClearSuccess?.();
       } else {
         throw new Error('Clear operation failed');
@@ -41,12 +35,6 @@ export const NotionClearButton = ({
     } catch (error) {
       console.error('❌ NotionClearButton: Clear failed:', error);
       const errorMsg = error instanceof Error ? error.message : "Failed to clear settings.";
-      
-      toast({
-        title: "❌ Clear Failed",
-        description: errorMsg,
-        variant: "destructive"
-      });
       onClearError?.(errorMsg);
     }
     
@@ -55,7 +43,7 @@ export const NotionClearButton = ({
 
   return (
     <Button variant="outline" onClick={handleClear}>
-      Clear All
+      Clear from {supabaseAvailable ? 'Database' : 'Local Storage'}
     </Button>
   );
 };

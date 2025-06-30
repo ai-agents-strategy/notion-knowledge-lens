@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, CheckCircle, XCircle } from "lucide-react";
+import { Info, CheckCircle, XCircle, Database, HardDrive } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { SettingsHeader } from "@/components/SettingsHeader";
@@ -11,7 +11,7 @@ import { SupabaseConnectionTest } from "@/components/settings/SupabaseConnection
 
 const Settings = () => {
   const { user } = useAuth();
-  const { getIntegration, saveIntegration, deleteIntegration, loading: integrationsLoading } = useIntegrations();
+  const { getIntegration, saveIntegration, deleteIntegration, loading: integrationsLoading, supabaseAvailable } = useIntegrations();
   
   // Notion state
   const [notionApiKey, setNotionApiKey] = useState('');
@@ -28,12 +28,13 @@ const Settings = () => {
   useEffect(() => {
     console.log('⚙️ Settings: Loading integrations data...');
     console.log('⚙️ Settings: Integrations loading:', integrationsLoading);
+    console.log('⚙️ Settings: Supabase available:', supabaseAvailable);
     
     if (!integrationsLoading) {
       // Load Notion integration
       const notionIntegration = getIntegration('notion');
       if (notionIntegration) {
-        console.log('⚙️ Settings: Loading Notion integration');
+        console.log('⚙️ Settings: Loading Notion integration from', notionIntegration.id.startsWith('local-') ? 'localStorage' : 'database');
         setNotionApiKey(notionIntegration.api_key || '');
         setDatabaseId(notionIntegration.database_id || '');
       }
@@ -41,7 +42,7 @@ const Settings = () => {
       // Load OpenAI integration
       const openaiIntegration = getIntegration('openai');
       if (openaiIntegration) {
-        console.log('⚙️ Settings: Loading OpenAI integration');
+        console.log('⚙️ Settings: Loading OpenAI integration from', openaiIntegration.id.startsWith('local-') ? 'localStorage' : 'database');
         setOpenaiKey(openaiIntegration.api_key || '');
       }
 
@@ -57,7 +58,7 @@ const Settings = () => {
         }
       }
     }
-  }, [integrationsLoading, getIntegration]);
+  }, [integrationsLoading, getIntegration, supabaseAvailable]);
 
   // Notion event handlers
   const handleNotionSaveSuccess = () => {
@@ -148,12 +149,23 @@ const Settings = () => {
 
       <div className="max-w-4xl mx-auto px-6 pb-8">
         <div className="space-y-6">
-          {/* Temporary Local Storage Notice */}
+          {/* Storage Status Alert */}
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              <strong>Temporary Mode:</strong> API keys are currently being saved to your browser's local storage 
-              while we resolve database connectivity issues. Your keys are secure and only accessible on this device.
+              <div className="flex items-center gap-2">
+                {supabaseAvailable ? (
+                  <>
+                    <Database className="w-4 h-4 text-green-600" />
+                    <strong>Database Connected:</strong> API keys are being saved to the secure database.
+                  </>
+                ) : (
+                  <>
+                    <HardDrive className="w-4 h-4 text-orange-600" />
+                    <strong>Offline Mode:</strong> API keys are being saved to local storage while database is unavailable.
+                  </>
+                )}
+              </div>
             </AlertDescription>
           </Alert>
 
