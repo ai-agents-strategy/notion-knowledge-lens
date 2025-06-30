@@ -47,7 +47,7 @@ const fetchGalleryGraphs = async (): Promise<GalleryGraph[]> => {
       graph_description,
       graph_tags,
       profiles!inner(
-        clerk_user_id,
+        user_id,
         user_name,
         user_bio,
         user_website,

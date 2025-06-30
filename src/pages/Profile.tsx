@@ -84,7 +84,7 @@ const Profile = () => {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('clerk_user_id', user.id)
+        .eq('user_id', user.id)
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
@@ -167,7 +167,7 @@ const Profile = () => {
       const { error } = await supabase
         .from('profiles')
         .upsert({
-          clerk_user_id: user.id,
+          user_id: user.id,
           ...userProfile
         });
 
@@ -236,7 +236,7 @@ const Profile = () => {
       // Delete user data from our tables
       await supabase.from('graphs').delete().eq('user_id', user.id);
       await supabase.from('integrations').delete().eq('user_id', user.id);
-      await supabase.from('profiles').delete().eq('clerk_user_id', user.id);
+      await supabase.from('profiles').delete().eq('user_id', user.id);
 
       // Clear local storage
       localStorage.clear();

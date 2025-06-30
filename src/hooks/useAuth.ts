@@ -78,7 +78,7 @@ export const useAuthState = () => {
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('id')
-        .eq('clerk_user_id', user.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (!existingProfile) {
@@ -86,7 +86,7 @@ export const useAuthState = () => {
         const { error } = await supabase
           .from('profiles')
           .insert({
-            clerk_user_id: user.id,
+            user_id: user.id,
             user_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
             user_email: user.email || '',
           });

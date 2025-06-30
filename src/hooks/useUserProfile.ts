@@ -4,8 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface UserProfile {
   id: string;
-  clerk_user_id: string;
+  user_id: string;
   created_at: string;
+  user_name?: string;
+  user_bio?: string;
+  user_website?: string;
+  user_twitter?: string;
+  user_linkedin?: string;
+  user_github?: string;
+  user_email?: string;
 }
 
 export const useUserProfile = () => {
@@ -29,7 +36,7 @@ export const useUserProfile = () => {
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('clerk_user_id', user.id)
+        .eq('user_id', user.id)
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
@@ -43,7 +50,7 @@ export const useUserProfile = () => {
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
           .insert({
-            clerk_user_id: user.id,
+            user_id: user.id,
           })
           .select()
           .single();
@@ -62,7 +69,7 @@ export const useUserProfile = () => {
     }
   }, [user?.id]);
 
-  const updateProfile = async (updates: Partial<Pick<UserProfile, 'clerk_user_id'>>) => {
+  const updateProfile = async (updates: Partial<Pick<UserProfile, 'user_name' | 'user_bio' | 'user_website' | 'user_twitter' | 'user_linkedin' | 'user_github' | 'user_email'>>) => {
     if (!user?.id || !profile) return false;
 
     try {
@@ -71,7 +78,7 @@ export const useUserProfile = () => {
       const { data: updatedProfile, error: updateError } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('clerk_user_id', user.id)
+        .eq('user_id', user.id)
         .select()
         .single();
 

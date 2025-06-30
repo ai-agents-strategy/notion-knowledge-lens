@@ -83,36 +83,36 @@ export type Database = {
       }
       profiles: {
         Row: {
-          clerk_user_id: string
           created_at: string | null
           id: string
           user_bio: string | null
           user_email: string | null
           user_github: string | null
+          user_id: string
           user_linkedin: string | null
           user_name: string | null
           user_twitter: string | null
           user_website: string | null
         }
         Insert: {
-          clerk_user_id: string
           created_at?: string | null
           id?: string
           user_bio?: string | null
           user_email?: string | null
           user_github?: string | null
+          user_id: string
           user_linkedin?: string | null
           user_name?: string | null
           user_twitter?: string | null
           user_website?: string | null
         }
         Update: {
-          clerk_user_id?: string
           created_at?: string | null
           id?: string
           user_bio?: string | null
           user_email?: string | null
           user_github?: string | null
+          user_id?: string
           user_linkedin?: string | null
           user_name?: string | null
           user_twitter?: string | null
@@ -125,7 +125,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_clerk_user_id: {
+      get_auth_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
