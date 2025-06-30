@@ -26,12 +26,23 @@ export const useIntegrations = () => {
   const [loading, setLoading] = useState(true);
   const [supabaseAvailable, setSupabaseAvailable] = useState(false);
 
-  // Test Supabase connection with more comprehensive checks
+  // Enhanced Supabase connection test
   const testSupabaseConnection = async (): Promise<boolean> => {
     try {
       console.log('🔍 Testing Supabase connection...');
       
-      // Test 1: Check if we can get the current session
+      // Test 1: Check environment variables
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('❌ Missing Supabase environment variables');
+        return false;
+      }
+      
+      console.log('✅ Environment variables present');
+
+      // Test 2: Check auth session
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
         console.error('❌ Supabase session test failed:', sessionError);
@@ -39,24 +50,27 @@ export const useIntegrations = () => {
       }
       console.log('✅ Supabase session test passed');
 
-      // Test 2: Try a simple query with proper error handling
-      try {
-        const { data, error: queryError } = await supabase
-          .from('integrations')
-          .select('count')
-          .limit(1);
-        
-        if (queryError) {
-          console.error('❌ Supabase query test failed:', queryError);
-          return false;
-        }
-        
-        console.log('✅ Supabase query test passed');
-        return true;
-      } catch (queryError) {
-        console.error('❌ Supabase query test failed with exception:', queryError);
+      // Test 3: Simple database query with timeout
+      console.log('🔍 Testing database query...');
+      
+      const queryPromise = supabase
+        .from('integrations')
+        .select('count')
+        .limit(1);
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 10000)
+      );
+
+      const { error: queryError } = await Promise.race([queryPromise, timeoutPromise]) as any;
+      
+      if (queryError) {
+        console.error('❌ Database query failed:', queryError);
         return false;
       }
+      
+      console.log('✅ Database query successful');
+      return true;
       
     } catch (error) {
       console.error('❌ Supabase connection test failed:', error);
@@ -85,31 +99,37 @@ export const useIntegrations = () => {
       if (isSupabaseConnected) {
         console.log('📥 Loading integrations from Supabase database...');
         
-        const { data: dbIntegrations, error } = await supabase
-          .from('integrations')
-          .select('*')
-          .eq('user_id', user.id);
+        try {
+          const { data: dbIntegrations, error } = await supabase
+            .from('integrations')
+            .select('*')
+            .eq('user_id', user.id);
 
-        if (!error && dbIntegrations) {
-          console.log('✅ Successfully loaded integrations from database:', dbIntegrations.length);
-          setIntegrations(dbIntegrations);
-          
-          // Sync to localStorage for offline access
-          dbIntegrations.forEach(integration => {
-            if (integration.integration_type === 'notion') {
-              localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY, integration.api_key);
-              if (integration.database_id) {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID, integration.database_id);
+          if (!error && dbIntegrations) {
+            console.log('✅ Successfully loaded integrations from database:', dbIntegrations.length);
+            setIntegrations(dbIntegrations);
+            
+            // Sync to localStorage for offline access
+            dbIntegrations.forEach(integration => {
+              if (integration.integration_type === 'notion') {
+                localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY, integration.api_key);
+                if (integration.database_id) {
+                  localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID, integration.database_id);
+                }
+              } else if (integration.integration_type === 'openai') {
+                localStorage.setItem(LOCAL_STORAGE_KEYS.OPENAI_API_KEY, integration.api_key);
               }
-            } else if (integration.integration_type === 'openai') {
-              localStorage.setItem(LOCAL_STORAGE_KEYS.OPENAI_API_KEY, integration.api_key);
-            }
-          });
-          
-          setLoading(false);
-          return;
-        } else {
-          console.warn('⚠️ Database fetch error, falling back to localStorage:', error);
+            });
+            
+            setLoading(false);
+            return;
+          } else {
+            console.warn('⚠️ Database fetch error, falling back to localStorage:', error);
+            setSupabaseAvailable(false);
+          }
+        } catch (dbError) {
+          console.warn('⚠️ Database query failed, falling back to localStorage:', dbError);
+          setSupabaseAvailable(false);
         }
       } else {
         console.warn('⚠️ Supabase connection failed, using localStorage only');
@@ -158,11 +178,6 @@ export const useIntegrations = () => {
     } catch (error) {
       console.error('❌ Unexpected error in fetchIntegrations:', error);
       setSupabaseAvailable(false);
-      toast({
-        title: "Warning",
-        description: "Using local storage for integrations due to database issues.",
-        variant: "default",
-      });
     } finally {
       setLoading(false);
     }
@@ -218,122 +233,113 @@ export const useIntegrations = () => {
     });
 
     try {
-      if (supabaseAvailable) {
-        console.log('💾 Step 1: Saving to Supabase database...');
-        
-        // First, check if integration already exists
-        const { data: existingIntegrations, error: fetchError } = await supabase
-          .from('integrations')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('integration_type', type);
-
-        if (fetchError) {
-          console.error('❌ Error checking existing integration:', fetchError);
-          throw fetchError;
-        }
-
-        let result;
-        if (existingIntegrations && existingIntegrations.length > 0) {
-          // UPDATE existing integration
-          console.log('🔄 Updating existing integration...');
-          result = await supabase
-            .from('integrations')
-            .update({
-              api_key: apiKey,
-              database_id: databaseId || null,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id)
-            .eq('integration_type', type)
-            .select()
-            .single();
+      // Always save to localStorage first for immediate availability
+      console.log('💾 Step 1: Saving to localStorage...');
+      if (type === 'notion') {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY, apiKey);
+        if (databaseId) {
+          localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID, databaseId);
         } else {
-          // INSERT new integration
-          console.log('➕ Creating new integration...');
-          result = await supabase
+          localStorage.removeItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID);
+        }
+      } else if (type === 'openai') {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.OPENAI_API_KEY, apiKey);
+      }
+      console.log('✅ Step 1 completed: localStorage save successful');
+
+      // Create local integration object
+      const newIntegration: Integration = {
+        id: `local-${type}`,
+        user_id: user.id,
+        integration_type: type,
+        api_key: apiKey,
+        database_id: databaseId || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      if (supabaseAvailable) {
+        console.log('💾 Step 2: Saving to Supabase database...');
+        
+        try {
+          // Check if integration already exists
+          const { data: existingIntegrations, error: fetchError } = await supabase
             .from('integrations')
-            .insert([{
-              user_id: user.id,
-              integration_type: type,
-              api_key: apiKey,
-              database_id: databaseId || null
-            }])
-            .select()
-            .single();
-        }
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('integration_type', type);
 
-        if (result.error) {
-          console.error('❌ Supabase save error:', result.error);
-          throw result.error;
-        }
-
-        console.log('✅ Step 1 completed: Supabase save successful');
-        console.log('📊 Saved integration data:', result.data);
-        
-        // Update local state with the saved integration
-        const savedIntegration = result.data;
-        setIntegrations(prev => {
-          const filtered = prev.filter(i => i.integration_type !== type);
-          const updated = [...filtered, savedIntegration];
-          console.log('🔄 Updated integrations state:', updated.map(i => ({ 
-            type: i.integration_type, 
-            source: i.id.startsWith('local-') ? 'localStorage' : 'database' 
-          })));
-          return updated;
-        });
-
-        // Also save to localStorage for offline access
-        console.log('💾 Step 2: Syncing to localStorage for offline access...');
-        if (type === 'notion') {
-          localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY, apiKey);
-          if (databaseId) {
-            localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID, databaseId);
-          } else {
-            localStorage.removeItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID);
+          if (fetchError) {
+            console.error('❌ Error checking existing integration:', fetchError);
+            throw fetchError;
           }
-        } else if (type === 'openai') {
-          localStorage.setItem(LOCAL_STORAGE_KEYS.OPENAI_API_KEY, apiKey);
-        }
-        console.log('✅ Step 2 completed: localStorage sync successful');
 
+          let result;
+          if (existingIntegrations && existingIntegrations.length > 0) {
+            // UPDATE existing integration
+            console.log('🔄 Updating existing integration...');
+            result = await supabase
+              .from('integrations')
+              .update({
+                api_key: apiKey,
+                database_id: databaseId || null,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', user.id)
+              .eq('integration_type', type)
+              .select()
+              .single();
+          } else {
+            // INSERT new integration
+            console.log('➕ Creating new integration...');
+            result = await supabase
+              .from('integrations')
+              .insert([{
+                user_id: user.id,
+                integration_type: type,
+                api_key: apiKey,
+                database_id: databaseId || null
+              }])
+              .select()
+              .single();
+          }
+
+          if (result.error) {
+            console.error('❌ Supabase save error:', result.error);
+            throw result.error;
+          }
+
+          console.log('✅ Step 2 completed: Supabase save successful');
+          
+          // Update local state with the database integration
+          const savedIntegration = result.data;
+          setIntegrations(prev => {
+            const filtered = prev.filter(i => i.integration_type !== type);
+            const updated = [...filtered, savedIntegration];
+            console.log('🔄 Updated integrations state with database integration');
+            return updated;
+          });
+
+        } catch (dbError) {
+          console.warn('⚠️ Step 2 warning: Database save failed, but localStorage succeeded:', dbError);
+          // Continue with localStorage-only integration
+          setIntegrations(prev => {
+            const filtered = prev.filter(i => i.integration_type !== type);
+            const updated = [...filtered, newIntegration];
+            console.log('🔄 Updated integrations state with localStorage integration');
+            return updated;
+          });
+        }
       } else {
-        // Fallback to localStorage only
-        console.log('💾 Supabase unavailable, saving to localStorage only...');
+        console.log('💾 Supabase unavailable, using localStorage only...');
         
-        if (type === 'notion') {
-          localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY, apiKey);
-          if (databaseId) {
-            localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID, databaseId);
-          } else {
-            localStorage.removeItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID);
-          }
-        } else if (type === 'openai') {
-          localStorage.setItem(LOCAL_STORAGE_KEYS.OPENAI_API_KEY, apiKey);
-        }
-
-        // Update local state
-        const newIntegration: Integration = {
-          id: `local-${type}`,
-          user_id: user.id,
-          integration_type: type,
-          api_key: apiKey,
-          database_id: databaseId || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
+        // Update local state with localStorage integration
         setIntegrations(prev => {
           const filtered = prev.filter(i => i.integration_type !== type);
           const updated = [...filtered, newIntegration];
-          console.log('🔄 Updated integrations state:', updated.map(i => ({ 
-            type: i.integration_type, 
-            source: i.id.startsWith('local-') ? 'localStorage' : 'database' 
-          })));
+          console.log('🔄 Updated integrations state with localStorage integration');
           return updated;
         });
-        
-        console.log('✅ localStorage save completed');
       }
 
       const endTime = Date.now();
@@ -371,23 +377,7 @@ export const useIntegrations = () => {
     }
     
     try {
-      if (supabaseAvailable) {
-        console.log('🗑️ Deleting from Supabase database...');
-        
-        const { error } = await supabase
-          .from('integrations')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('integration_type', type);
-          
-        if (error) {
-          console.error('❌ Supabase delete error:', error);
-          throw error;
-        }
-        console.log('✅ Deleted from database');
-      }
-
-      // Remove from local storage
+      // Remove from local storage first
       if (type === 'notion') {
         console.log('🗑️ Removing Notion credentials from localStorage...');
         localStorage.removeItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY);
@@ -395,6 +385,26 @@ export const useIntegrations = () => {
       } else if (type === 'openai') {
         console.log('🗑️ Removing OpenAI credentials from localStorage...');
         localStorage.removeItem(LOCAL_STORAGE_KEYS.OPENAI_API_KEY);
+      }
+
+      if (supabaseAvailable) {
+        console.log('🗑️ Deleting from Supabase database...');
+        
+        try {
+          const { error } = await supabase
+            .from('integrations')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('integration_type', type);
+            
+          if (error) {
+            console.error('❌ Supabase delete error:', error);
+            throw error;
+          }
+          console.log('✅ Deleted from database');
+        } catch (dbError) {
+          console.warn('⚠️ Database delete failed, but local storage cleared:', dbError);
+        }
       }
 
       // Update local state

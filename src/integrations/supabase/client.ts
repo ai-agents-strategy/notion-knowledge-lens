@@ -16,7 +16,7 @@ if (!SUPABASE_ANON_KEY) {
 }
 
 console.log('🔧 Supabase Client Configuration:', {
-  url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 20)}...` : 'MISSING',
+  url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 30)}...` : 'MISSING',
   anonKey: SUPABASE_ANON_KEY ? `${SUPABASE_ANON_KEY.substring(0, 20)}...` : 'MISSING',
   hasUrl: !!SUPABASE_URL,
   hasAnonKey: !!SUPABASE_ANON_KEY
@@ -42,7 +42,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
   }
 });
 
-// Test connection on initialization
+// Test connection on initialization with better error handling
 supabase.auth.getSession().then(({ data: { session }, error }) => {
   if (error) {
     console.error('❌ Supabase auth session error:', error);
@@ -51,6 +51,22 @@ supabase.auth.getSession().then(({ data: { session }, error }) => {
       hasSession: !!session,
       userId: session?.user?.id || 'none'
     });
+    
+    // Test a simple database query to verify full connectivity
+    supabase
+      .from('integrations')
+      .select('count')
+      .limit(1)
+      .then(({ error: queryError }) => {
+        if (queryError) {
+          console.error('❌ Supabase database test query failed:', queryError);
+        } else {
+          console.log('✅ Supabase database connection verified');
+        }
+      })
+      .catch(err => {
+        console.error('❌ Supabase database test query error:', err);
+      });
   }
 }).catch(err => {
   console.error('❌ Supabase initialization error:', err);

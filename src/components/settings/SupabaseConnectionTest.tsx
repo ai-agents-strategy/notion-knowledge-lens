@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Database, CheckCircle, XCircle, Loader2, Wifi } from "lucide-react";
+import { Database, CheckCircle, XCircle, Loader2, Wifi, AlertTriangle } from "lucide-react";
 
 export const SupabaseConnectionTest = () => {
   const { user } = useAuth();
@@ -33,9 +33,16 @@ export const SupabaseConnectionTest = () => {
         details: {
           hasUrl,
           hasAnonKey,
-          url: hasUrl ? `${import.meta.env.VITE_SUPABASE_URL.substring(0, 20)}...` : 'MISSING'
+          url: hasUrl ? `${import.meta.env.VITE_SUPABASE_URL.substring(0, 30)}...` : 'MISSING'
         }
       });
+
+      if (!hasUrl || !hasAnonKey) {
+        setConnectionStatus('error');
+        setTestResults(results);
+        setIsTestingConnection(false);
+        return;
+      }
 
       // Test 2: Auth Session
       console.log('🔍 Test 2: Checking auth session...');
@@ -51,16 +58,21 @@ export const SupabaseConnectionTest = () => {
         }
       });
 
-      // Test 3: Database Query
+      // Test 3: Database Query with timeout
       console.log('🔍 Test 3: Testing database query...');
       const queryStart = Date.now();
       
       try {
-        const { data: queryData, error: queryError } = await supabase
+        const queryPromise = supabase
           .from('integrations')
           .select('count')
           .limit(1);
           
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Query timeout after 10 seconds')), 10000)
+        );
+
+        const { error: queryError } = await Promise.race([queryPromise, timeoutPromise]) as any;
         const queryTime = Date.now() - queryStart;
         
         results.tests.push({
@@ -73,10 +85,12 @@ export const SupabaseConnectionTest = () => {
           }
         });
       } catch (queryError) {
+        const queryTime = Date.now() - queryStart;
         results.tests.push({
           name: 'Database Query',
           status: 'error',
           details: {
+            responseTime: `${queryTime}ms (timeout)`,
             error: queryError instanceof Error ? queryError.message : 'Unknown error'
           }
         });
@@ -110,6 +124,77 @@ export const SupabaseConnectionTest = () => {
             }
           });
         }
+      } else {
+        results.tests.push({
+          name: 'RLS Policies',
+          status: 'warning',
+          details: {
+            message: 'Skipped - user not authenticated'
+          }
+        });
+      }
+
+      // Test 5: Write Operation Test (if user is authenticated)
+      if (user) {
+        console.log('🔍 Test 5: Testing write operations...');
+        try {
+          // Try to insert a test record and then delete it
+          const testIntegration = {
+            user_id: user.id,
+            integration_type: 'test',
+            api_key: 'test-key-' + Date.now(),
+            database_id: null
+          };
+
+          const { data: insertData, error: insertError } = await supabase
+            .from('integrations')
+            .insert([testIntegration])
+            .select()
+            .single();
+
+          if (!insertError && insertData) {
+            // Clean up test record
+            await supabase
+              .from('integrations')
+              .delete()
+              .eq('id', insertData.id);
+
+            results.tests.push({
+              name: 'Write Operations',
+              status: 'success',
+              details: {
+                canWrite: true,
+                message: 'Insert and delete operations successful'
+              }
+            });
+          } else {
+            results.tests.push({
+              name: 'Write Operations',
+              status: 'error',
+              details: {
+                canWrite: false,
+                error: insertError?.message
+              }
+            });
+          }
+        } catch (writeError) {
+          results.tests.push({
+            name: 'Write Operations',
+            status: 'error',
+            details: {
+              canWrite: false,
+              error: writeError instanceof Error ? writeError.message : 'Unknown error'
+            }
+          });
+        }
+      } else {
+        results.tests.push({
+          name: 'Write Operations',
+          status: 'warning',
+          details: {
+            message: 'Skipped - user not authenticated'
+          }
+        });
       }
 
       // Determine overall status
@@ -138,6 +223,8 @@ export const SupabaseConnectionTest = () => {
         return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'error':
         return <XCircle className="w-4 h-4 text-red-600" />;
+      case 'warning':
+        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
       default:
         return <Loader2 className="w-4 h-4 animate-spin" />;
     }
@@ -218,6 +305,24 @@ export const SupabaseConnectionTest = () => {
             <div className="text-xs text-gray-500 mt-2">
               Test completed at: {new Date(testResults.timestamp).toLocaleString()}
             </div>
+          </div>
+        )}
+
+        {connectionStatus === 'error' && (
+          <div className="bg-red-50 dark:bg-red-950 p-3 rounded-lg">
+            <p className="text-sm text-red-800 dark:text-red-200">
+              <XCircle className="w-4 h-4 inline mr-1" />
+              Database connection failed. Your API keys will be stored in local storage until the connection is restored.
+            </p>
+          </div>
+        )}
+
+        {connectionStatus === 'success' && (
+          <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg">
+            <p className="text-sm text-green-800 dark:text-green-200">
+              <CheckCircle className="w-4 h-4 inline mr-1" />
+              Database connection successful! Your API keys will be stored securely in the database.
+            </p>
           </div>
         )}
       </CardContent>
