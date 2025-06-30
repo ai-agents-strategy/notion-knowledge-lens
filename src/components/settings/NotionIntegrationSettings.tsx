@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Key, Save, RefreshCw, CheckCircle, Database } from "lucide-react";
+import { Key, Save, RefreshCw, CheckCircle, Database, HardDrive } from "lucide-react";
 
 interface NotionIntegrationSettingsProps {
   notionApiKey: string;
@@ -40,7 +40,10 @@ export const NotionIntegrationSettings = ({
         </CardTitle>
         <CardDescription>
           Connect your Notion workspace to visualize your actual database relationships.
-          Your API key is stored securely in our encrypted database and linked to your account.
+          <span className="flex items-center gap-1 mt-1 text-blue-600">
+            <HardDrive className="w-3 h-3" />
+            Currently stored in local storage (temporary)
+          </span>
         </CardDescription>
       </CardHeader>
       
@@ -55,7 +58,7 @@ export const NotionIntegrationSettings = ({
             onChange={(e) => setNotionApiKey(e.target.value)}
           />
           <p className="text-xs text-gray-500">
-            Your API key is stored securely in our encrypted database and linked to your account
+            Your API key is stored securely in your browser's local storage
           </p>
         </div>
 

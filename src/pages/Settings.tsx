@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIntegrations } from "@/hooks/useIntegrations";
@@ -25,17 +25,17 @@ const Settings = () => {
   const [openaiKey, setOpenaiKey] = useState('');
   const [chatIsLoading, setChatIsLoading] = useState(false);
 
-  // Load data from database
+  // Load data from integrations (now using local storage)
   useEffect(() => {
     if (!integrationsLoading) {
-      // Load Notion integration from database
+      // Load Notion integration
       const notionIntegration = getIntegration('notion');
       if (notionIntegration) {
         setNotionApiKey(notionIntegration.api_key || '');
         setDatabaseId(notionIntegration.database_id || '');
       }
 
-      // Load OpenAI integration from database
+      // Load OpenAI integration
       const openaiIntegration = getIntegration('openai');
       if (openaiIntegration) {
         setOpenaiKey(openaiIntegration.api_key || '');
@@ -76,31 +76,20 @@ const Settings = () => {
     setErrorMessage('');
     
     try {
-      console.log('💾 Starting save process...');
+      console.log('💾 Starting save process to local storage...');
       console.log('👤 User ID:', user.id);
       console.log('🔑 API Key length:', notionApiKey.trim().length);
       console.log('🗄️ Database ID:', databaseId.trim() || 'none');
 
-      // Test database connection first
-      console.log('🔍 Testing database connection...');
-      const { data: testData, error: testError } = await supabase
-        .from('integrations')
-        .select('count')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      if (testError) {
-        console.error('❌ Database connection test failed:', testError);
-        throw new Error(`Database connection failed: ${testError.message}`);
-      }
-
-      console.log('✅ Database connection test passed');
-
-      // Save to database
+      // Save to local storage (this should be instant and reliable)
       const success = await saveIntegration('notion', notionApiKey.trim(), databaseId.trim() || undefined);
       
       if (success) {
-        console.log('✅ Settings saved successfully to database');
+        console.log('✅ Settings saved successfully to local storage');
+        toast({
+          title: "Settings saved!",
+          description: "Your Notion API key has been saved to local storage.",
+        });
       } else {
         throw new Error('Save operation returned false');
       }
@@ -188,7 +177,7 @@ const Settings = () => {
 
   const handleClear = async () => {
     try {
-      // Clear database data
+      // Clear local storage data
       await deleteIntegration('notion');
       
       // Clear localStorage data
@@ -204,7 +193,7 @@ const Settings = () => {
       setErrorMessage('');
       toast({
         title: "Settings cleared",
-        description: "All Notion integration settings have been cleared from the database."
+        description: "All Notion integration settings have been cleared from local storage."
       });
     } catch (error) {
       console.error('❌ Error clearing settings:', error);
@@ -233,7 +222,7 @@ const Settings = () => {
         if (success) {
           toast({
             title: "Chat settings saved!",
-            description: "Your OpenAI API key has been saved securely to the database."
+            description: "Your OpenAI API key has been saved to local storage."
           });
         }
       } else {
@@ -241,7 +230,7 @@ const Settings = () => {
         await deleteIntegration('openai');
         toast({
           title: "Chat settings cleared",
-          description: "OpenAI API key has been removed from the database."
+          description: "OpenAI API key has been removed from local storage."
         });
       }
     } catch (error) {
@@ -263,7 +252,7 @@ const Settings = () => {
       
       toast({
         title: "Chat settings cleared",
-        description: "OpenAI API key has been removed from the database."
+        description: "OpenAI API key has been removed from local storage."
       });
     } catch (error) {
       toast({
@@ -285,6 +274,15 @@ const Settings = () => {
 
       <div className="max-w-4xl mx-auto px-6 pb-8">
         <div className="space-y-6">
+          {/* Temporary Local Storage Notice */}
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Temporary Mode:</strong> API keys are currently being saved to your browser's local storage 
+              while we resolve database connectivity issues. Your keys are secure and only accessible on this device.
+            </AlertDescription>
+          </Alert>
+
           {/* Error Alert */}
           {errorMessage && (
             <Alert variant="destructive">

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Bot, Save } from "lucide-react";
+import { Eye, EyeOff, Bot, Save, HardDrive } from "lucide-react";
 
 interface ChatApiSettingsProps {
   openaiKey: string;
@@ -32,7 +32,10 @@ export const ChatApiSettings = ({
         </CardTitle>
         <CardDescription>
           Configure your AI chat experience with enhanced models.
-          Your API key is stored securely in our encrypted database and linked to your account.
+          <span className="flex items-center gap-1 mt-1 text-blue-600">
+            <HardDrive className="w-3 h-3" />
+            Currently stored in local storage (temporary)
+          </span>
         </CardDescription>
       </CardHeader>
       
@@ -69,7 +72,7 @@ export const ChatApiSettings = ({
 
         <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg">
           <p className="font-medium mb-1">Note:</p>
-          <p>• API key is stored securely in our encrypted database</p>
+          <p>• API key is stored securely in your browser's local storage</p>
           <p>• Without an API key, you'll use the free model</p>
           <p>• Enhanced features include better responses and context understanding</p>
         </div>
