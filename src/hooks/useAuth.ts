@@ -62,12 +62,12 @@ export const useAuthState = () => {
 
   const createUserProfile = async (user: User) => {
     try {
-      // Check if profile already exists
+      // Check if profile already exists using maybeSingle() instead of single()
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('id')
         .eq('clerk_user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!existingProfile) {
         // Create profile for new user

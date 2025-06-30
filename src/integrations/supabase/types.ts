@@ -12,59 +12,71 @@ export type Database = {
       graphs: {
         Row: {
           connections: Json | null
-          created_at: string
+          created_at: string | null
+          graph_description: string | null
+          graph_tags: string[] | null
+          graph_title: string | null
           id: string
           nodes: Json | null
           public_id: string | null
-          updated_at: string
+          updated_at: string | null
           user_id: string
+          visibility: Database["public"]["Enums"]["graph_visibility"] | null
         }
         Insert: {
           connections?: Json | null
-          created_at?: string
+          created_at?: string | null
+          graph_description?: string | null
+          graph_tags?: string[] | null
+          graph_title?: string | null
           id?: string
           nodes?: Json | null
           public_id?: string | null
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
+          visibility?: Database["public"]["Enums"]["graph_visibility"] | null
         }
         Update: {
           connections?: Json | null
-          created_at?: string
+          created_at?: string | null
+          graph_description?: string | null
+          graph_tags?: string[] | null
+          graph_title?: string | null
           id?: string
           nodes?: Json | null
           public_id?: string | null
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
+          visibility?: Database["public"]["Enums"]["graph_visibility"] | null
         }
         Relationships: []
       }
       integrations: {
         Row: {
           api_key: string
-          created_at: string
+          created_at: string | null
           database_id: string | null
           id: string
           integration_type: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           api_key: string
-          created_at?: string
+          created_at?: string | null
           database_id?: string | null
           id?: string
           integration_type: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           api_key?: string
-          created_at?: string
+          created_at?: string | null
           database_id?: string | null
           id?: string
           integration_type?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -72,18 +84,39 @@ export type Database = {
       profiles: {
         Row: {
           clerk_user_id: string
-          created_at: string
+          created_at: string | null
           id: string
+          user_bio: string | null
+          user_email: string | null
+          user_github: string | null
+          user_linkedin: string | null
+          user_name: string | null
+          user_twitter: string | null
+          user_website: string | null
         }
         Insert: {
           clerk_user_id: string
-          created_at?: string
+          created_at?: string | null
           id?: string
+          user_bio?: string | null
+          user_email?: string | null
+          user_github?: string | null
+          user_linkedin?: string | null
+          user_name?: string | null
+          user_twitter?: string | null
+          user_website?: string | null
         }
         Update: {
           clerk_user_id?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
+          user_bio?: string | null
+          user_email?: string | null
+          user_github?: string | null
+          user_linkedin?: string | null
+          user_name?: string | null
+          user_twitter?: string | null
+          user_website?: string | null
         }
         Relationships: []
       }
@@ -98,7 +131,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      graph_visibility: "private" | "unlisted" | "gallery"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -213,6 +246,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      graph_visibility: {
+        private: "private" as const,
+        unlisted: "unlisted" as const,
+        gallery: "gallery" as const,
+      },
+    },
   },
 } as const
