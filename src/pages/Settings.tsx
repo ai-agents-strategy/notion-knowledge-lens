@@ -8,6 +8,7 @@ import { ChatApiSettings } from "@/components/settings/ChatApiSettings";
 import { NotionIntegrationSettings } from "@/components/settings/NotionIntegrationSettings";
 import { NotionSetupInstructions } from "@/components/settings/NotionSetupInstructions";
 import { SupabaseConnectionTest } from "@/components/settings/SupabaseConnectionTest";
+import { SupabaseDebugTest } from "@/components/settings/SupabaseDebugTest";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -71,7 +72,7 @@ const Settings = () => {
     setErrorMessage(error);
   };
 
-  const handleNotionSyncSuccess = (data: any) => {
+  const handleNotionSyncSuccess = (data: { results?: Array<{ title?: Array<{ plain_text: string }> }> }) => {
     console.log('✅ Settings: Notion sync successful');
     setSyncedDatabases(data.results || []);
     setSyncStatus('success');
@@ -191,6 +192,9 @@ const Settings = () => {
 
           {/* Supabase Connection Test */}
           <SupabaseConnectionTest />
+
+          {/* Debug Test Component */}
+          <SupabaseDebugTest />
 
           <ChatApiSettings
             openaiKey={openaiKey}

@@ -9,58 +9,38 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
+interface SignUpFormData {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  fullName: string;
+}
+
 const SignUpPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [formData, setFormData] = useState<SignUpFormData>({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    fullName: '',
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
 
-  const createUserProfile = async (userId: string, email: string, name?: string) => {
-    try {
-      console.log('👤 Creating user profile for:', userId);
-      
-      const profileData = {
-        user_id: userId,
-        user_email: email,
-        user_name: name || email.split('@')[0] || '',
-        created_at: new Date().toISOString()
-      };
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([profileData]);
-
-      if (profileError) {
-        console.error('❌ Profile creation error:', profileError);
-        // Don't throw error, just log it - user can still use the app
-        toast({
-          title: "Profile Setup",
-          description: "Account created successfully. You can complete your profile later in settings.",
-          variant: "default"
-        });
-      } else {
-        console.log('✅ User profile created successfully');
-      }
-    } catch (error) {
-      console.error('❌ Unexpected error creating profile:', error);
-      // Don't throw error, just log it
-    }
+  const updateFormData = (field: keyof SignUpFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validation
-    if (password !== confirmPassword) {
+  const validateForm = (): boolean => {
+    const { email, password, confirmPassword } = formData;
+
+    if (!email.trim()) {
       toast({
-        title: "Password Mismatch",
-        description: "Passwords do not match. Please try again.",
+        title: "Email Required",
+        description: "Please enter a valid email address.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (password.length < 6) {
@@ -69,24 +49,55 @@ const SignUpPage = () => {
         description: "Password must be at least 6 characters long.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
-    if (!email.trim()) {
+    if (password !== confirmPassword) {
       toast({
-        title: "Email Required",
-        description: "Please enter a valid email address.",
+        title: "Password Mismatch",
+        description: "Passwords do not match. Please try again.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  const createUserProfile = async (userId: string, email: string, name?: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .insert([{
+          user_id: userId,
+          user_email: email,
+          user_name: name || email.split('@')[0] || '',
+          created_at: new Date().toISOString()
+        }]);
+
+      if (error) {
+        console.error('Profile creation error:', error);
+        toast({
+          title: "Profile Setup",
+          description: "Account created successfully. You can complete your profile later in settings.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Unexpected error creating profile:', error);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
 
     setIsLoading(true);
 
     try {
-      console.log('🔐 Starting email/password sign up process...');
+      const { email, password, fullName } = formData;
       
-      // Step 1: Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -99,7 +110,6 @@ const SignUpPage = () => {
       });
 
       if (authError) {
-        console.error('❌ Auth sign up error:', authError);
         toast({
           title: "Sign Up Failed",
           description: authError.message,
@@ -109,7 +119,6 @@ const SignUpPage = () => {
       }
 
       if (!authData.user) {
-        console.error('❌ No user returned from sign up');
         toast({
           title: "Sign Up Failed",
           description: "Failed to create account. Please try again.",
@@ -118,53 +127,35 @@ const SignUpPage = () => {
         return;
       }
 
-      console.log('✅ Auth user created:', authData.user.id);
-
-      // Step 2: Create user profile with auth_id
       await createUserProfile(
         authData.user.id, 
         email.trim(), 
         fullName.trim() || email.split('@')[0]
       );
 
-      // Step 3: Handle different confirmation scenarios
-      if (authData.user.email_confirmed_at) {
-        // Email is already confirmed (auto-confirm enabled)
-        console.log('✅ Email auto-confirmed, user can sign in immediately');
-        toast({
-          title: "Account Created Successfully! 🎉",
-          description: "Your account has been created and is ready to use. You can now sign in.",
+      const isEmailConfirmed = !!authData.user.email_confirmed_at;
+      const message = isEmailConfirmed 
+        ? 'Account created successfully! Please sign in with your credentials.'
+        : 'Please check your email and confirm your account before signing in.';
+
+      toast({
+        title: isEmailConfirmed ? "Account Created Successfully! 🎉" : "Check Your Email 📧",
+        description: isEmailConfirmed 
+          ? "Your account has been created and is ready to use. You can now sign in."
+          : "We've sent you a confirmation link. Please check your email and click the link to activate your account.",
+      });
+
+      setTimeout(() => {
+        navigate('/sign-in', { 
+          state: { 
+            message,
+            email: email.trim()
+          }
         });
-        
-        // Small delay to show success message
-        setTimeout(() => {
-          navigate('/sign-in', { 
-            state: { 
-              message: 'Account created successfully! Please sign in with your credentials.',
-              email: email.trim()
-            }
-          });
-        }, 1500);
-      } else {
-        // Email confirmation required
-        console.log('📧 Email confirmation required');
-        toast({
-          title: "Check Your Email 📧",
-          description: "We've sent you a confirmation link. Please check your email and click the link to activate your account.",
-        });
-        
-        setTimeout(() => {
-          navigate('/sign-in', { 
-            state: { 
-              message: 'Please check your email and confirm your account before signing in.',
-              email: email.trim()
-            }
-          });
-        }, 2000);
-      }
+      }, isEmailConfirmed ? 1500 : 2000);
 
     } catch (error) {
-      console.error('❌ Unexpected sign up error:', error);
+      console.error('Unexpected sign up error:', error);
       toast({
         title: "Sign Up Error",
         description: "An unexpected error occurred. Please try again.",
@@ -175,21 +166,14 @@ const SignUpPage = () => {
     }
   };
 
-  const handleGoogleSignUp = async () => {
+  const handleGoogleSignUp = async (): Promise<void> => {
     setIsGoogleLoading(true);
 
     try {
-      console.log('🔐 Starting Google OAuth sign up...');
-      
-      // Get the current origin for redirect
-      const redirectTo = `${window.location.origin}/`;
-      
-      console.log('🔗 Google OAuth redirect URL:', redirectTo);
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo,
+          redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -198,7 +182,6 @@ const SignUpPage = () => {
       });
 
       if (error) {
-        console.error('❌ Google OAuth error:', error);
         toast({
           title: "Google Sign Up Failed",
           description: error.message,
@@ -207,17 +190,13 @@ const SignUpPage = () => {
         return;
       }
 
-      console.log('🔗 Google OAuth initiated successfully');
-      
       toast({
         title: "Redirecting to Google...",
         description: "You'll be redirected to Google to complete sign up.",
       });
       
-      // The redirect will happen automatically
-      
     } catch (error) {
-      console.error('❌ Unexpected Google OAuth error:', error);
+      console.error('Unexpected Google OAuth error:', error);
       toast({
         title: "Google Sign Up Error",
         description: "An unexpected error occurred with Google sign-up. Please try again.",
@@ -227,6 +206,9 @@ const SignUpPage = () => {
       setIsGoogleLoading(false);
     }
   };
+
+  const { email, password, confirmPassword, fullName } = formData;
+  const isFormDisabled = isLoading || isGoogleLoading;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
@@ -238,13 +220,12 @@ const SignUpPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Google Sign Up Button */}
           <Button
             type="button"
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignUp}
-            disabled={isGoogleLoading || isLoading}
+            disabled={isFormDisabled}
           >
             {isGoogleLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -282,7 +263,6 @@ const SignUpPage = () => {
             </div>
           </div>
 
-          {/* Email/Password Form */}
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name (Optional)</Label>
@@ -291,8 +271,8 @@ const SignUpPage = () => {
                 type="text"
                 placeholder="Enter your full name"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                disabled={isLoading || isGoogleLoading}
+                onChange={(e) => updateFormData('fullName', e.target.value)}
+                disabled={isFormDisabled}
               />
             </div>
             
@@ -303,9 +283,9 @@ const SignUpPage = () => {
                 type="email"
                 placeholder="Enter your email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => updateFormData('email', e.target.value)}
                 required
-                disabled={isLoading || isGoogleLoading}
+                disabled={isFormDisabled}
               />
             </div>
             
@@ -316,10 +296,10 @@ const SignUpPage = () => {
                 type="password"
                 placeholder="Create a password (min 6 characters)"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => updateFormData('password', e.target.value)}
                 required
                 minLength={6}
-                disabled={isLoading || isGoogleLoading}
+                disabled={isFormDisabled}
               />
             </div>
             
@@ -330,17 +310,17 @@ const SignUpPage = () => {
                 type="password"
                 placeholder="Confirm your password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => updateFormData('confirmPassword', e.target.value)}
                 required
                 minLength={6}
-                disabled={isLoading || isGoogleLoading}
+                disabled={isFormDisabled}
               />
             </div>
             
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || isGoogleLoading || !email.trim() || !password}
+              disabled={isFormDisabled || !email.trim() || !password}
             >
               {isLoading ? (
                 <>

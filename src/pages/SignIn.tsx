@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,30 +9,57 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Info } from 'lucide-react';
+import type { User } from '@supabase/supabase-js';
+
+interface SignInFormData {
+  email: string;
+  password: string;
+}
+
+interface LocationState {
+  message?: string;
+  email?: string;
+}
 
 const SignInPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState<SignInFormData>({
+    email: '',
+    password: '',
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get any message passed from sign-up page
-  const locationState = location.state as { message?: string; email?: string } | null;
+  const locationState = location.state as LocationState | null;
 
-  // Pre-fill email if passed from sign-up
-  useState(() => {
+  useEffect(() => {
     if (locationState?.email) {
-      setEmail(locationState.email);
+      setFormData(prev => ({ ...prev, email: locationState.email || '' }));
     }
-  });
+  }, [locationState?.email]);
 
-  const ensureUserProfile = async (user: any) => {
+  const updateFormData = (field: keyof SignInFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateForm = (): boolean => {
+    const { email, password } = formData;
+
+    if (!email.trim() || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const ensureUserProfile = async (user: User): Promise<void> => {
     try {
-      console.log('👤 Ensuring user profile exists for:', user.id);
-      
-      // Check if profile already exists
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('id')
@@ -40,14 +67,11 @@ const SignInPage = () => {
         .maybeSingle();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('❌ Error checking existing profile:', fetchError);
+        console.error('Error checking existing profile:', fetchError);
         return;
       }
 
       if (!existingProfile) {
-        console.log('➕ Creating new user profile...');
-        
-        // Extract user info from metadata or email
         const userName = user.user_metadata?.full_name || 
                         user.user_metadata?.name || 
                         user.email?.split('@')[0] || 
@@ -62,34 +86,33 @@ const SignInPage = () => {
           });
 
         if (insertError) {
-          console.error('❌ Error creating user profile:', insertError);
-        } else {
-          console.log('✅ User profile created successfully');
+          console.error('Error creating user profile:', insertError);
         }
-      } else {
-        console.log('✅ User profile already exists');
       }
     } catch (error) {
-      console.error('❌ Unexpected error in ensureUserProfile:', error);
+      console.error('Unexpected error in ensureUserProfile:', error);
     }
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const getErrorMessage = (error: { message: string }): string => {
+    if (error.message.includes('Invalid login credentials')) {
+      return "Invalid email or password. Please check your credentials and try again.";
+    }
+    if (error.message.includes('Email not confirmed')) {
+      return "Please check your email and click the confirmation link before signing in.";
+    }
+    return error.message;
+  };
+
+  const handleSignIn = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     
-    if (!email.trim() || !password) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter both email and password.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
 
     try {
-      console.log('🔐 Attempting email/password sign in...');
+      const { email, password } = formData;
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -97,28 +120,15 @@ const SignInPage = () => {
       });
 
       if (error) {
-        console.error('❌ Sign in error:', error);
-        
-        // Provide more specific error messages
-        let errorMessage = error.message;
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = "Invalid email or password. Please check your credentials and try again.";
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = "Please check your email and click the confirmation link before signing in.";
-        }
-        
         toast({
           title: "Sign In Failed",
-          description: errorMessage,
+          description: getErrorMessage(error),
           variant: "destructive",
         });
         return;
       }
 
       if (data.user) {
-        console.log('✅ Sign in successful:', data.user.id);
-        
-        // Ensure user profile exists
         await ensureUserProfile(data.user);
         
         toast({
@@ -126,13 +136,12 @@ const SignInPage = () => {
           description: "You have been signed in successfully.",
         });
         
-        // Small delay to ensure auth state is updated
         setTimeout(() => {
           navigate('/', { replace: true });
         }, 500);
       }
     } catch (error) {
-      console.error('❌ Unexpected sign in error:', error);
+      console.error('Unexpected sign in error:', error);
       toast({
         title: "Sign In Error",
         description: "An unexpected error occurred during sign in. Please try again.",
@@ -143,21 +152,14 @@ const SignInPage = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (): Promise<void> => {
     setIsGoogleLoading(true);
 
     try {
-      console.log('🔐 Attempting Google OAuth sign in...');
-      
-      // Get the current origin (works for both localhost and production)
-      const redirectTo = `${window.location.origin}/`;
-      
-      console.log('🔗 Google OAuth redirect URL:', redirectTo);
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo,
+          redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -166,7 +168,6 @@ const SignInPage = () => {
       });
 
       if (error) {
-        console.error('❌ Google OAuth error:', error);
         toast({
           title: "Google Sign In Failed",
           description: error.message,
@@ -175,17 +176,13 @@ const SignInPage = () => {
         return;
       }
 
-      console.log('🔗 Google OAuth initiated successfully');
-      
       toast({
         title: "Redirecting to Google...",
         description: "You'll be redirected to Google to complete sign in.",
       });
       
-      // The redirect will happen automatically
-      
     } catch (error) {
-      console.error('❌ Unexpected Google OAuth error:', error);
+      console.error('Unexpected Google OAuth error:', error);
       toast({
         title: "Google Sign In Error",
         description: "An unexpected error occurred with Google sign-in. Please try again.",
@@ -195,6 +192,9 @@ const SignInPage = () => {
       setIsGoogleLoading(false);
     }
   };
+
+  const { email, password } = formData;
+  const isFormDisabled = isLoading || isGoogleLoading;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
@@ -206,7 +206,6 @@ const SignInPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Show message from sign-up if available */}
           {locationState?.message && (
             <Alert>
               <Info className="h-4 w-4" />
@@ -216,13 +215,12 @@ const SignInPage = () => {
             </Alert>
           )}
 
-          {/* Google Sign In Button */}
           <Button
             type="button"
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading || isLoading}
+            disabled={isFormDisabled}
           >
             {isGoogleLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -260,7 +258,6 @@ const SignInPage = () => {
             </div>
           </div>
 
-          {/* Email/Password Form */}
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
@@ -269,9 +266,9 @@ const SignInPage = () => {
                 type="email"
                 placeholder="Enter your email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => updateFormData('email', e.target.value)}
                 required
-                disabled={isLoading || isGoogleLoading}
+                disabled={isFormDisabled}
                 autoComplete="email"
               />
             </div>
@@ -282,16 +279,16 @@ const SignInPage = () => {
                 type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => updateFormData('password', e.target.value)}
                 required
-                disabled={isLoading || isGoogleLoading}
+                disabled={isFormDisabled}
                 autoComplete="current-password"
               />
             </div>
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || isGoogleLoading || !email.trim() || !password}
+              disabled={isFormDisabled || !email.trim() || !password}
             >
               {isLoading ? (
                 <>
