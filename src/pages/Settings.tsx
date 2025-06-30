@@ -9,8 +9,6 @@ import { SettingsHeader } from "@/components/SettingsHeader";
 import { ChatApiSettings } from "@/components/settings/ChatApiSettings";
 import { NotionIntegrationSettings } from "@/components/settings/NotionIntegrationSettings";
 import { NotionSetupInstructions } from "@/components/settings/NotionSetupInstructions";
-import { IntegrationsCRUDTest } from "@/components/settings/IntegrationsCRUDTest";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -286,50 +284,39 @@ const Settings = () => {
       />
 
       <div className="max-w-4xl mx-auto px-6 pb-8">
-        {/* Error Alert */}
-        {errorMessage && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{errorMessage}</AlertDescription>
-          </Alert>
-        )}
+        <div className="space-y-6">
+          {/* Error Alert */}
+          {errorMessage && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
 
-        <Tabs defaultValue="integrations" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="integrations">Integrations</TabsTrigger>
-            <TabsTrigger value="testing">CRUD Testing</TabsTrigger>
-          </TabsList>
+          <ChatApiSettings
+            openaiKey={openaiKey}
+            setOpenaiKey={setOpenaiKey}
+            handleSaveChatSettings={handleSaveChatSettings}
+            handleClearChatSettings={handleClearChatSettings}
+            isLoading={chatIsLoading}
+          />
 
-          <TabsContent value="integrations" className="space-y-6">
-            <ChatApiSettings
-              openaiKey={openaiKey}
-              setOpenaiKey={setOpenaiKey}
-              handleSaveChatSettings={handleSaveChatSettings}
-              handleClearChatSettings={handleClearChatSettings}
-              isLoading={chatIsLoading}
-            />
+          <NotionIntegrationSettings
+            notionApiKey={notionApiKey}
+            setNotionApiKey={setNotionApiKey}
+            databaseId={databaseId}
+            setDatabaseId={setDatabaseId}
+            isLoading={isLoading}
+            isSyncing={isSyncing}
+            syncStatus={syncStatus}
+            syncedDatabases={syncedDatabases}
+            handleSave={handleSave}
+            handleSync={handleSync}
+            handleClear={handleClear}
+          />
 
-            <NotionIntegrationSettings
-              notionApiKey={notionApiKey}
-              setNotionApiKey={setNotionApiKey}
-              databaseId={databaseId}
-              setDatabaseId={setDatabaseId}
-              isLoading={isLoading}
-              isSyncing={isSyncing}
-              syncStatus={syncStatus}
-              syncedDatabases={syncedDatabases}
-              handleSave={handleSave}
-              handleSync={handleSync}
-              handleClear={handleClear}
-            />
-
-            <NotionSetupInstructions />
-          </TabsContent>
-
-          <TabsContent value="testing">
-            <IntegrationsCRUDTest />
-          </TabsContent>
-        </Tabs>
+          <NotionSetupInstructions />
+        </div>
       </div>
     </div>
   );
