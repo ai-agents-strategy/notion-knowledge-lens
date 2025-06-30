@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Send, MessageCircle, Minimize2, Maximize2, X, Bot } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { toast } from "@/components/ui/use-toast";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 import { convertMarkdownToHtml } from "@/utils/markdownToHtml";
@@ -24,6 +24,7 @@ interface FloatingGraphChatProps {
 }
 
 export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps) => {
+  const supabase = useSupabaseClient();
   const { getIntegration } = useIntegrations();
   const [isOpen, setIsOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -46,7 +47,7 @@ export const FloatingGraphChat = ({ nodes, connections }: FloatingGraphChatProps
   }, [isOpen, getIntegration]);
 
   const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+    if (!inputMessage.trim() || isLoading || !supabase) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),

@@ -49,17 +49,33 @@ export const NotionSaveButton = ({
     
     setIsLoading(true);
     
+    if (!supabaseAvailable) {
+      toast({
+        title: "Database Not Connected",
+        description: "Please check your internet connection and try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const success = await saveIntegration('notion', notionApiKey.trim(), databaseId.trim() || undefined);
-      
       if (success) {
+        toast({
+          title: "✅ Settings Saved",
+          description: "Your Notion integration has been successfully saved.",
+        });
         onSaveSuccess?.();
-      } else {
-        throw new Error('Save operation returned false');
       }
     } catch (error) {
-      console.error('❌ NotionSaveButton: Save failed:', error);
-      const errorMsg = error instanceof Error ? error.message : "Failed to save settings. Please try again.";
+      const errorMsg = error instanceof Error ? error.message : "An unknown error occurred.";
+      console.error('❌ NotionSaveButton: Save failed:', errorMsg);
+      toast({
+        title: "❌ Save Failed",
+        description: "Could not save settings to the database. Please try again.",
+        variant: "destructive",
+      });
       onSaveError?.(errorMsg);
     } finally {
       setIsLoading(false);

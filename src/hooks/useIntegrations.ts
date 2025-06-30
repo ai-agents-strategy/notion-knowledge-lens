@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { useSupabaseClient } from './useSupabaseClient';
 import { toast } from '@/hooks/use-toast';
 
 interface Integration {
@@ -22,62 +22,29 @@ const LOCAL_STORAGE_KEYS = {
 
 export const useIntegrations = () => {
   const { user, isLoaded } = useUser();
+  const supabase = useSupabaseClient();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [supabaseAvailable, setSupabaseAvailable] = useState(false);
 
-  // Enhanced Supabase connection test with better timeout handling
   const testSupabaseConnection = async (): Promise<boolean> => {
+    if (!supabase) return false;
     try {
-      // Test 1: Check environment variables
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseAnonKey) {
-        console.error('❌ Missing Supabase environment variables');
+      const { error } = await supabase.from('integrations').select('id').limit(1);
+      if (error) {
+        console.warn('Supabase connection test failed, using offline mode:', error.message);
         return false;
       }
-      
-      // Test 2: Check auth session with increased timeout
-      const sessionPromise = supabase.auth.getSession();
-      const sessionTimeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Auth session timeout')), 30000) // Increased from 20000 to 30000
-      );
-
-      const { error: sessionError } = await Promise.race([sessionPromise, sessionTimeout]) as { error: Error | null };
-      if (sessionError) {
-        console.error('❌ Supabase session test failed:', sessionError);
-        return false;
-      }
-
-      // Test 3: Simple database query with increased timeout
-      const queryPromise = supabase
-        .from('integrations')
-        .select('count')
-        .limit(1);
-
-      const queryTimeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database query timeout')), 35000) // Increased from 25000 to 35000
-      );
-
-      const { error: queryError } = await Promise.race([queryPromise, queryTimeout]) as { error: Error | null };
-      
-      if (queryError) {
-        console.error('❌ Database query failed:', queryError);
-        return false;
-      }
-      
       return true;
-      
     } catch (error) {
-      console.error('❌ Supabase connection test failed:', error);
+      console.warn('Supabase connection test failed, using offline mode:', error);
       return false;
     }
   };
 
   // Load integrations from Supabase (primary) with localStorage fallback
   const fetchIntegrations = useCallback(async () => {
-    if (!user) {
+    if (!user || !supabase) {
       setIntegrations([]);
       setLoading(false);
       setSupabaseAvailable(false);
@@ -92,41 +59,29 @@ export const useIntegrations = () => {
       setSupabaseAvailable(isSupabaseConnected);
 
       if (isSupabaseConnected) {
-        try {
-          // Add increased timeout to the database query
-          const dbPromise = supabase
-            .from('integrations')
-            .select('*')
-            .eq('user_id', user.id);
+        const { data: dbIntegrations, error } = await supabase
+          .from('integrations')
+          .select('*')
+          .eq('user_id', user.id);
 
-          const dbTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database fetch timeout')), 35000) // Increased from 25000 to 35000
-          );
-
-          const { data: dbIntegrations, error } = await Promise.race([dbPromise, dbTimeout]) as { data: Integration[], error: Error | null };
-
-          if (!error && dbIntegrations) {
-            setIntegrations(dbIntegrations);
-            
-            // Sync to localStorage for offline access
-            dbIntegrations.forEach((integration: Integration) => {
-              if (integration.integration_type === 'notion') {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY, integration.api_key);
-                if (integration.database_id) {
-                  localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID, integration.database_id);
-                }
-              } else if (integration.integration_type === 'openai') {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.OPENAI_API_KEY, integration.api_key);
-              }
-            });
-            
-            setLoading(false);
-            return;
-          } else {
-            setSupabaseAvailable(false);
-          }
-        } catch (dbError) {
+        if (error) {
+          console.error('Error fetching integrations, falling back to local:', error);
           setSupabaseAvailable(false);
+        } else {
+          setIntegrations(dbIntegrations || []);
+          // Sync to localStorage for offline access
+          (dbIntegrations || []).forEach(integration => {
+            if (integration.integration_type === 'notion') {
+              localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY, integration.api_key);
+              if (integration.database_id) {
+                localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID, integration.database_id);
+              }
+            } else if (integration.integration_type === 'openai') {
+              localStorage.setItem(LOCAL_STORAGE_KEYS.OPENAI_API_KEY, integration.api_key);
+            }
+          });
+          setLoading(false);
+          return;
         }
       }
 
@@ -172,7 +127,7 @@ export const useIntegrations = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, supabase]);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -190,8 +145,8 @@ export const useIntegrations = () => {
   };
 
   const saveIntegration = async (type: string, apiKey: string, databaseId?: string): Promise<boolean> => {
-    if (!user) {
-      console.error('❌ Cannot save integration: missing user');
+    if (!user || !supabase) {
+      console.error('❌ Cannot save integration: missing user or supabase client');
       toast({
         title: "Authentication Required",
         description: "Please sign in to save integrations.",
@@ -200,8 +155,69 @@ export const useIntegrations = () => {
       return false;
     }
 
+    if (!supabaseAvailable) {
+      toast({
+        title: "❌ Save Failed",
+        description: "Database connection is not available. Please check your network.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     try {
-      // Always save to localStorage first for immediate availability
+      const { data: existing, error: checkError } = await supabase
+        .from('integrations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('integration_type', type);
+
+      if (checkError) {
+        console.error('❌ Error checking for existing integration:', checkError);
+        throw checkError;
+      }
+
+      let result;
+      if (existing && existing.length > 0) {
+        // Update existing integration
+        result = await supabase
+          .from('integrations')
+          .update({
+            api_key: apiKey,
+            database_id: databaseId || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .eq('integration_type', type)
+          .select()
+          .single();
+      } else {
+        // Insert new integration
+        result = await supabase
+          .from('integrations')
+          .insert([{
+            user_id: user.id,
+            integration_type: type,
+            api_key: apiKey,
+            database_id: databaseId || null
+          }])
+          .select()
+          .single();
+      }
+
+      if (result.error) {
+        console.error('❌ Supabase save error:', result.error);
+        throw result.error;
+      }
+      
+      const savedIntegration = result.data as Integration;
+      
+      // Update local state
+      setIntegrations(prev => {
+        const filtered = prev.filter(i => i.integration_type !== type);
+        return [...filtered, savedIntegration];
+      });
+
+      // Update localStorage as a cache after successful save
       if (type === 'notion') {
         localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY, apiKey);
         if (databaseId) {
@@ -212,111 +228,10 @@ export const useIntegrations = () => {
       } else if (type === 'openai') {
         localStorage.setItem(LOCAL_STORAGE_KEYS.OPENAI_API_KEY, apiKey);
       }
-
-      // Create local integration object
-      const newIntegration: Integration = {
-        id: `local-${type}`,
-        user_id: user.id,
-        integration_type: type,
-        api_key: apiKey,
-        database_id: databaseId || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      if (supabaseAvailable) {
-        try {
-          // Add increased timeout to database operations
-          const checkPromise = supabase
-            .from('integrations')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('integration_type', type);
-
-          const checkTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database check timeout')), 30000) // Increased from 20000 to 30000
-          );
-
-          const { data: existingIntegrations, error: fetchError } = await Promise.race([checkPromise, checkTimeout]) as { data: { id: string }[], error: Error | null };
-
-          if (fetchError) {
-            console.error('❌ Error checking existing integration:', fetchError);
-            throw fetchError;
-          }
-
-          let result;
-          if (existingIntegrations && existingIntegrations.length > 0) {
-            // UPDATE existing integration
-            const updatePromise = supabase
-              .from('integrations')
-              .update({
-                api_key: apiKey,
-                database_id: databaseId || null,
-                updated_at: new Date().toISOString()
-              })
-              .eq('user_id', user.id)
-              .eq('integration_type', type)
-              .select()
-              .single();
-
-            const updateTimeout = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Database update timeout')), 30000) // Increased from 20000 to 30000
-            );
-
-            result = await Promise.race([updatePromise, updateTimeout]);
-          } else {
-            // INSERT new integration
-            const insertPromise = supabase
-              .from('integrations')
-              .insert([{
-                user_id: user.id,
-                integration_type: type,
-                api_key: apiKey,
-                database_id: databaseId || null
-              }])
-              .select()
-              .single();
-
-            const insertTimeout = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Database insert timeout')), 30000) // Increased from 20000 to 30000
-            );
-
-            result = await Promise.race([insertPromise, insertTimeout]);
-          }
-
-          if ((result as { error: Error | null }).error) {
-            console.error('❌ Supabase save error:', (result as { error: Error | null }).error);
-            throw (result as { error: Error | null }).error;
-          }
-          
-          // Update local state with the database integration
-          const savedIntegration = (result as { data: Integration }).data;
-          setIntegrations(prev => {
-            const filtered = prev.filter(i => i.integration_type !== type);
-            const updated = [...filtered, savedIntegration];
-            return updated;
-          });
-
-        } catch (dbError) {
-          // Continue with localStorage-only integration
-          setIntegrations(prev => {
-            const filtered = prev.filter(i => i.integration_type !== type);
-            const updated = [...filtered, newIntegration];
-            return updated;
-          });
-        }
-      } else {
-        // Update local state with localStorage integration
-        setIntegrations(prev => {
-          const filtered = prev.filter(i => i.integration_type !== type);
-          const updated = [...filtered, newIntegration];
-          return updated;
-        });
-      }
       
       toast({
         title: "✅ Settings Saved!",
-        description: `Your ${type} API key has been saved ${supabaseAvailable ? 'to the database' : 'to local storage'}.`,
+        description: `Your ${type} API key has been saved to the database.`,
       });
       
       return true;
@@ -334,8 +249,8 @@ export const useIntegrations = () => {
   };
 
   const deleteIntegration = async (type: string): Promise<boolean> => {
-    if (!user) {
-      console.error('❌ Cannot delete integration: missing user');
+    if (!user || !supabase) {
+      console.error('❌ Cannot delete integration: missing user or supabase client');
       return false;
     }
     
@@ -349,25 +264,15 @@ export const useIntegrations = () => {
       }
 
       if (supabaseAvailable) {
-        try {
-          const deletePromise = supabase
-            .from('integrations')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('integration_type', type);
+        const { error } = await supabase
+          .from('integrations')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('integration_type', type);
 
-          const deleteTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database delete timeout')), 30000) // Increased from 20000 to 30000
-          );
-
-          const { error } = await Promise.race([deletePromise, deleteTimeout]) as { error: Error | null };
-            
-          if (error) {
-            console.error('❌ Supabase delete error:', error);
-            throw error;
-          }
-        } catch (dbError) {
-          // In case of error, local storage is already cleared.
+        if (error) {
+          console.error('❌ Supabase delete error:', error);
+          // Still attempt to clear local state and show success to user
         }
       }
 

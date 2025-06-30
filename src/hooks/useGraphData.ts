@@ -3,8 +3,7 @@ import { useAuth } from '@clerk/clerk-react';
 import { useIntegrations } from '@/hooks/useIntegrations';
 import { useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-
-import { supabase } from '@/lib/supabase';
+import { useSupabaseClient } from './useSupabaseClient';
 import { toast } from '@/components/ui/use-toast';
 import { sampleNodes, sampleConnections } from '@/data/sample-data';
 
@@ -34,6 +33,7 @@ export interface GraphConnection {
 // Hook definition
 export const useGraphData = () => {
   const { isSignedIn, userId } = useAuth();
+  const supabase = useSupabaseClient();
   const { getIntegration } = useIntegrations();
   const [searchParams, setSearchParams] = useSearchParams();
   const [nodes, setNodes] = useState<GraphNode[]>([]);
@@ -95,7 +95,7 @@ export const useGraphData = () => {
   }, [isSignedIn, userId, dataInitialized]);
 
   const loadPublicSharingStatus = async () => {
-    if (!userId) return;
+    if (!userId || !supabase) return;
 
     try {
       const { data, error } = await supabase
@@ -119,7 +119,7 @@ export const useGraphData = () => {
   };
 
   const togglePublicSharing = async (enabled: boolean): Promise<void> => {
-    if (!isSignedIn || !userId) {
+    if (!isSignedIn || !userId || !supabase) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to share your graph.",
@@ -188,7 +188,7 @@ export const useGraphData = () => {
 
   // Sync data from Notion via Edge Function
   const handleSync = useCallback(async () => {
-    if (!isSignedIn || !userId) {
+    if (!isSignedIn || !userId || !supabase) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to sync with Notion.",
@@ -285,7 +285,7 @@ export const useGraphData = () => {
     } finally {
       setIsSyncing(false);
     }
-  }, [isSignedIn, userId, notionIntegration, isPublic, publicId]);
+  }, [isSignedIn, userId, notionIntegration, isPublic, publicId, supabase]);
 
   // Fetch data on mount and when user changes - only if data not already initialized
   useEffect(() => {
@@ -322,6 +322,16 @@ export const useGraphData = () => {
   const fetchPublicGraph = async (publicId: string) => {
     setIsLoading(true);
     console.log('🔗 Fetching public graph with ID:', publicId);
+
+    if (!supabase) {
+      toast({
+        title: "Error",
+        description: "Database client not available.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const { data: graph, error } = await supabase
