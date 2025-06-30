@@ -25,6 +25,44 @@ export const useIntegrations = () => {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Test Supabase connection
+  const testSupabaseConnection = async (): Promise<boolean> => {
+    try {
+      console.log('🔍 Testing Supabase connection...');
+      
+      // Test 1: Check if we can get the current session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('❌ Supabase session test failed:', sessionError);
+        return false;
+      }
+      console.log('✅ Supabase session test passed');
+
+      // Test 2: Try a simple query (with timeout)
+      const queryPromise = supabase
+        .from('integrations')
+        .select('count')
+        .limit(1);
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), 5000)
+      );
+
+      const { error: queryError } = await Promise.race([queryPromise, timeoutPromise]) as any;
+      
+      if (queryError) {
+        console.error('❌ Supabase query test failed:', queryError);
+        return false;
+      }
+      
+      console.log('✅ Supabase connection test passed');
+      return true;
+    } catch (error) {
+      console.error('❌ Supabase connection test failed:', error);
+      return false;
+    }
+  };
+
   const fetchIntegrations = useCallback(async () => {
     if (!user) {
       console.log('❌ No user available for integrations fetch');
@@ -82,23 +120,32 @@ export const useIntegrations = () => {
         });
       }
 
-      // Try to fetch from database as backup (non-blocking)
-      try {
-        const { data: dbIntegrations, error } = await supabase
-          .from('integrations')
-          .select('*')
-          .eq('user_id', user.id);
+      // Test Supabase connection before attempting database operations
+      const isSupabaseConnected = await testSupabaseConnection();
+      
+      if (isSupabaseConnected) {
+        try {
+          console.log('🔍 Attempting to fetch from database...');
+          const { data: dbIntegrations, error } = await supabase
+            .from('integrations')
+            .select('*')
+            .eq('user_id', user.id);
 
-        if (!error && dbIntegrations) {
-          console.log('📥 Found database integrations:', dbIntegrations.length);
-          // Merge database integrations with local storage (local storage takes priority)
-          const dbIntegrationsFiltered = dbIntegrations.filter(dbInt => 
-            !localIntegrations.some(localInt => localInt.integration_type === dbInt.integration_type)
-          );
-          localIntegrations.push(...dbIntegrationsFiltered);
+          if (!error && dbIntegrations) {
+            console.log('📥 Found database integrations:', dbIntegrations.length);
+            // Merge database integrations with local storage (local storage takes priority)
+            const dbIntegrationsFiltered = dbIntegrations.filter(dbInt => 
+              !localIntegrations.some(localInt => localInt.integration_type === dbInt.integration_type)
+            );
+            localIntegrations.push(...dbIntegrationsFiltered);
+          } else if (error) {
+            console.warn('⚠️ Database fetch error:', error);
+          }
+        } catch (dbError) {
+          console.warn('⚠️ Database fetch failed:', dbError);
         }
-      } catch (dbError) {
-        console.warn('⚠️ Database fetch failed, using local storage only:', dbError);
+      } else {
+        console.warn('⚠️ Supabase connection failed, using local storage only');
       }
 
       console.log('✅ Loaded integrations:', localIntegrations.map(i => ({ 
@@ -147,6 +194,7 @@ export const useIntegrations = () => {
 
   const saveIntegration = async (type: string, apiKey: string, databaseId?: string): Promise<boolean> => {
     console.log(`💾 === SAVE ${type.toUpperCase()} INTEGRATION STARTED ===`);
+    const startTime = Date.now();
     
     if (!user) {
       console.error('❌ Cannot save integration: missing user');
@@ -167,23 +215,22 @@ export const useIntegrations = () => {
     });
 
     try {
-      // Save to local storage (temporary solution)
+      // Save to local storage (primary method)
+      console.log('💾 Step 1: Saving to localStorage...');
       if (type === 'notion') {
-        console.log('💾 Storing Notion credentials in localStorage...');
         localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_API_KEY, apiKey);
         if (databaseId) {
           localStorage.setItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID, databaseId);
-          console.log('💾 Stored database ID in localStorage');
         } else {
           localStorage.removeItem(LOCAL_STORAGE_KEYS.NOTION_DATABASE_ID);
-          console.log('💾 Removed database ID from localStorage');
         }
       } else if (type === 'openai') {
-        console.log('💾 Storing OpenAI credentials in localStorage...');
         localStorage.setItem(LOCAL_STORAGE_KEYS.OPENAI_API_KEY, apiKey);
       }
+      console.log('✅ Step 1 completed: localStorage save successful');
 
       // Update local state
+      console.log('💾 Step 2: Updating local state...');
       const newIntegration: Integration = {
         id: `local-${type}`,
         user_id: user.id,
@@ -203,47 +250,60 @@ export const useIntegrations = () => {
         })));
         return updated;
       });
+      console.log('✅ Step 2 completed: Local state updated');
 
       // Try to save to database in background (non-blocking)
-      try {
-        const existingIntegration = integrations.find(i => i.integration_type === type && !i.id.startsWith('local-'));
-        
-        if (existingIntegration) {
-          console.log('🔄 Updating existing database integration...');
-          await supabase
-            .from('integrations')
-            .update({
-              api_key: apiKey,
-              database_id: databaseId || null,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingIntegration.id);
-        } else {
-          console.log('➕ Creating new database integration...');
-          await supabase
-            .from('integrations')
-            .insert([{
-              user_id: user.id,
-              integration_type: type,
-              api_key: apiKey,
-              database_id: databaseId || null
-            }]);
+      console.log('💾 Step 3: Attempting database backup save...');
+      const isSupabaseConnected = await testSupabaseConnection();
+      
+      if (isSupabaseConnected) {
+        try {
+          const existingIntegration = integrations.find(i => i.integration_type === type && !i.id.startsWith('local-'));
+          
+          if (existingIntegration) {
+            console.log('🔄 Updating existing database integration...');
+            const { error } = await supabase
+              .from('integrations')
+              .update({
+                api_key: apiKey,
+                database_id: databaseId || null,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingIntegration.id);
+              
+            if (error) throw error;
+          } else {
+            console.log('➕ Creating new database integration...');
+            const { error } = await supabase
+              .from('integrations')
+              .insert([{
+                user_id: user.id,
+                integration_type: type,
+                api_key: apiKey,
+                database_id: databaseId || null
+              }]);
+              
+            if (error) throw error;
+          }
+          console.log('✅ Step 3 completed: Database backup successful');
+        } catch (dbError) {
+          console.warn('⚠️ Step 3 warning: Database save failed, but localStorage succeeded:', dbError);
         }
-        console.log('✅ Also saved to database as backup');
-      } catch (dbError) {
-        console.warn('⚠️ Database save failed, but local storage succeeded:', dbError);
+      } else {
+        console.warn('⚠️ Step 3 skipped: Supabase connection unavailable');
       }
 
+      const endTime = Date.now();
       console.log(`✅ === SAVE ${type.toUpperCase()} INTEGRATION SUCCESSFUL ===`);
-      console.log('✅ Integration saved successfully to localStorage');
+      console.log(`⏱️ Total save time: ${endTime - startTime}ms`);
       
-      // Note: We don't show a toast here as the calling component will handle it
       return true;
     } catch (error) {
+      const endTime = Date.now();
       console.error(`❌ === SAVE ${type.toUpperCase()} INTEGRATION FAILED ===`);
+      console.error(`⏱️ Failed after: ${endTime - startTime}ms`);
       console.error('❌ Unexpected error saving integration:', error);
       
-      // Note: We don't show a toast here as the calling component will handle it
       return false;
     }
   };
@@ -280,24 +340,27 @@ export const useIntegrations = () => {
       });
 
       // Try to delete from database in background (non-blocking)
-      try {
-        const integration = integrations.find(i => i.integration_type === type && !i.id.startsWith('local-'));
-        if (integration) {
-          console.log('🗑️ Deleting from database...');
-          await supabase
-            .from('integrations')
-            .delete()
-            .eq('id', integration.id);
-          console.log('✅ Also deleted from database');
+      const isSupabaseConnected = await testSupabaseConnection();
+      
+      if (isSupabaseConnected) {
+        try {
+          const integration = integrations.find(i => i.integration_type === type && !i.id.startsWith('local-'));
+          if (integration) {
+            console.log('🗑️ Deleting from database...');
+            const { error } = await supabase
+              .from('integrations')
+              .delete()
+              .eq('id', integration.id);
+              
+            if (error) throw error;
+            console.log('✅ Also deleted from database');
+          }
+        } catch (dbError) {
+          console.warn('⚠️ Database delete failed, but local storage cleared:', dbError);
         }
-      } catch (dbError) {
-        console.warn('⚠️ Database delete failed, but local storage cleared:', dbError);
       }
 
       console.log(`✅ === DELETE ${type.toUpperCase()} INTEGRATION SUCCESSFUL ===`);
-      console.log('✅ Integration deleted successfully from localStorage');
-      
-      // Note: We don't show a toast here as the calling component will handle it
       return true;
     } catch (error) {
       console.error(`❌ === DELETE ${type.toUpperCase()} INTEGRATION FAILED ===`);

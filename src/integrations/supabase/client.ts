@@ -6,14 +6,52 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL) {
+  console.error('❌ Missing VITE_SUPABASE_URL environment variable');
   throw new Error('Missing VITE_SUPABASE_URL environment variable. Please check your .env file.');
 }
 
 if (!SUPABASE_ANON_KEY) {
+  console.error('❌ Missing VITE_SUPABASE_ANON_KEY environment variable');
   throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable. Please check your .env file.');
 }
+
+console.log('🔧 Supabase Client Configuration:', {
+  url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 20)}...` : 'MISSING',
+  anonKey: SUPABASE_ANON_KEY ? `${SUPABASE_ANON_KEY.substring(0, 20)}...` : 'MISSING',
+  hasUrl: !!SUPABASE_URL,
+  hasAnonKey: !!SUPABASE_ANON_KEY
+});
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  },
+  db: {
+    schema: 'public'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'supabase-js-web'
+    }
+  }
+});
+
+// Test connection on initialization
+supabase.auth.getSession().then(({ data: { session }, error }) => {
+  if (error) {
+    console.error('❌ Supabase auth session error:', error);
+  } else {
+    console.log('✅ Supabase client initialized successfully', {
+      hasSession: !!session,
+      userId: session?.user?.id || 'none'
+    });
+  }
+}).catch(err => {
+  console.error('❌ Supabase initialization error:', err);
+});
