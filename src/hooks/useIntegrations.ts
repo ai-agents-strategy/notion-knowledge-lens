@@ -26,7 +26,7 @@ export const useIntegrations = () => {
   const [loading, setLoading] = useState(true);
   const [supabaseAvailable, setSupabaseAvailable] = useState(false);
 
-  // Test Supabase connection
+  // Test Supabase connection with more comprehensive checks
   const testSupabaseConnection = async (): Promise<boolean> => {
     try {
       console.log('🔍 Testing Supabase connection...');
@@ -39,25 +39,25 @@ export const useIntegrations = () => {
       }
       console.log('✅ Supabase session test passed');
 
-      // Test 2: Try a simple query (with timeout)
-      const queryPromise = supabase
-        .from('integrations')
-        .select('count')
-        .limit(1);
-
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timeout')), 5000)
-      );
-
-      const { error: queryError } = await Promise.race([queryPromise, timeoutPromise]) as any;
-      
-      if (queryError) {
-        console.error('❌ Supabase query test failed:', queryError);
+      // Test 2: Try a simple query with proper error handling
+      try {
+        const { data, error: queryError } = await supabase
+          .from('integrations')
+          .select('count')
+          .limit(1);
+        
+        if (queryError) {
+          console.error('❌ Supabase query test failed:', queryError);
+          return false;
+        }
+        
+        console.log('✅ Supabase query test passed');
+        return true;
+      } catch (queryError) {
+        console.error('❌ Supabase query test failed with exception:', queryError);
         return false;
       }
       
-      console.log('✅ Supabase connection test passed');
-      return true;
     } catch (error) {
       console.error('❌ Supabase connection test failed:', error);
       return false;
@@ -70,6 +70,7 @@ export const useIntegrations = () => {
       console.log('❌ No user available for integrations fetch');
       setIntegrations([]);
       setLoading(false);
+      setSupabaseAvailable(false);
       return;
     }
 
@@ -156,6 +157,7 @@ export const useIntegrations = () => {
 
     } catch (error) {
       console.error('❌ Unexpected error in fetchIntegrations:', error);
+      setSupabaseAvailable(false);
       toast({
         title: "Warning",
         description: "Using local storage for integrations due to database issues.",
@@ -173,6 +175,7 @@ export const useIntegrations = () => {
     } else if (isLoaded && !user) {
       console.log('🔌 No user, clearing integrations.');
       setIntegrations([]);
+      setSupabaseAvailable(false);
       setLoading(false);
     }
   }, [user, isLoaded, fetchIntegrations]);
@@ -218,7 +221,7 @@ export const useIntegrations = () => {
       if (supabaseAvailable) {
         console.log('💾 Step 1: Saving to Supabase database...');
         
-        // Check if integration already exists
+        // First, check if integration already exists
         const { data: existingIntegrations, error: fetchError } = await supabase
           .from('integrations')
           .select('id')
@@ -266,12 +269,18 @@ export const useIntegrations = () => {
         }
 
         console.log('✅ Step 1 completed: Supabase save successful');
+        console.log('📊 Saved integration data:', result.data);
         
         // Update local state with the saved integration
         const savedIntegration = result.data;
         setIntegrations(prev => {
           const filtered = prev.filter(i => i.integration_type !== type);
-          return [...filtered, savedIntegration];
+          const updated = [...filtered, savedIntegration];
+          console.log('🔄 Updated integrations state:', updated.map(i => ({ 
+            type: i.integration_type, 
+            source: i.id.startsWith('local-') ? 'localStorage' : 'database' 
+          })));
+          return updated;
         });
 
         // Also save to localStorage for offline access
@@ -316,7 +325,12 @@ export const useIntegrations = () => {
 
         setIntegrations(prev => {
           const filtered = prev.filter(i => i.integration_type !== type);
-          return [...filtered, newIntegration];
+          const updated = [...filtered, newIntegration];
+          console.log('🔄 Updated integrations state:', updated.map(i => ({ 
+            type: i.integration_type, 
+            source: i.id.startsWith('local-') ? 'localStorage' : 'database' 
+          })));
+          return updated;
         });
         
         console.log('✅ localStorage save completed');
@@ -328,7 +342,7 @@ export const useIntegrations = () => {
       
       toast({
         title: "✅ Settings Saved!",
-        description: `Your ${type} API key has been saved successfully.`,
+        description: `Your ${type} API key has been saved ${supabaseAvailable ? 'to the database' : 'to local storage'}.`,
       });
       
       return true;

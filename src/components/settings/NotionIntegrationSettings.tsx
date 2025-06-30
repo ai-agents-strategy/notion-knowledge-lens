@@ -5,6 +5,7 @@ import { Key, CheckCircle, Database, HardDrive } from "lucide-react";
 import { NotionSaveButton } from "./NotionSaveButton";
 import { NotionSyncButton } from "./NotionSyncButton";
 import { NotionClearButton } from "./NotionClearButton";
+import { useIntegrations } from "@/hooks/useIntegrations";
 
 interface NotionIntegrationSettingsProps {
   notionApiKey: string;
@@ -35,6 +36,8 @@ export const NotionIntegrationSettings = ({
   onClearSuccess,
   onClearError,
 }: NotionIntegrationSettingsProps) => {
+  const { supabaseAvailable } = useIntegrations();
+
   return (
     <Card>
       <CardHeader>
@@ -45,8 +48,17 @@ export const NotionIntegrationSettings = ({
         <CardDescription>
           Connect your Notion workspace to visualize your actual database relationships.
           <span className="flex items-center gap-1 mt-1 text-blue-600">
-            <HardDrive className="w-3 h-3" />
-            Currently stored in local storage (temporary)
+            {supabaseAvailable ? (
+              <>
+                <Database className="w-3 h-3" />
+                Stored in secure database
+              </>
+            ) : (
+              <>
+                <HardDrive className="w-3 h-3" />
+                Stored in local storage (temporary)
+              </>
+            )}
           </span>
         </CardDescription>
       </CardHeader>
@@ -62,7 +74,7 @@ export const NotionIntegrationSettings = ({
             onChange={(e) => setNotionApiKey(e.target.value)}
           />
           <p className="text-xs text-gray-500">
-            Your API key is stored securely in your browser's local storage
+            Your API key is stored {supabaseAvailable ? 'securely in the database' : 'in your browser\'s local storage'}
           </p>
         </div>
 
@@ -121,6 +133,23 @@ export const NotionIntegrationSettings = ({
             </div>
           </div>
         )}
+
+        {/* Database Status Indicator */}
+        <div className={`p-3 rounded-lg ${supabaseAvailable ? 'bg-green-50 dark:bg-green-950' : 'bg-orange-50 dark:bg-orange-950'}`}>
+          <p className={`text-sm ${supabaseAvailable ? 'text-green-800 dark:text-green-200' : 'text-orange-800 dark:text-orange-200'}`}>
+            {supabaseAvailable ? (
+              <>
+                <Database className="w-4 h-4 inline mr-1" />
+                Connected to database - your API keys are stored securely and will sync across devices.
+              </>
+            ) : (
+              <>
+                <HardDrive className="w-4 h-4 inline mr-1" />
+                Database unavailable - using local storage. Your keys are safe but only available on this device.
+              </>
+            )}
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
