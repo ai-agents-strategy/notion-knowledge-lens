@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Database, Settings, Eye, EyeOff, LogIn, UserPlus, GalleryVertical as Gallery } from "lucide-react";
+import { Database, Settings, Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { UserButton } from "@/components/UserButton";
@@ -83,12 +83,6 @@ export const GraphHeader = ({
               )}
             </Button>
           )}
-
-          {/* Gallery Button */}
-          <Button variant="outline" size="sm" onClick={() => navigate('/gallery')} className="flex items-center gap-2">
-            <Gallery className="w-4 h-4" />
-            Gallery
-          </Button>
 
           {/* Share Graph Button - only show for signed in users */}
           {isSignedIn && (

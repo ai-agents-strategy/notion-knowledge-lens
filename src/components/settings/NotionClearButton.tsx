@@ -43,7 +43,7 @@ export const NotionClearButton = ({
 
   return (
     <Button variant="outline" onClick={handleClear}>
-      Clear from {supabaseAvailable ? 'Database' : 'Local Storage'}
+      Clear from Database
     </Button>
   );
 };

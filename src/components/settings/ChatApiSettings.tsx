@@ -35,17 +35,8 @@ export const ChatApiSettings = ({
         <CardDescription>
           Configure your AI chat experience with enhanced models.
           <span className="flex items-center gap-1 mt-1 text-blue-600">
-            {supabaseAvailable ? (
-              <>
-                <Database className="w-3 h-3" />
-                Stored in secure database
-              </>
-            ) : (
-              <>
-                <HardDrive className="w-3 h-3" />
-                Stored in local storage (temporary)
-              </>
-            )}
+            <Database className="w-3 h-3" />
+            Stored in secure database
           </span>
         </CardDescription>
       </CardHeader>
@@ -83,7 +74,7 @@ export const ChatApiSettings = ({
 
         <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg">
           <p className="font-medium mb-1">Note:</p>
-          <p>• API key is stored {supabaseAvailable ? 'securely in the database' : 'in your browser\'s local storage'}</p>
+          <p>• API key is stored securely in the database</p>
           <p>• Without an API key, you'll use the free model</p>
           <p>• Enhanced features include better responses and context understanding</p>
         </div>
@@ -91,7 +82,7 @@ export const ChatApiSettings = ({
         <div className="flex gap-3 pt-4">
           <Button onClick={handleSaveChatSettings} disabled={isLoading}>
             <Save className="w-4 h-4 mr-2" />
-            {isLoading ? "Saving..." : `Save to ${supabaseAvailable ? 'Database' : 'Local Storage'}`}
+            {isLoading ? "Saving..." : "Save to Database"}
           </Button>
           <Button variant="outline" onClick={handleClearChatSettings} disabled={isLoading}>
             Clear Settings

@@ -7,16 +7,26 @@ import { NotionSyncButton } from "./NotionSyncButton";
 import { NotionClearButton } from "./NotionClearButton";
 import { useIntegrations } from "@/hooks/useIntegrations";
 
+interface SyncedDatabase {
+  title?: Array<{ plain_text: string }>;
+}
+
+interface SyncData {
+  results?: SyncedDatabase[];
+  nodes?: Record<string, unknown>[];
+  connections?: Record<string, unknown>[];
+}
+
 interface NotionIntegrationSettingsProps {
   notionApiKey: string;
   setNotionApiKey: (key: string) => void;
   databaseId: string;
   setDatabaseId: (id: string) => void;
   syncStatus: 'idle' | 'success' | 'error';
-  syncedDatabases: Array<{ title?: Array<{ plain_text: string }> }>;
+  syncedDatabases: SyncedDatabase[];
   onSaveSuccess?: () => void;
   onSaveError?: (error: string) => void;
-  onSyncSuccess?: (data: any) => void;
+  onSyncSuccess?: (data: SyncData) => void;
   onSyncError?: (error: string) => void;
   onClearSuccess?: () => void;
   onClearError?: (error: string) => void;
@@ -48,17 +58,8 @@ export const NotionIntegrationSettings = ({
         <CardDescription>
           Connect your Notion workspace to visualize your actual database relationships.
           <span className="flex items-center gap-1 mt-1 text-blue-600">
-            {supabaseAvailable ? (
-              <>
-                <Database className="w-3 h-3" />
-                Stored in secure database
-              </>
-            ) : (
-              <>
-                <HardDrive className="w-3 h-3" />
-                Stored in local storage (temporary)
-              </>
-            )}
+            <Database className="w-3 h-3" />
+            Stored in secure database
           </span>
         </CardDescription>
       </CardHeader>
@@ -74,7 +75,7 @@ export const NotionIntegrationSettings = ({
             onChange={(e) => setNotionApiKey(e.target.value)}
           />
           <p className="text-xs text-gray-500">
-            Your API key is stored {supabaseAvailable ? 'securely in the database' : 'in your browser\'s local storage'}
+            Your API key is stored securely in the database
           </p>
         </div>
 
@@ -135,19 +136,10 @@ export const NotionIntegrationSettings = ({
         )}
 
         {/* Database Status Indicator */}
-        <div className={`p-3 rounded-lg ${supabaseAvailable ? 'bg-green-50 dark:bg-green-950' : 'bg-orange-50 dark:bg-orange-950'}`}>
-          <p className={`text-sm ${supabaseAvailable ? 'text-green-800 dark:text-green-200' : 'text-orange-800 dark:text-orange-200'}`}>
-            {supabaseAvailable ? (
-              <>
-                <Database className="w-4 h-4 inline mr-1" />
-                Connected to database - your API keys are stored securely and will sync across devices.
-              </>
-            ) : (
-              <>
-                <HardDrive className="w-4 h-4 inline mr-1" />
-                Database unavailable - using local storage. Your keys are safe but only available on this device.
-              </>
-            )}
+        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950">
+          <p className="text-sm text-green-800 dark:text-green-200">
+            <Database className="w-4 h-4 inline mr-1" />
+            Connected to database - your API keys are stored securely and will sync across devices.
           </p>
         </div>
       </CardContent>

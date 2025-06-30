@@ -72,7 +72,7 @@ export const NotionSaveButton = ({
       disabled={isLoading || !notionApiKey.trim()}
     >
       <Save className="w-4 h-4 mr-2" />
-      {isLoading ? "Saving..." : `Save to ${supabaseAvailable ? 'Database' : 'Local Storage'}`}
+      {isLoading ? "Saving..." : "Save to Database"}
     </Button>
   );
 };

@@ -17,7 +17,7 @@ interface ShareGraphProps {
   isLoading: boolean;
 }
 
-type VisibilityLevel = 'private' | 'unlisted' | 'gallery';
+type VisibilityLevel = 'private' | 'unlisted';
 
 export const ShareGraph = ({ 
   publicId, 
@@ -73,8 +73,7 @@ export const ShareGraph = ({
       
       const visibilityLabels = {
         private: 'Private',
-        unlisted: 'Unlisted',
-        gallery: 'Gallery'
+        unlisted: 'Unlisted'
       };
 
       toast({
@@ -129,8 +128,6 @@ export const ShareGraph = ({
         return <Lock className="w-4 h-4" />;
       case 'unlisted':
         return <Eye className="w-4 h-4" />;
-      case 'gallery':
-        return <Globe className="w-4 h-4" />;
       default:
         return <Lock className="w-4 h-4" />;
     }
@@ -142,8 +139,6 @@ export const ShareGraph = ({
         return 'Only you can see this graph';
       case 'unlisted':
         return 'Anyone with the link can view this graph';
-      case 'gallery':
-        return 'Public in gallery + anyone with link can view';
       default:
         return '';
     }
@@ -231,15 +226,6 @@ export const ShareGraph = ({
                           </div>
                         </div>
                       </SelectItem>
-                      <SelectItem value="gallery">
-                        <div className="flex items-center gap-2">
-                          <Globe className="w-4 h-4" />
-                          <div>
-                            <div className="font-medium">Gallery</div>
-                            <div className="text-xs text-gray-500">Public showcase + link sharing</div>
-                          </div>
-                        </div>
-                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-gray-500">
@@ -277,40 +263,21 @@ export const ShareGraph = ({
 
                 {/* Status Indicator */}
                 <div className={`p-3 rounded-lg ${
-                  visibility === 'gallery' 
-                    ? 'bg-green-50 dark:bg-green-950' 
-                    : visibility === 'unlisted'
+                  visibility === 'unlisted'
                     ? 'bg-blue-50 dark:bg-blue-950'
                     : 'bg-gray-50 dark:bg-gray-900'
                 }`}>
                   <div className="flex items-center gap-2">
                     {getVisibilityIcon(visibility)}
                     <p className={`text-xs ${
-                      visibility === 'gallery' 
-                        ? 'text-green-800 dark:text-green-200' 
-                        : visibility === 'unlisted'
+                      visibility === 'unlisted'
                         ? 'text-blue-800 dark:text-blue-200'
                         : 'text-gray-600 dark:text-gray-400'
                     }`}>
-                      {visibility === 'gallery' && 'Your graph is featured in the public gallery and accessible via link.'}
                       {visibility === 'unlisted' && 'Your graph is accessible to anyone with the link.'}
                       {visibility === 'private' && 'Your graph is private and only visible to you.'}
                     </p>
                   </div>
-                  
-                  {visibility === 'gallery' && (
-                    <div className="mt-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => window.open('/gallery', '_blank')}
-                        className="text-xs"
-                      >
-                        <Users className="w-3 h-3 mr-1" />
-                        View in Gallery
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </>
             )}

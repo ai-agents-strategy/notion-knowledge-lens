@@ -137,17 +137,8 @@ const Settings = () => {
             <Info className="h-4 w-4" />
             <AlertDescription>
               <div className="flex items-center gap-2">
-                {supabaseAvailable ? (
-                  <>
-                    <Database className="w-4 h-4 text-green-600" />
-                    <strong>Database Connected:</strong> API keys are being saved to the secure database.
-                  </>
-                ) : (
-                  <>
-                    <HardDrive className="w-4 h-4 text-orange-600" />
-                    <strong>Offline Mode:</strong> API keys are being saved to local storage while database is unavailable.
-                  </>
-                )}
+                <Database className="w-4 h-4 text-green-600" />
+                <strong>Database Connected:</strong> API keys are being saved to the secure database.
               </div>
             </AlertDescription>
           </Alert>
