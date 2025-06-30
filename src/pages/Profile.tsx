@@ -23,7 +23,8 @@ import {
   Download,
   Save,
   ExternalLink,
-  Globe
+  Globe,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -230,6 +231,8 @@ const Profile = () => {
 
     setIsDeleting(true);
     try {
+      console.log('🗑️ Starting account deletion process...');
+      
       // Delete user data from our tables
       await supabase.from('graphs').delete().eq('user_id', user.id);
       await supabase.from('integrations').delete().eq('user_id', user.id);
@@ -238,21 +241,19 @@ const Profile = () => {
       // Clear local storage
       localStorage.clear();
 
-      // Sign out and delete auth user
-      await supabase.auth.admin.deleteUser(user.id);
-      
       toast({
-        title: "Account deleted",
-        description: "Your account and all data have been permanently deleted.",
+        title: "Account data deleted",
+        description: "Your account data has been deleted. Signing you out...",
       });
 
-      // Redirect to home
-      window.location.href = '/';
+      // Sign out the user
+      await signOut();
+      
     } catch (error) {
       console.error('Error deleting account:', error);
       toast({
         title: "Deletion failed",
-        description: "Failed to delete your account. Please contact support.",
+        description: "Failed to delete your account data. Please try again or contact support.",
         variant: "destructive"
       });
     } finally {
@@ -597,16 +598,25 @@ const Profile = () => {
 
               <div className="flex items-center justify-between p-4 border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-950">
                 <div>
-                  <h4 className="font-medium text-red-800 dark:text-red-200">Delete Account</h4>
+                  <h4 className="font-medium text-red-800 dark:text-red-200">Delete Account Data</h4>
                   <p className="text-sm text-red-600 dark:text-red-400">
-                    Permanently delete your account and all associated data
+                    Permanently delete your account data and sign out
                   </p>
                 </div>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" disabled={isDeleting}>
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {isDeleting ? 'Deleting...' : 'Delete Account'}
+                      {isDeleting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Data
+                        </>
+                      )}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -614,19 +624,21 @@ const Profile = () => {
                       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                       <AlertDialogDescription>
                         This action cannot be undone. This will permanently delete your account
-                        and remove all your data from our servers, including:
+                        data from our servers, including:
                         <ul className="list-disc list-inside mt-2 space-y-1">
                           <li>All your knowledge graphs</li>
                           <li>Integration settings and API keys</li>
                           <li>Profile information</li>
                           <li>Public shared graphs</li>
                         </ul>
+                        <br />
+                        <strong>Note:</strong> This will delete your data and sign you out, but your Supabase auth account will remain. You can sign back in anytime to create new data.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction onClick={deleteAccount} className="bg-red-600 hover:bg-red-700">
-                        Yes, delete my account
+                        Yes, delete my data
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

@@ -47,6 +47,8 @@ export const useAuthState = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 Auth state change:', event, session?.user?.id || 'no user');
+      
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoaded(true);
@@ -54,6 +56,16 @@ export const useAuthState = () => {
       // Handle sign-in events (including OAuth)
       if (event === 'SIGNED_IN' && session?.user) {
         await createUserProfile(session.user);
+      }
+
+      // Handle sign-out events
+      if (event === 'SIGNED_OUT') {
+        console.log('🔐 User signed out, clearing local data');
+        // Clear any cached data
+        setUser(null);
+        setSession(null);
+        // Optionally clear localStorage if needed
+        // localStorage.clear();
       }
     });
 
@@ -91,7 +103,36 @@ export const useAuthState = () => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      console.log('🔐 Starting sign out process...');
+      
+      // Clear local state first
+      setUser(null);
+      setSession(null);
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ Sign out error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Sign out successful');
+      
+      // Optional: Clear localStorage if you want to remove all cached data
+      // localStorage.clear();
+      
+      // Redirect to home page
+      window.location.href = '/';
+      
+    } catch (error) {
+      console.error('❌ Sign out failed:', error);
+      // Even if there's an error, try to clear local state and redirect
+      setUser(null);
+      setSession(null);
+      window.location.href = '/';
+    }
   };
 
   return {
