@@ -51,13 +51,13 @@ const testConnection = async () => {
     // Test auth session with timeout
     const sessionPromise = supabase.auth.getSession();
     const sessionTimeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Auth session timeout')), 8000)
+      setTimeout(() => reject(new Error('Auth session timeout')), 30000)
     );
 
     const { data: { session }, error: sessionError } = await Promise.race([
       sessionPromise, 
       sessionTimeout
-    ]) as any;
+    ]) as { data: { session: import('@supabase/supabase-js').Session | null }, error: Error | null };
 
     if (sessionError) {
       console.warn('⚠️ Auth session test warning:', sessionError);
@@ -81,7 +81,7 @@ const testConnection = async () => {
     const { error: queryError } = await Promise.race([
       queryPromise, 
       queryTimeout
-    ]) as any;
+    ]) as { error: Error | null };
 
     if (queryError) {
       console.warn('⚠️ Database connectivity test warning:', queryError);

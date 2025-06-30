@@ -12,6 +12,8 @@ import Organization from "./pages/Organization";
 import PublicGraph from "./pages/PublicGraph";
 import SignInPage from "./pages/SignIn";
 import SignUpPage from "./pages/SignUp";
+import ForgotPasswordPage from "./pages/ForgotPassword";
+import ResetPasswordPage from "./pages/ResetPassword";
 import { AuthProvider } from "./components/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/public/graph/:publicId" element={<PublicGraph />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route
             path="/settings"
             element={

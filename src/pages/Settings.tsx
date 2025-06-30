@@ -7,8 +7,6 @@ import { SettingsHeader } from "@/components/SettingsHeader";
 import { ChatApiSettings } from "@/components/settings/ChatApiSettings";
 import { NotionIntegrationSettings } from "@/components/settings/NotionIntegrationSettings";
 import { NotionSetupInstructions } from "@/components/settings/NotionSetupInstructions";
-import { SupabaseConnectionTest } from "@/components/settings/SupabaseConnectionTest";
-import { SupabaseDebugTest } from "@/components/settings/SupabaseDebugTest";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -189,12 +187,6 @@ const Settings = () => {
               </AlertDescription>
             </Alert>
           )}
-
-          {/* Supabase Connection Test */}
-          <SupabaseConnectionTest />
-
-          {/* Debug Test Component */}
-          <SupabaseDebugTest />
 
           <ChatApiSettings
             openaiKey={openaiKey}

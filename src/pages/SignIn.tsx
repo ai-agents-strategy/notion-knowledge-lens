@@ -273,7 +273,15 @@ const SignInPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -285,9 +293,9 @@ const SignInPage = () => {
                 autoComplete="current-password"
               />
             </div>
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               disabled={isFormDisabled || !email.trim() || !password}
             >
               {isLoading ? (

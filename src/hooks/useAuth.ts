@@ -115,13 +115,13 @@ export const useAuthState = () => {
         // Get initial session with timeout
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session initialization timeout')), 10000)
+          setTimeout(() => reject(new Error('Session initialization timeout')), 30000)
         );
 
         const { data: { session }, error } = await Promise.race([
           sessionPromise, 
           timeoutPromise
-        ]) as any;
+        ]) as { data: { session: Session | null }, error: Error | null };
 
         if (!mounted) return;
 
@@ -226,7 +226,7 @@ export const useAuthState = () => {
       const { error } = await Promise.race([
         signOutPromise, 
         timeoutPromise
-      ]) as any;
+      ]) as { error: Error | null };
       
       if (error) {
         console.error('❌ Sign out error:', error);
