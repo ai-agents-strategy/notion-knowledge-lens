@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@clerk/clerk-react";
 import { useIntegrations } from "@/hooks/useIntegrations";
 
 interface NotionSaveButtonProps {
@@ -18,7 +18,7 @@ export const NotionSaveButton = ({
   onSaveSuccess, 
   onSaveError 
 }: NotionSaveButtonProps) => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { saveIntegration, supabaseAvailable } = useIntegrations();
   const [isLoading, setIsLoading] = useState(false);
 

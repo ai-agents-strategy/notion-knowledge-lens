@@ -2,7 +2,7 @@ import { ControlPanel } from "@/components/ControlPanel";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { GraphFilterControls } from "./GraphFilterControls";
 import { DetailedNodeView } from "./DetailedNodeView";

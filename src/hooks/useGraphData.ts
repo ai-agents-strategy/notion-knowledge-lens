@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@clerk/clerk-react';
 import { useIntegrations } from '@/hooks/useIntegrations';
 import { useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { sampleNodes, sampleConnections } from '@/data/sample-data';
 
@@ -33,7 +33,7 @@ export interface GraphConnection {
 
 // Hook definition
 export const useGraphData = () => {
-  const { user } = useAuth();
+  const { isSignedIn, userId } = useAuth();
   const { getIntegration } = useIntegrations();
   const [searchParams, setSearchParams] = useSearchParams();
   const [nodes, setNodes] = useState<GraphNode[]>([]);
@@ -89,19 +89,19 @@ export const useGraphData = () => {
 
   // Load public sharing status
   useEffect(() => {
-    if (user && dataInitialized) {
+    if (isSignedIn && userId && dataInitialized) {
       loadPublicSharingStatus();
     }
-  }, [user, dataInitialized]);
+  }, [isSignedIn, userId, dataInitialized]);
 
   const loadPublicSharingStatus = async () => {
-    if (!user) return;
+    if (!userId) return;
 
     try {
       const { data, error } = await supabase
         .from('graphs')
         .select('public_id')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -119,7 +119,7 @@ export const useGraphData = () => {
   };
 
   const togglePublicSharing = async (enabled: boolean): Promise<void> => {
-    if (!user) {
+    if (!isSignedIn || !userId) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to share your graph.",
@@ -137,7 +137,7 @@ export const useGraphData = () => {
         const { error } = await supabase
           .from('graphs')
           .upsert({
-            user_id: user.id,
+            user_id: userId,
             nodes: nodes,
             connections: connections,
             public_id: newPublicId,
@@ -158,7 +158,7 @@ export const useGraphData = () => {
         const { error } = await supabase
           .from('graphs')
           .update({ public_id: null })
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
 
         if (error) throw error;
 
@@ -188,7 +188,7 @@ export const useGraphData = () => {
 
   // Sync data from Notion via Edge Function
   const handleSync = useCallback(async () => {
-    if (!user) {
+    if (!isSignedIn || !userId) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to sync with Notion.",
@@ -263,7 +263,7 @@ export const useGraphData = () => {
             connections: fetchedConnections,
             updated_at: new Date().toISOString()
           })
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
       }
 
       toast({
@@ -285,13 +285,13 @@ export const useGraphData = () => {
     } finally {
       setIsSyncing(false);
     }
-  }, [user, notionIntegration, isPublic, publicId]);
+  }, [isSignedIn, userId, notionIntegration, isPublic, publicId]);
 
   // Fetch data on mount and when user changes - only if data not already initialized
   useEffect(() => {
     if (!dataInitialized) return;
 
-    if (!user) {
+    if (!isSignedIn) {
       console.log('ℹ️ No user, using sample data');
       if (nodes.length === 0) {
         setNodes(sampleNodes);
@@ -317,7 +317,7 @@ export const useGraphData = () => {
       }
       setIsLoading(false);
     }
-  }, [user, dataInitialized, nodes.length, realNodes.length, searchParams]);
+  }, [isSignedIn, dataInitialized, nodes.length, realNodes.length, searchParams]);
 
   const fetchPublicGraph = async (publicId: string) => {
     setIsLoading(true);
@@ -375,7 +375,7 @@ export const useGraphData = () => {
 
   // Toggle between real and sample data
   const toggleDataSource = () => {
-    if (!user) {
+    if (!isSignedIn) {
       console.error('❌ Cannot toggle data source: no user');
       return;
     }

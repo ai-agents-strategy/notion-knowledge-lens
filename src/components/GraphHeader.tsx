@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Database, Settings, Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { UserButton } from "@/components/UserButton";
+import { useAuth } from "@clerk/clerk-react";
+import UserButton from "@/components/UserButton";
 import { ShareGraph } from "@/components/ShareGraph";
 
 interface GraphHeaderProps {
@@ -85,23 +85,21 @@ export const GraphHeader = ({
           )}
 
           {/* Share Graph Button - only show for signed in users */}
-          {isSignedIn && (
-            <ShareGraph
-              publicId={publicId}
-              isPublic={isPublic}
-              onTogglePublic={onTogglePublicSharing}
-              onRevokeLink={onRevokePublicLink}
-              isLoading={shareLoading}
-            />
-          )}
-
-          <Button variant="outline" size="sm" onClick={() => navigate('/settings')} className="flex items-center gap-2">
-            <Settings className="w-4 h-4" />
-            Settings
-          </Button>
-
           {isSignedIn ? (
-            <UserButton />
+            <>
+              <ShareGraph
+                publicId={publicId}
+                isPublic={isPublic}
+                onTogglePublic={onTogglePublicSharing}
+                onRevokeLink={onRevokePublicLink}
+                isLoading={shareLoading}
+              />
+              <Button variant="outline" size="sm" onClick={() => navigate('/settings')} className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Settings
+              </Button>
+              <UserButton />
+            </>
           ) : (
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => navigate('/sign-in')} className="flex items-center gap-2">

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Send, MessageCircle, Minimize2, Maximize2, X, Bot } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 import { DatabaseNode, DatabaseConnection } from "@/types/graph";
 import { convertMarkdownToHtml } from "@/utils/markdownToHtml";

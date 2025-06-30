@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useUser } from '@clerk/clerk-react';
+import { supabase } from "@/lib/supabase";
 
 interface NotionSyncButtonProps {
   notionApiKey: string;
@@ -16,7 +16,7 @@ export const NotionSyncButton = ({
   onSyncSuccess, 
   onSyncError 
 }: NotionSyncButtonProps) => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSync = async () => {

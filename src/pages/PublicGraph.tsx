@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { KnowledgeGraph } from '@/components/KnowledgeGraph';
 import { DatabaseNode, DatabaseConnection } from '@/types/graph';
 import { Loader2, ServerCrash, Share2 } from 'lucide-react';

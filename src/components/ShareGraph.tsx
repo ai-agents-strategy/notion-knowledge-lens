@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '@clerk/clerk-react';
 
 interface ShareGraphProps {
   publicId: string | null;
@@ -26,7 +26,7 @@ export const ShareGraph = ({
   onRevokeLink,
   isLoading 
 }: ShareGraphProps) => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [visibility, setVisibility] = useState<VisibilityLevel>('private');
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);

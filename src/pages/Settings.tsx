@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info, CheckCircle, XCircle, Database, HardDrive } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@clerk/clerk-react";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { SettingsHeader } from "@/components/SettingsHeader";
 import { SettingsSidebar } from "@/components/SettingsSidebar";
@@ -9,8 +10,8 @@ import { ChatApiSettings } from "@/components/settings/ChatApiSettings";
 import { NotionIntegrationSettings } from "@/components/settings/NotionIntegrationSettings";
 import { NotionSetupInstructions } from "@/components/settings/NotionSetupInstructions";
 
-const Settings = () => {
-  const { user } = useAuth();
+const SettingsPage = () => {
+  const { user } = useUser();
   const { getIntegration, saveIntegration, deleteIntegration, loading: integrationsLoading, supabaseAvailable } = useIntegrations();
   
   // Notion state
@@ -195,6 +196,23 @@ const Settings = () => {
       </main>
     </div>
   );
+}
+
+const Settings = () => {
+  const { isLoaded, isSignedIn } = useUser();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      navigate("/sign-in");
+    }
+  }, [isLoaded, isSignedIn, navigate]);
+
+  if (!isLoaded || !isSignedIn) {
+    return null; // Or a loading spinner
+  }
+
+  return <SettingsPage />;
 };
 
 export default Settings;

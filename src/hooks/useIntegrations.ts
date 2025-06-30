@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useUser } from '@clerk/clerk-react';
+import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 
 interface Integration {
@@ -21,7 +21,7 @@ const LOCAL_STORAGE_KEYS = {
 };
 
 export const useIntegrations = () => {
-  const { user, isLoaded } = useAuth();
+  const { user, isLoaded } = useUser();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [supabaseAvailable, setSupabaseAvailable] = useState(false);
