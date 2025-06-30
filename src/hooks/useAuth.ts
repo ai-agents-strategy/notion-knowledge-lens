@@ -36,19 +36,59 @@ export const useAuthState = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoaded(true);
+
+      // Create profile for new users (especially OAuth users)
+      if (session?.user && !session.user.user_metadata?.profile_created) {
+        createUserProfile(session.user);
+      }
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoaded(true);
+
+      // Handle sign-in events (including OAuth)
+      if (event === 'SIGNED_IN' && session?.user) {
+        await createUserProfile(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const createUserProfile = async (user: User) => {
+    try {
+      // Check if profile already exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_user_id', user.id)
+        .single();
+
+      if (!existingProfile) {
+        // Create profile for new user
+        const { error } = await supabase
+          .from('profiles')
+          .insert({
+            clerk_user_id: user.id,
+            user_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+            user_email: user.email || '',
+          });
+
+        if (error) {
+          console.error('Error creating user profile:', error);
+        } else {
+          console.log('User profile created successfully');
+        }
+      }
+    } catch (error) {
+      console.error('Error in createUserProfile:', error);
+    }
+  };
 
   const signOut = async () => {
     await supabase.auth.signOut();
