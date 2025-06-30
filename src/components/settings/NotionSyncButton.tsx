@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface NotionSyncButtonProps {
   notionApiKey: string;
-  onSyncSuccess?: (data: any) => void;
+  onSyncSuccess?: (data: { results?: []; nodes?: []; connections?: [] }) => void;
   onSyncError?: (error: string) => void;
 }
 
@@ -20,10 +20,6 @@ export const NotionSyncButton = ({
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSync = async () => {
-    console.log('🟡 NotionSyncButton: Sync operation started');
-    console.log('🟡 NotionSyncButton: API Key length:', notionApiKey.trim().length);
-    console.log('🟡 NotionSyncButton: User present:', !!user);
-    
     if (!user) {
       const errorMsg = "Please sign in to sync with Notion.";
       console.error('❌ NotionSyncButton: No user authenticated');
@@ -51,15 +47,9 @@ export const NotionSyncButton = ({
     setIsSyncing(true);
     
     try {
-      console.log('🟡 NotionSyncButton: Calling Supabase Edge Function...');
-      const startTime = Date.now();
-      
       const { data, error } = await supabase.functions.invoke('notion-sync', {
         body: { apiKey: notionApiKey.trim() }
       });
-      
-      const endTime = Date.now();
-      console.log('🟡 NotionSyncButton: Edge function completed in', endTime - startTime, 'ms');
       
       if (error) {
         console.error('❌ NotionSyncButton: Edge function error:', error);
@@ -70,13 +60,6 @@ export const NotionSyncButton = ({
         console.error('❌ NotionSyncButton: Notion API error:', data.error);
         throw new Error(data.error);
       }
-      
-      console.log('✅ NotionSyncButton: Sync successful');
-      console.log('🟡 NotionSyncButton: Sync results:', {
-        databases: data.results?.length || 0,
-        nodes: data.nodes?.length || 0,
-        connections: data.connections?.length || 0
-      });
       
       // Save synced data to localStorage
       localStorage.setItem('notion_synced_databases', JSON.stringify(data.results || []));
@@ -104,7 +87,6 @@ export const NotionSyncButton = ({
       onSyncError?.(errorMsg);
     } finally {
       setIsSyncing(false);
-      console.log('🟡 NotionSyncButton: Sync operation ended');
     }
   };
 

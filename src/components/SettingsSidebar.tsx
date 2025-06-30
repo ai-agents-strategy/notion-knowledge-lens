@@ -1,27 +1,45 @@
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { User, Building, Settings, ArrowLeft } from 'lucide-react';
 
-export const SettingsSidebar = () => {
+const navLinks = [
+  { to: '/profile', icon: <User className="w-5 h-5" />, text: 'Profile' },
+  { to: '/organization', icon: <Building className="w-5 h-5" />, text: 'Organization' },
+  { to: '/settings', icon: <Settings className="w-5 h-5" />, text: 'Integrations' },
+];
+
+const backLink = { to: '/', icon: <ArrowLeft className="w-5 h-5" />, text: 'Back to Graph' };
+
+export const SettingsSidebar: React.FC = () => {
   return (
-    <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-screen p-6">
-      {/* Back to Graph Button */}
-      <div className="mb-8">
-        <Link to="/">
-          <Button variant="outline" size="sm" className="w-full justify-start">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Graph
-          </Button>
-        </Link>
-      </div>
-
-      {/* Settings Title */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-          Manage your account and preferences
-        </p>
-      </div>
-    </div>
+    <aside className="w-64 flex-shrink-0 p-6 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+      <nav className="space-y-2">
+        {navLinks.map(({ to, icon, text }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-white'
+                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+              }`
+            }
+          >
+            {icon}
+            <span>{text}</span>
+          </NavLink>
+        ))}
+      </nav>
+      <nav>
+        <NavLink
+          to={backLink.to}
+          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+        >
+          {backLink.icon}
+          <span>{backLink.text}</span>
+        </NavLink>
+      </nav>
+    </aside>
   );
 };

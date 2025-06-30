@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { SettingsHeader } from "@/components/SettingsHeader";
+import { SettingsSidebar } from "@/components/SettingsSidebar";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -7,15 +8,17 @@ const Organization = () => {
   const { user, isLoaded } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <SettingsHeader 
-        title="Organization" 
-        description="Manage your organization settings and team" 
-      />
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+      <SettingsSidebar />
+      <main className="flex-1">
+        <SettingsHeader 
+          title="Organization" 
+          description="Manage your organization settings and team" 
+        />
 
-      <div className="max-w-4xl mx-auto px-6 pb-8">
-        {!isLoaded ? (
-          <div className="flex justify-center items-center h-64">
+        <div className="mx-auto px-6 pb-8">
+          {!isLoaded ? (
+            <div className="flex justify-center items-center h-64">
             <Loader2 className="h-12 w-12 animate-spin text-notion-blue" />
           </div>
         ) : (
@@ -40,9 +43,10 @@ const Organization = () => {
                 </div>
               )}
             </CardContent>
-          </Card>
-        )}
-      </div>
+            </Card>
+          )}
+        </div>
+      </main>
     </div>
   );
 };

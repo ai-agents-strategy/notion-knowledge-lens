@@ -23,12 +23,6 @@ export const NotionSaveButton = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = async () => {
-    console.log('🔵 NotionSaveButton: Save operation started');
-    console.log('🔵 NotionSaveButton: API Key length:', notionApiKey.trim().length);
-    console.log('🔵 NotionSaveButton: Database ID:', databaseId.trim() || 'none');
-    console.log('🔵 NotionSaveButton: User present:', !!user);
-    console.log('🔵 NotionSaveButton: Supabase available:', supabaseAvailable);
-    
     if (!user) {
       const errorMsg = "Please sign in to save settings.";
       console.error('❌ NotionSaveButton: No user authenticated');
@@ -56,17 +50,9 @@ export const NotionSaveButton = ({
     setIsLoading(true);
     
     try {
-      console.log('🔵 NotionSaveButton: Calling saveIntegration...');
-      const startTime = Date.now();
-      
       const success = await saveIntegration('notion', notionApiKey.trim(), databaseId.trim() || undefined);
       
-      const endTime = Date.now();
-      console.log('🔵 NotionSaveButton: saveIntegration completed in', endTime - startTime, 'ms');
-      console.log('🔵 NotionSaveButton: saveIntegration result:', success);
-      
       if (success) {
-        console.log('✅ NotionSaveButton: Save successful');
         onSaveSuccess?.();
       } else {
         throw new Error('Save operation returned false');
@@ -77,7 +63,6 @@ export const NotionSaveButton = ({
       onSaveError?.(errorMsg);
     } finally {
       setIsLoading(false);
-      console.log('🔵 NotionSaveButton: Save operation ended');
     }
   };
 

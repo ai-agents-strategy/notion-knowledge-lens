@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useIntegrations } from "@/hooks/useIntegrations";
 import { SettingsHeader } from "@/components/SettingsHeader";
+import { SettingsSidebar } from "@/components/SettingsSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,6 @@ interface UserProfile {
 
 const Profile = () => {
   const { user, signOut } = useAuth();
-  const { integrations } = useIntegrations();
   const [userStats, setUserStats] = useState<UserStats>({
     totalGraphs: 0,
     publicGraphs: 0,
@@ -198,7 +197,6 @@ const Profile = () => {
           created_at: user?.created_at
         },
         profile: userProfile,
-        integrations: integrations,
         graphs: userStats,
         exportedAt: new Date().toISOString()
       };
@@ -307,16 +305,18 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <SettingsHeader 
-        title="Profile" 
-        description="Manage your account settings, personal branding, and social links" 
-      />
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+      <SettingsSidebar />
+      <main className="flex-1">
+        <SettingsHeader 
+          title="Profile" 
+          description="Manage your account settings, personal branding, and social links" 
+        />
 
-      <div className="max-w-4xl mx-auto px-6 pb-8">
-        <div className="grid gap-6">
-          {/* Profile Overview */}
-          <Card>
+        <div className="mx-auto px-6 pb-8">
+          <div className="grid gap-6">
+            {/* Profile Overview */}
+            <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <Avatar className="h-12 w-12">
@@ -524,51 +524,6 @@ const Profile = () => {
             </CardContent>
           </Card>
 
-          {/* Connected Integrations */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Connected Integrations
-              </CardTitle>
-              <CardDescription>
-                Services connected to your account
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {integrations.length > 0 ? (
-                <div className="space-y-3">
-                  {integrations.map((integration) => (
-                    <div key={integration.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                          <span className="text-blue-600 font-semibold text-sm">
-                            {integration.integration_type.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium capitalize">{integration.integration_type}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Connected {formatDate(integration.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant="secondary">Connected</Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Settings className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">No integrations connected yet</p>
-                  <Button variant="outline" className="mt-2" onClick={() => window.location.href = '/settings'}>
-                    Connect Integrations
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Data Management */}
           <Card>
             <CardHeader>
@@ -645,9 +600,10 @@ const Profile = () => {
                 </AlertDialog>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

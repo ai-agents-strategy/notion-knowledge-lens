@@ -15,12 +15,6 @@ if (!SUPABASE_ANON_KEY) {
   throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable. Please check your .env file.');
 }
 
-console.log('🔧 Supabase Client Configuration:', {
-  url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 30)}...` : 'MISSING',
-  anonKey: SUPABASE_ANON_KEY ? `${SUPABASE_ANON_KEY.substring(0, 20)}...` : 'MISSING',
-  hasUrl: !!SUPABASE_URL,
-  hasAnonKey: !!SUPABASE_ANON_KEY
-});
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -42,60 +36,3 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     }
   }
 });
-
-// Enhanced connection test with better error handling and timeouts
-const testConnection = async () => {
-  try {
-    console.log('🔍 Testing Supabase connection...');
-    
-    // Test auth session with timeout
-    const sessionPromise = supabase.auth.getSession();
-    const sessionTimeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Auth session timeout')), 30000)
-    );
-
-    const { data: { session }, error: sessionError } = await Promise.race([
-      sessionPromise, 
-      sessionTimeout
-    ]) as { data: { session: import('@supabase/supabase-js').Session | null }, error: Error | null };
-
-    if (sessionError) {
-      console.warn('⚠️ Auth session test warning:', sessionError);
-    } else {
-      console.log('✅ Auth session test passed:', {
-        hasSession: !!session,
-        userId: session?.user?.id || 'none'
-      });
-    }
-
-    // Test database connectivity with timeout
-    const queryPromise = supabase
-      .from('profiles')
-      .select('count')
-      .limit(1);
-
-    const queryTimeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Database query timeout')), 10000)
-    );
-
-    const { error: queryError } = await Promise.race([
-      queryPromise, 
-      queryTimeout
-    ]) as { error: Error | null };
-
-    if (queryError) {
-      console.warn('⚠️ Database connectivity test warning:', queryError);
-    } else {
-      console.log('✅ Database connectivity verified');
-    }
-
-    console.log('✅ Supabase client initialized successfully');
-    
-  } catch (error) {
-    console.warn('⚠️ Supabase connection test completed with warnings:', error);
-    // Don't throw error, just log warning
-  }
-};
-
-// Test connection on initialization (non-blocking)
-testConnection();
