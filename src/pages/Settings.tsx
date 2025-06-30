@@ -62,6 +62,7 @@ const Settings = () => {
       });
       return;
     }
+    
     if (!notionApiKey.trim()) {
       toast({
         title: "API Key Required",
@@ -70,10 +71,12 @@ const Settings = () => {
       });
       return;
     }
+    
     setIsLoading(true);
     setErrorMessage('');
+    
     try {
-      console.log('💾 Saving integration settings to database...');
+      console.log('💾 Starting save process...');
 
       // Save to database
       const success = await saveIntegration('notion', notionApiKey.trim(), databaseId.trim() || undefined);

@@ -20,7 +20,9 @@ export const useIntegrations = () => {
 
   const fetchIntegrations = useCallback(async () => {
     if (!user) {
-      console.error('❌ No user available for integrations fetch');
+      console.log('❌ No user available for integrations fetch');
+      setIntegrations([]);
+      setLoading(false);
       return;
     }
 
@@ -76,6 +78,11 @@ export const useIntegrations = () => {
   const saveIntegration = async (type: string, apiKey: string, databaseId?: string) => {
     if (!user) {
       console.error('❌ Cannot save integration: missing user');
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to save integrations.",
+        variant: "destructive",
+      });
       return false;
     }
 
@@ -86,6 +93,8 @@ export const useIntegrations = () => {
       
       if (existingIntegration) {
         // Update existing integration in database
+        console.log('🔄 Updating existing integration:', existingIntegration.id);
+        
         const { data, error } = await supabase
           .from('integrations')
           .update({
@@ -107,7 +116,7 @@ export const useIntegrations = () => {
           return false;
         }
 
-        console.log('✅ Integration updated successfully');
+        console.log('✅ Integration updated successfully:', data);
         setIntegrations(prev => 
           prev.map(integration => 
             integration.id === existingIntegration.id ? data : integration
@@ -115,12 +124,16 @@ export const useIntegrations = () => {
         );
       } else {
         // Create new integration in database
+        console.log('➕ Creating new integration');
+        
         const insertData = {
           user_id: user.id,
           integration_type: type,
           api_key: apiKey,
           database_id: databaseId || null
         };
+
+        console.log('📝 Insert data:', { ...insertData, api_key: '[REDACTED]' });
 
         const { data, error } = await supabase
           .from('integrations')
@@ -130,6 +143,12 @@ export const useIntegrations = () => {
 
         if (error) {
           console.error('❌ Error creating integration:', error);
+          console.error('❌ Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
           toast({
             title: "Error",
             description: `Failed to create integration: ${error.message}`,
@@ -138,7 +157,7 @@ export const useIntegrations = () => {
           return false;
         }
 
-        console.log('✅ Integration created successfully');
+        console.log('✅ Integration created successfully:', { ...data, api_key: '[REDACTED]' });
         setIntegrations(prev => [...prev, data]);
       }
 
@@ -149,6 +168,11 @@ export const useIntegrations = () => {
       return true;
     } catch (error) {
       console.error('❌ Unexpected error saving integration:', error);
+      toast({
+        title: "Unexpected Error",
+        description: "Failed to save integration. Please try again.",
+        variant: "destructive",
+      });
       return false;
     }
   };
