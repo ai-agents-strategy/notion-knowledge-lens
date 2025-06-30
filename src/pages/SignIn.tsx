@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 
 const SignInPage = () => {
   const [email, setEmail] = useState('');
@@ -15,9 +16,76 @@ const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get any message passed from sign-up page
+  const locationState = location.state as { message?: string; email?: string } | null;
+
+  // Pre-fill email if passed from sign-up
+  useState(() => {
+    if (locationState?.email) {
+      setEmail(locationState.email);
+    }
+  });
+
+  const ensureUserProfile = async (user: any) => {
+    try {
+      console.log('👤 Ensuring user profile exists for:', user.id);
+      
+      // Check if profile already exists
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('❌ Error checking existing profile:', fetchError);
+        return;
+      }
+
+      if (!existingProfile) {
+        console.log('➕ Creating new user profile...');
+        
+        // Extract user info from metadata or email
+        const userName = user.user_metadata?.full_name || 
+                        user.user_metadata?.name || 
+                        user.email?.split('@')[0] || 
+                        '';
+        
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            user_name: userName,
+            user_email: user.email || '',
+          });
+
+        if (insertError) {
+          console.error('❌ Error creating user profile:', insertError);
+        } else {
+          console.log('✅ User profile created successfully');
+        }
+      } else {
+        console.log('✅ User profile already exists');
+      }
+    } catch (error) {
+      console.error('❌ Unexpected error in ensureUserProfile:', error);
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email.trim() || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -30,9 +98,18 @@ const SignInPage = () => {
 
       if (error) {
         console.error('❌ Sign in error:', error);
+        
+        // Provide more specific error messages
+        let errorMessage = error.message;
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = "Invalid email or password. Please check your credentials and try again.";
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = "Please check your email and click the confirmation link before signing in.";
+        }
+        
         toast({
           title: "Sign In Failed",
-          description: error.message,
+          description: errorMessage,
           variant: "destructive",
         });
         return;
@@ -40,21 +117,25 @@ const SignInPage = () => {
 
       if (data.user) {
         console.log('✅ Sign in successful:', data.user.id);
+        
+        // Ensure user profile exists
+        await ensureUserProfile(data.user);
+        
         toast({
-          title: "Welcome back!",
+          title: "Welcome back! 👋",
           description: "You have been signed in successfully.",
         });
         
         // Small delay to ensure auth state is updated
         setTimeout(() => {
-          navigate('/');
+          navigate('/', { replace: true });
         }, 500);
       }
     } catch (error) {
       console.error('❌ Unexpected sign in error:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred during sign in.",
+        title: "Sign In Error",
+        description: "An unexpected error occurred during sign in. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -95,13 +176,19 @@ const SignInPage = () => {
       }
 
       console.log('🔗 Google OAuth initiated successfully');
+      
+      toast({
+        title: "Redirecting to Google...",
+        description: "You'll be redirected to Google to complete sign in.",
+      });
+      
       // The redirect will happen automatically
       
     } catch (error) {
       console.error('❌ Unexpected Google OAuth error:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred with Google sign-in",
+        title: "Google Sign In Error",
+        description: "An unexpected error occurred with Google sign-in. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -113,12 +200,22 @@ const SignInPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Sign In</CardTitle>
+          <CardTitle>Welcome Back</CardTitle>
           <CardDescription>
-            Enter your email and password to access your account
+            Sign in to your account to access your knowledge graphs
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Show message from sign-up if available */}
+          {locationState?.message && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                {locationState.message}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Google Sign In Button */}
           <Button
             type="button"
@@ -166,7 +263,7 @@ const SignInPage = () => {
           {/* Email/Password Form */}
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -175,6 +272,7 @@ const SignInPage = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading || isGoogleLoading}
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -187,12 +285,13 @@ const SignInPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading || isGoogleLoading}
+                autoComplete="current-password"
               />
             </div>
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || isGoogleLoading}
+              disabled={isLoading || isGoogleLoading || !email.trim() || !password}
             >
               {isLoading ? (
                 <>
@@ -207,8 +306,8 @@ const SignInPage = () => {
 
           <div className="text-center text-sm">
             Don't have an account?{' '}
-            <Link to="/sign-up" className="text-blue-600 hover:underline">
-              Sign up
+            <Link to="/sign-up" className="text-blue-600 hover:underline font-medium">
+              Create one here
             </Link>
           </div>
         </CardContent>

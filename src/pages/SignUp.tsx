@@ -13,13 +13,47 @@ const SignUpPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
 
+  const createUserProfile = async (userId: string, email: string, name?: string) => {
+    try {
+      console.log('👤 Creating user profile for:', userId);
+      
+      const profileData = {
+        user_id: userId,
+        user_email: email,
+        user_name: name || email.split('@')[0] || '',
+        created_at: new Date().toISOString()
+      };
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([profileData]);
+
+      if (profileError) {
+        console.error('❌ Profile creation error:', profileError);
+        // Don't throw error, just log it - user can still use the app
+        toast({
+          title: "Profile Setup",
+          description: "Account created successfully. You can complete your profile later in settings.",
+          variant: "default"
+        });
+      } else {
+        console.log('✅ User profile created successfully');
+      }
+    } catch (error) {
+      console.error('❌ Unexpected error creating profile:', error);
+      // Don't throw error, just log it
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validation
     if (password !== confirmPassword) {
       toast({
         title: "Password Mismatch",
@@ -38,55 +72,102 @@ const SignUpPage = () => {
       return;
     }
 
+    if (!email.trim()) {
+      toast({
+        title: "Email Required",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      console.log('🔐 Attempting email/password sign up...');
+      console.log('🔐 Starting email/password sign up process...');
       
-      const { data, error } = await supabase.auth.signUp({
+      // Step 1: Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
           data: {
+            full_name: fullName.trim() || email.split('@')[0],
             email: email.trim(),
           }
         }
       });
 
-      if (error) {
-        console.error('❌ Sign up error:', error);
+      if (authError) {
+        console.error('❌ Auth sign up error:', authError);
         toast({
           title: "Sign Up Failed",
-          description: error.message,
+          description: authError.message,
           variant: "destructive",
         });
         return;
       }
 
-      if (data.user) {
-        console.log('✅ Sign up successful:', data.user.id);
-        
-        if (data.user.email_confirmed_at) {
-          // Email is already confirmed (auto-confirm enabled)
-          toast({
-            title: "Account Created!",
-            description: "Your account has been created successfully. You can now sign in.",
-          });
-          navigate('/sign-in');
-        } else {
-          // Email confirmation required
-          toast({
-            title: "Check Your Email",
-            description: "Please check your email and click the confirmation link to activate your account.",
-          });
-          navigate('/sign-in');
-        }
+      if (!authData.user) {
+        console.error('❌ No user returned from sign up');
+        toast({
+          title: "Sign Up Failed",
+          description: "Failed to create account. Please try again.",
+          variant: "destructive",
+        });
+        return;
       }
+
+      console.log('✅ Auth user created:', authData.user.id);
+
+      // Step 2: Create user profile with auth_id
+      await createUserProfile(
+        authData.user.id, 
+        email.trim(), 
+        fullName.trim() || email.split('@')[0]
+      );
+
+      // Step 3: Handle different confirmation scenarios
+      if (authData.user.email_confirmed_at) {
+        // Email is already confirmed (auto-confirm enabled)
+        console.log('✅ Email auto-confirmed, user can sign in immediately');
+        toast({
+          title: "Account Created Successfully! 🎉",
+          description: "Your account has been created and is ready to use. You can now sign in.",
+        });
+        
+        // Small delay to show success message
+        setTimeout(() => {
+          navigate('/sign-in', { 
+            state: { 
+              message: 'Account created successfully! Please sign in with your credentials.',
+              email: email.trim()
+            }
+          });
+        }, 1500);
+      } else {
+        // Email confirmation required
+        console.log('📧 Email confirmation required');
+        toast({
+          title: "Check Your Email 📧",
+          description: "We've sent you a confirmation link. Please check your email and click the link to activate your account.",
+        });
+        
+        setTimeout(() => {
+          navigate('/sign-in', { 
+            state: { 
+              message: 'Please check your email and confirm your account before signing in.',
+              email: email.trim()
+            }
+          });
+        }, 2000);
+      }
+
     } catch (error) {
       console.error('❌ Unexpected sign up error:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred during sign up.",
+        title: "Sign Up Error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -98,9 +179,9 @@ const SignUpPage = () => {
     setIsGoogleLoading(true);
 
     try {
-      console.log('🔐 Attempting Google OAuth sign up...');
+      console.log('🔐 Starting Google OAuth sign up...');
       
-      // Get the current origin (works for both localhost and production)
+      // Get the current origin for redirect
       const redirectTo = `${window.location.origin}/`;
       
       console.log('🔗 Google OAuth redirect URL:', redirectTo);
@@ -127,13 +208,19 @@ const SignUpPage = () => {
       }
 
       console.log('🔗 Google OAuth initiated successfully');
+      
+      toast({
+        title: "Redirecting to Google...",
+        description: "You'll be redirected to Google to complete sign up.",
+      });
+      
       // The redirect will happen automatically
       
     } catch (error) {
       console.error('❌ Unexpected Google OAuth error:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred with Google sign-up",
+        title: "Google Sign Up Error",
+        description: "An unexpected error occurred with Google sign-up. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -145,9 +232,9 @@ const SignUpPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Sign Up</CardTitle>
+          <CardTitle>Create Account</CardTitle>
           <CardDescription>
-            Create a new account to get started
+            Sign up to start creating and sharing knowledge graphs
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -198,7 +285,19 @@ const SignUpPage = () => {
           {/* Email/Password Form */}
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="fullName">Full Name (Optional)</Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="Enter your full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                disabled={isLoading || isGoogleLoading}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
               <Input
                 id="email"
                 type="email"
@@ -209,12 +308,13 @@ const SignUpPage = () => {
                 disabled={isLoading || isGoogleLoading}
               />
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password *</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password (min 6 characters)"
+                placeholder="Create a password (min 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -222,8 +322,9 @@ const SignUpPage = () => {
                 disabled={isLoading || isGoogleLoading}
               />
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Confirm Password *</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -235,10 +336,11 @@ const SignUpPage = () => {
                 disabled={isLoading || isGoogleLoading}
               />
             </div>
+            
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || isGoogleLoading}
+              disabled={isLoading || isGoogleLoading || !email.trim() || !password}
             >
               {isLoading ? (
                 <>
@@ -246,15 +348,19 @@ const SignUpPage = () => {
                   Creating account...
                 </>
               ) : (
-                'Sign Up'
+                'Create Account'
               )}
             </Button>
           </form>
 
+          <div className="text-center text-sm text-muted-foreground">
+            By signing up, you agree to our Terms of Service and Privacy Policy
+          </div>
+
           <div className="text-center text-sm">
             Already have an account?{' '}
-            <Link to="/sign-in" className="text-blue-600 hover:underline">
-              Sign in
+            <Link to="/sign-in" className="text-blue-600 hover:underline font-medium">
+              Sign in here
             </Link>
           </div>
         </CardContent>
