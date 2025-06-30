@@ -77,16 +77,32 @@ const Settings = () => {
     
     try {
       console.log('💾 Starting save process...');
+      console.log('👤 User ID:', user.id);
+      console.log('🔑 API Key length:', notionApiKey.trim().length);
+      console.log('🗄️ Database ID:', databaseId.trim() || 'none');
+
+      // Test database connection first
+      console.log('🔍 Testing database connection...');
+      const { data: testData, error: testError } = await supabase
+        .from('integrations')
+        .select('count')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (testError) {
+        console.error('❌ Database connection test failed:', testError);
+        throw new Error(`Database connection failed: ${testError.message}`);
+      }
+
+      console.log('✅ Database connection test passed');
 
       // Save to database
       const success = await saveIntegration('notion', notionApiKey.trim(), databaseId.trim() || undefined);
       
       if (success) {
         console.log('✅ Settings saved successfully to database');
-        toast({
-          title: "Settings saved!",
-          description: "Your Notion integration settings have been saved securely to the database."
-        });
+      } else {
+        throw new Error('Save operation returned false');
       }
     } catch (error) {
       console.error('❌ Error saving settings:', error);

@@ -38,6 +38,12 @@ export const useIntegrations = () => {
 
       if (error) {
         console.error('❌ Error fetching integrations:', error);
+        console.error('❌ Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         toast({
           title: "Database Error",
           description: `Failed to fetch integrations: ${error.message}`,
@@ -75,7 +81,7 @@ export const useIntegrations = () => {
     return integrations.find(integration => integration.integration_type === type) || null;
   };
 
-  const saveIntegration = async (type: string, apiKey: string, databaseId?: string) => {
+  const saveIntegration = async (type: string, apiKey: string, databaseId?: string): Promise<boolean> => {
     if (!user) {
       console.error('❌ Cannot save integration: missing user');
       toast({
@@ -95,19 +101,29 @@ export const useIntegrations = () => {
         // Update existing integration in database
         console.log('🔄 Updating existing integration:', existingIntegration.id);
         
+        const updateData = {
+          api_key: apiKey,
+          database_id: databaseId || null,
+          updated_at: new Date().toISOString()
+        };
+
+        console.log('📝 Update data:', { ...updateData, api_key: '[REDACTED]' });
+
         const { data, error } = await supabase
           .from('integrations')
-          .update({
-            api_key: apiKey,
-            database_id: databaseId || null,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', existingIntegration.id)
           .select()
           .single();
 
         if (error) {
           console.error('❌ Error updating integration:', error);
+          console.error('❌ Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
           toast({
             title: "Error",
             description: `Failed to update integration: ${error.message}`,
@@ -116,7 +132,7 @@ export const useIntegrations = () => {
           return false;
         }
 
-        console.log('✅ Integration updated successfully:', data);
+        console.log('✅ Integration updated successfully:', { ...data, api_key: '[REDACTED]' });
         setIntegrations(prev => 
           prev.map(integration => 
             integration.id === existingIntegration.id ? data : integration
@@ -177,7 +193,7 @@ export const useIntegrations = () => {
     }
   };
 
-  const deleteIntegration = async (type: string) => {
+  const deleteIntegration = async (type: string): Promise<boolean> => {
     if (!user) {
       console.error('❌ Cannot delete integration: missing user');
       return false;
