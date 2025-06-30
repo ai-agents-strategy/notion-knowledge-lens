@@ -61,8 +61,8 @@ export const SupabaseConnectionTest = () => {
       try {
         const sessionResult = await testWithTimeout(
           supabase.auth.getSession(),
-          10000, // Increased from 5000 to 10000
-          'Auth session check timeout after 10 seconds'
+          30000, // Increased from 10000 to 30000
+          'Auth session check timeout after 30 seconds'
         );
         
         results.tests.push({
@@ -94,8 +94,8 @@ export const SupabaseConnectionTest = () => {
       try {
         const queryResult = await testWithTimeout(
           supabase.from('integrations').select('count').limit(1),
-          15000, // Increased from 8000 to 15000
-          'Database query timeout after 15 seconds'
+          35000, // Increased from 15000 to 35000
+          'Database query timeout after 35 seconds'
         );
         
         const queryTime = Date.now() - queryStart;
@@ -132,8 +132,8 @@ export const SupabaseConnectionTest = () => {
               .select('*')
               .eq('user_id', user.id)
               .limit(1),
-            10000, // Increased from 5000 to 10000
-            'RLS policy test timeout after 10 seconds'
+            30000, // Increased from 10000 to 30000
+            'RLS policy test timeout after 30 seconds'
           );
             
           results.tests.push({
@@ -183,8 +183,8 @@ export const SupabaseConnectionTest = () => {
               .insert([testIntegration])
               .select()
               .single(),
-            10000, // Increased from 5000 to 10000
-            'Write operation timeout after 10 seconds'
+            30000, // Increased from 10000 to 30000
+            'Write operation timeout after 30 seconds'
           );
 
           if (!insertResult.error && insertResult.data) {
@@ -195,7 +195,7 @@ export const SupabaseConnectionTest = () => {
                   .from('integrations')
                   .delete()
                   .eq('id', insertResult.data.id),
-                5000, // Increased from 3000 to 5000
+                15000, // Increased from 5000 to 15000
                 'Cleanup operation timeout'
               );
             } catch (cleanupError) {
@@ -328,7 +328,7 @@ export const SupabaseConnectionTest = () => {
           <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-200">
               <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
-              Running connection tests... This may take up to 45 seconds.
+              Running connection tests... This may take up to 2 minutes.
             </p>
           </div>
         )}

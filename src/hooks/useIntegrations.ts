@@ -46,7 +46,7 @@ export const useIntegrations = () => {
       console.log('🔍 Testing auth session...');
       const sessionPromise = supabase.auth.getSession();
       const sessionTimeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Auth session timeout')), 10000) // Increased from 5000 to 10000
+        setTimeout(() => reject(new Error('Auth session timeout')), 30000) // Increased from 20000 to 30000
       );
 
       const { error: sessionError } = await Promise.race([sessionPromise, sessionTimeout]) as any;
@@ -65,7 +65,7 @@ export const useIntegrations = () => {
         .limit(1);
 
       const queryTimeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database query timeout')), 15000) // Increased from 8000 to 15000
+        setTimeout(() => reject(new Error('Database query timeout')), 35000) // Increased from 25000 to 35000
       );
 
       const { error: queryError } = await Promise.race([queryPromise, queryTimeout]) as any;
@@ -113,7 +113,7 @@ export const useIntegrations = () => {
             .eq('user_id', user.id);
 
           const dbTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database fetch timeout')), 15000) // Increased from 10000 to 15000
+            setTimeout(() => reject(new Error('Database fetch timeout')), 35000) // Increased from 25000 to 35000
           );
 
           const { data: dbIntegrations, error } = await Promise.race([dbPromise, dbTimeout]) as any;
@@ -283,7 +283,7 @@ export const useIntegrations = () => {
             .eq('integration_type', type);
 
           const checkTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database check timeout')), 10000) // Increased from 5000 to 10000
+            setTimeout(() => reject(new Error('Database check timeout')), 30000) // Increased from 20000 to 30000
           );
 
           const { data: existingIntegrations, error: fetchError } = await Promise.race([checkPromise, checkTimeout]) as any;
@@ -310,7 +310,7 @@ export const useIntegrations = () => {
               .single();
 
             const updateTimeout = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Database update timeout')), 10000) // Increased from 5000 to 10000
+              setTimeout(() => reject(new Error('Database update timeout')), 30000) // Increased from 20000 to 30000
             );
 
             result = await Promise.race([updatePromise, updateTimeout]);
@@ -329,7 +329,7 @@ export const useIntegrations = () => {
               .single();
 
             const insertTimeout = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Database insert timeout')), 10000) // Increased from 5000 to 10000
+              setTimeout(() => reject(new Error('Database insert timeout')), 30000) // Increased from 20000 to 30000
             );
 
             result = await Promise.race([insertPromise, insertTimeout]);
@@ -429,7 +429,7 @@ export const useIntegrations = () => {
             .eq('integration_type', type);
 
           const deleteTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database delete timeout')), 10000) // Increased from 5000 to 10000
+            setTimeout(() => reject(new Error('Database delete timeout')), 30000) // Increased from 20000 to 30000
           );
 
           const { error } = await Promise.race([deletePromise, deleteTimeout]) as any;
